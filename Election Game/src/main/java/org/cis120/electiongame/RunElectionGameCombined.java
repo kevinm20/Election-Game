@@ -189,6 +189,9 @@ public class RunElectionGameCombined implements Runnable {
                         setLabel(status);
                         status.repaint();
                         JOptionPane.showMessageDialog(null, election.getMessage());
+                        if(election.getAchievement()!=null) {
+                            JOptionPane.showMessageDialog(null, election.getAchievement());
+                        }
 
                         if (election.checkWinner() == 1) {
                             JOptionPane.showMessageDialog(
@@ -442,7 +445,7 @@ public class RunElectionGameCombined implements Runnable {
         /*
          * Here, the game is started with all necessary inputs
          */
-        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin" };
+        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "quandale" };
 
         Object[] options = { "1-Player", "2-Player", "Quick 1-Player" };
         int gameMode = JOptionPane.showOptionDialog(
@@ -520,7 +523,7 @@ public class RunElectionGameCombined implements Runnable {
                 election.setAIDifficulty(difficulty);
             }
 
-            Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes" };
+            Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational" };
             int deck = JOptionPane.showOptionDialog(
                     null, "Choose the game deck:",
                     "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
@@ -543,6 +546,10 @@ public class RunElectionGameCombined implements Runnable {
             if (deck == 3) {
                 election.reset("memes", 0, true, 0, true, 0, true);
                 deckSet = "memes";
+            }
+            if (deck == 4) {
+                election.reset("generational", 0, true, 0, true, 0, true);
+                deckSet = "generational";
             }
 
             // Final message to start the game

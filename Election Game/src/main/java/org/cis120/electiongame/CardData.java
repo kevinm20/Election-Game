@@ -52,7 +52,7 @@ public class CardData {
             "James A. Garfield", "Midwest", 5, 5, 2, 3, "Conservative", "Limited Government"
     );
     static President jamesMonroe = new President(
-            "James Monroe", "South", 8, 7, 6, 4, "Libertarian", "Nationalism"
+            "James Monroe", "South", 8, 8, 6, 6, "Libertarian", "Nationalism"
     );
     static President williamMcKinley = new President(
             "William McKinley", "Midwest", 7, 5, 7, 6, "Conservative", "Tariffs"
@@ -97,7 +97,7 @@ public class CardData {
             "Abraham Lincoln", "Midwest", 3, 9, 10, 7, "Conservative", "Civil Rights"
     );
     static President williamHenryHarrison = new President(
-            "William Henry Harrison", "Midwest", 4, 4, 1, 7, "Conservative", "Central Bank"
+            "William Henry Harrison", "Midwest", 3, 6, 1, 7, "Conservative", "Central Bank"
     );
     static President martinVanBuren = new President(
             "Martin Van Buren", "Northeast", 8, 4, 5, 4, "Libertarian", "Laissez-Faire"
@@ -118,7 +118,7 @@ public class CardData {
             "Zachary Taylor", "Northeast", 1, 3, 1, 6, "Conservative", "Nationalism"
     );
     static President georgeWBush = new President(
-            "George W. Bush", "South", 3, 6, 4, 7, "Conservative", "Tough Foreign Policy"
+            "George W. Bush", "South", 3, 6, 3, 7, "Conservative", "Tough Foreign Policy"
     );
     static President alGore = new President(
             "Al Gore", "South", 8, 3, 6, 5, "Progressive", "Social Liberalism"
@@ -127,7 +127,7 @@ public class CardData {
             "John F. Kennedy", "Northeast", 5, 9, 6, 7, "Progressive", "Tough Foreign Policy"
     );
     static President georgeHWBush = new President(
-            "George H. W. Bush", "South", 5, 2, 4, 6, "Conservative", "Tough Foreign Policy"
+            "George H. W. Bush", "South", 7, 2, 4, 6, "Conservative", "Tough Foreign Policy"
     );
     static President geraldFord = new President(
             "Gerald Ford", "Midwest", 7, 2, 1, 3, "Conservative", "Establishment"
@@ -136,13 +136,13 @@ public class CardData {
             "William Howard Taft", "Midwest", 2, 3, 5, 4, "Conservative", "Free Trade"
     );
     static President herbertHoover = new President(
-            "Herbert Hoover", "Midwest", 2, 4, 5, 2, "Progressive", "Tariffs"
+            "Herbert Hoover", "West", 2, 4, 5, 2, "Progressive", "Tariffs"
     );
     static President harrySTruman = new President(
             "Harry S. Truman", "South", 7, 4, 3, 4, "Progressive", "Tough Foreign Policy"
     );
     static President dwightEisenhower = new President(
-            "Dwight Eisenhower", "South", 1, 8, 5, 10, "Conservative", "Internal Improvements"
+            "Dwight Eisenhower", "West", 1, 8, 5, 10, "Conservative", "Internal Improvements"
     );
     static President benjaminHarrison = new President(
             "Benjamin Harrison", "Midwest", 3, 4, 2, 3, "Conservative", "Tariffs"
@@ -157,13 +157,13 @@ public class CardData {
             "Andrew Johnson", "South", 6, 2, 3, 3, "Populist", "Racism"
     );
     static President jamesBuchanan = new President(
-            "James Buchanan", "South", 6, 3, 3, 3, "Populist", "Laissez-Faire"
+            "James Buchanan", "Northeast", 6, 3, 3, 3, "Populist", "Laissez-Faire"
     );
     static President franklinPierce = new President(
             "Franklin Pierce", "Northeast", 5, 5, 3, 1, "Populist", "Racism"
     );
     static President georgeWallace = new President(
-            "George Wallace", "South", 6, 5, 1, 4, "Populist", "Racism"
+            "George Wallace", "South", 5, 5, 1, 4, "Populist", "Racism"
     );
     static President barryGoldwater = new President(
             "Barry Goldwater", "West", 5, 3, 4, 4, "Libertarian", "Tax Cuts"
@@ -177,7 +177,7 @@ public class CardData {
             "Traditional Morality"
     );
     static President jebBush = new President(
-            "Jeb Bush", "South", 6, -5, 4, 5, "Conservative", "Traditional Morality"
+            "Jeb Bush!", "South", 3, -5, 2, 4, "Conservative", "Establishment"
     );
     static President dababy = new President(
             "DaBaby", "South", 0, 10, 0, 10, "Progressive", "Personal Freedom"
@@ -249,7 +249,7 @@ public class CardData {
             "Robert La Follette", "Midwest", 9, 3, 5, 3, "Progressive", "Regulation"
     );
     static President charlesLindbergh = new President(
-            "Charles Lindbergh", "Midwest", 1, 4, 2, 9, "Populist", "Isolationism"
+            "Charles Lindbergh", "Midwest", 1, 5, 2, 9, "Populist", "Isolationism"
     );
     static President williamHSeward = new President(
             "William H. Seward", "Northeast", 8, 1, 5, 6, "Conservative", "Civil Rights"
@@ -347,9 +347,175 @@ public class CardData {
     static President warrenG = new President(
             "Warren G.", "Midwest", 6, 9, 9, 4, "Conservative", "Limited Government"
     );
+    static President shirleyChisholm = new President(
+            "Shirley Chisholm", "Northest", 2, 5, 3, 4, "Progressive", "Social Liberalism"
+    );
+    static President bettyFord = new President(
+            "Betty Ford", "Midwest", 1, 6, 1, 6, "Progressive", "Social Liberalism"
+    );
+    static President sarahPalin = new President(
+            "Sarah Palin", "West", 2, 4, 3, 2, "Conservative", "Anti-Establishment"
+    );
+    static President jackKemp = new President(
+            "Jack Kemp", "Northeast", 5, 1, 5, 1, "Conservative", "Tax Cuts"
+    );
+    static President howardDean = new President(
+            "Howard Dean", "Northeast", 4, 5, 3, 2, "Progressive", "Isolationism"
+    );
+    static President rudyGiuliani = new President(
+            "Rudy Giuliani", "Northeast", 2, 6, 2, 7, "Conservative", "Law and Order"
+    );
+    static President martinLutherKingJr = new President(
+            "Martin Luther King Jr.", "South", 1, 9, 5, 9, "Progressive", "Civil Rights"
+    );
+    static President danQuayle = new President(
+            "Dan Quayle", "Midwest", 5, 1, 2, 2, "Conservative", "Traditional Morality"
+    );
+    static President hueyLong = new President(
+            "Huey Long", "South", 4, 7, 6, 3, "Populist", "Social Programs"
+    );
+    static President colinPowell = new President(
+            "Colin Powell", "South", 5, 4, 3, 4, "Conservative", "Tough Foreign Policy"
+    );
+    static President susanBAnthony = new President(
+            "Susan B. Anthony", "Northeast", 1, 7, 2, 6, "Progressive", "Social Liberalism"
+    );
+    static President walterMondale = new President(
+            "Walter Mondale", "Midwest", 6, 2, 2, 2, "Progressive", "Social Liberalism"
+    );
+    static President spiroAgnew = new President(
+            "Spiro Agnew", "Northeast", 5, 3, 3, 2, "Conservative", "Traditional Morality"
+    );
+    static President alfLandon = new President(
+            "Alf Landon", "West", 3, 1, 3, 1, "Conservative", "Tax Cuts"
+    );
+    static President wendellWillkie = new President(
+            "Wendell Willkie", "Midwest", 1, 7, 2, 3, "Conservative", "Tough Foreign Policy"
+    );
+    static President johnNanceGarner = new President(
+            "John Nance Garner", "South", 7, 2, 5, 2, "Populist", "Limited Government"
+    );
+    static President henryFord = new President(
+            "Henry Ford", "Midwest", 1, 1, 1, 8, "Progressive", "Isolationism"
+    );
+    static President danielWebster = new President(
+            "Daniel Webster", "Northeast", 9, 2, 8, 4, "Conservative", "Centralization"
+    );
+    static President winfieldScott = new President(
+            "Winfield Scott", "South", 1, 2, 1, 5, "Conservative", "Nationalism"
+    );
+    static President johnCBreckinridge = new President(
+            "John C. Breckinridge", "South", 4, 4, 3, 3, "Populist", "Racism"
+    );
+    static President johnBell = new President(
+            "John Bell", "South", 6, 2, 4, 1, "Conservative", "Centralization"
+    );
+    static President charlesSumner = new President(
+            "Charles Sumner", "Northeast", 5, 1, 3, 7, "Conservative", "Civil Rights"
+    );
+    static President johnBrown = new President(
+            "John Brown", "Northeast", 1, 5, 1, 9, "Progressive", "Civil Rights"
+    );
+    static President andrewJackson24 = new President(
+            "Andrew Jackson '24", "South", 2, 8, 2, 7, "Populist", "Egalitarianism"
+    );
+    static President andrewJackson32 = new President(
+            "Andrew Jackson '32", "South", 5, 10, 3, 9, "Populist", "Anti-Central Bank"
+    );
+    static President andrewJackson36 = new President(
+            "Andrew Jackson '36", "South", 7, 8, 6, 10, "Populist", "Anti-Central Bank"
+    );
+    static President theodoreRoosevelt98 = new President(
+            "Teddy Roosevelt '98", "Northeast", 2, 7, 3, 5, "Progressive", "Regulation"
+    );
+    static President theodoreRoosevelt04 = new President(
+            "Teddy Roosevelt '04", "Northeast", 5, 7, 7, 8, "Progressive", "Regulation"
+    );
+    static President theodoreRoosevelt12 = new President(
+            "Teddy Roosevelt '12", "Northeast", 6, 8, 9, 10, "Progressive", "Regulation"
+    );
+    static President franklinDRoosevelt32 = new President(
+            "Franklin Roosevelt '32", "Northeast", 2, 8, 5, 4, "Progressive", "Social Programs"
+    );
+    static President franklinDRoosevelt40 = new President(
+            "Franklin Roosevelt '40", "Northeast", 7, 9, 8, 8, "Progressive", "Social Programs"
+    );
+    static President franklinDRoosevelt44 = new President(
+            "Franklin Roosevelt '44", "Northeast", 9, 8, 9, 10, "Progressive", "Tough Foreign Policy"
+    );
+    static President abrahamLincoln56 = new President(
+            "Abraham Lincoln '56", "Midwest", 2, 6, 8, 5, "Conservative", "Civil Rights"
+    );
+    static President abrahamLincoln60 = new President(
+            "Abraham Lincoln '60", "Midwest", 3, 9, 10, 7, "Conservative", "Civil Rights"
+    );
+    static President abrahamLincoln65 = new President(
+            "Abraham Lincoln '65", "Midwest", 8, 9, 10, 10, "Conservative", "Civil Rights"
+    );
+    static President calvinCoolidge20 = new President(
+            "Calvin Coolidge '20", "Northeast", 4, 4, 5, 2, "Libertarian", "Tax Cuts"
+    );
+    static President calvinCoolidge23 = new President(
+            "Calvin Coolidge '23", "Northeast", 6, 5, 7, 5, "Libertarian", "Tax Cuts"
+    );
+    static President calvinCoolidge28 = new President(
+            "Calvin Coolidge '28", "Northeast", 9, 6, 9, 7, "Libertarian", "Tax Cuts"
+    );
+    static President richardNixon60 = new President(
+            "Richard Nixon '60", "West", 8, 5, 5, 7, "Conservative", "Tough Foreign Policy"
+    );
+    static President richardNixon68 = new President(
+            "Richard Nixon '68", "West", 8, 7, 5, 8, "Conservative", "Law and Order"
+    );
+    static President richardNixon84 = new President(
+            "Richard Nixon '84", "West", 9, 5, 8, 10, "Conservative", "Tough Foreign Policy"
+    );
+    static President ronaldReagan76 = new President(
+            "Ronald Reagan '76", "West", 4, 6, 3, 7, "Conservative", "Traditional Morality"
+    );
+    static President ronaldReagan80 = new President(
+            "Ronald Reagan '80", "West", 4, 10, 5, 8, "Conservative", "Tax Cuts"
+    );
+    static President ronaldReagan88 = new President(
+            "Ronald Reagan '88", "West", 8, 9, 7, 10, "Conservative", "Tough Foreign Policy"
+    );
+    static President alGore88 = new President(
+            "Al Gore", "South", 4, 2, 3, 4, "Progressive", "Traditional Morality"
+    );
+    static President alGore00 = new President(
+            "Al Gore", "South", 8, 3, 6, 5, "Progressive", "Social Liberalism"
+    );
+    static President joeBiden96 = new President(
+            "Joe Biden '96", "Northeast", 7, 2, 5, 2, "Progressive", "Social Programs"
+    );
+    static President joeBiden20 = new President(
+            "Joe Biden '20", "Northeast", 10, 2, 3, 6, "Progressive", "Social Programs"
+    );
+    static President ulyssesSGrant66 = new President(
+            "Ulysses S. Grant '66", "Midwest", 1, 6, 2, 9, "Conservative", "Civil Rights"
+    );
+    static President ulyssesSGrant72 = new President(
+            "Ulysses S. Grant '72", "Midwest", 5, 8, 5, 10, "Conservative", "Civil Rights"
+    );
+    static President ulyssesSGrant76 = new President(
+            "Ulysses S. Grant '76", "Midwest", 6, 8, 7, 10, "Conservative", "Civil Rights"
+    );
+    static President mikePence = new President(
+            "Mike Pence", "Midwest", 6, 2, 3, 4, "Conservative", "Traditional Morality"
+    );
+    static President jebBushh = new President(
+            "Jeb Bush", "South", 3, 1, 2, 4, "Conservative", "Establishment"
+    );
+    static President joeLiberal = new President(
+            "Joe Liberal", "Northest", 10, 1, 9, 5, "Progressive", "Social Liberalism"
+    );
+    static President geraldMander = new President(
+            "Gerald Mander", "South", 10, 1, 9, 5, "Conservative", "Tax Cuts"
+    );
     
-        
-
+    
+    
+    
     static Election e2020 = new Election(
             2020, "nam", "exp", "Midwest", "Regulation vs. Deregulation",
             "Tax Cuts vs. Social Programs", "Law and Order vs. Personal Freedom"
@@ -485,12 +651,12 @@ public class CardData {
             1892, "pol", "exp", "South", "Free Trade vs. Tariffs", "Civil Rights vs. Racism",
             "Gold Standard vs. Inflation"
     );
-    /*
-     * static Election e1888 = new Election(
-     * 1888, "pol", "infl", "Northeast", "Free Trade vs. Tariffs",
-     * "Gold Standard vs. Inflation", "Civil Rights vs. Racism"
-     * );
-     */
+    
+    static Election e1888 = new Election(
+            1888, "pol", "infl", "Northeast", "Free Trade vs. Tariffs",
+            "Gold Standard vs. Inflation", "Establishment vs. Anti-Establishment"
+    );
+     
     static Election e1884 = new Election(
             1884, "infl", "exp", "Northeast",
             "Establishment vs. Anti-Establishment",
@@ -623,8 +789,8 @@ public class CardData {
     static Policy sociallib2 = new Policy("Social Liberalism", "Progressive");
     static Policy freetrade1 = new Policy("Free Trade", "Progressive", "Libertarian", "Populist");
     static Policy freetrade2 = new Policy("Free Trade", "Progressive", "Libertarian", "Populist");
-    static Policy tariffs1 = new Policy("Tariffs", "Conservative");
-    static Policy tariffs2 = new Policy("Tariffs", "Conservative");
+    static Policy tariffs1 = new Policy("Tariffs", "Populist", "Conservative");
+    static Policy tariffs2 = new Policy("Tariffs", "Populist", "Conservative");
     static Policy statesrights1 = new Policy(
             "States' Rights", "Conservative", "Libertarian", "Populist"
     );
@@ -652,9 +818,9 @@ public class CardData {
             "Egalitarianism", "Progressive", "Populist", "Libertarian"
     );
     static Policy intimprov = new Policy("Internal Improvements", "Conservative", "Progressive");
-    static Policy subsidies = new Policy("Subsidies", "Conservative");
-    static Policy laissez1 = new Policy("Laissez-Faire", "Conservative", "Libertarian", "Populist");
-    static Policy laissez2 = new Policy("Laissez-Faire", "Conservative", "Libertarian", "Populist");
+    static Policy subsidies = new Policy("Subsidies", "Conservative", "Progressive");
+    static Policy laissez1 = new Policy("Laissez-Faire", "Libertarian", "Populist");
+    static Policy laissez2 = new Policy("Laissez-Faire", "Libertarian", "Populist");
     static Policy openb = new Policy("Open Borders", "Progressive", "Libertarian");
     static Policy closedb = new Policy("Closed Borders", "Conservative", "Populist");
     static Policy activeexec = new Policy("Active Executive", "Progressive");
@@ -673,13 +839,19 @@ public class CardData {
     static Policy nationalism2 = new Policy("Nationalism", "Conservative", "Libertarian");
     static Policy establishment = new Policy("Establishment", "Conservative", "Progressive");
     static Policy antiestablishment = new Policy(
-            "Anti-Establishment", "Progressive", "Conservative", "Libertarian", "Populist"
+            "Anti-Establishment", "Progressive", "Libertarian", "Populist"
     );
     static Policy communism = new Policy(
             "Communism", "Progressive"
     );
     static Policy anarchy = new Policy(
             "Anarcho-Capitalism", "Libertarian"
+    );
+    static Policy theocracy = new Policy(
+            "Theocracy", "Conservative"
+    );
+    static Policy riots = new Policy(
+            "Riots", "Progressive"
     );
 
     static String fp = "Tough Foreign Policy vs. Isolationism";
@@ -794,6 +966,8 @@ public class CardData {
         if (memes) {
             policies.add(communism);
             policies.add(anarchy);
+            policies.add(riots);
+            policies.add(theocracy);
         }
         Collections.shuffle(policies);
         return policies;
@@ -897,6 +1071,32 @@ public class CardData {
         nonpresidents.add(georgeMcGovern);
         nonpresidents.add(bobbyKennedy);
         nonpresidents.add(georgePatton);
+        nonpresidents.add(shirleyChisholm);
+        nonpresidents.add(bettyFord);
+        nonpresidents.add(sarahPalin);
+        nonpresidents.add(jackKemp);
+        nonpresidents.add(howardDean);
+        nonpresidents.add(rudyGiuliani);
+        nonpresidents.add(martinLutherKingJr);
+        nonpresidents.add(danQuayle);
+        nonpresidents.add(hueyLong);
+        nonpresidents.add(colinPowell);
+        nonpresidents.add(susanBAnthony);
+        nonpresidents.add(walterMondale);
+        nonpresidents.add(spiroAgnew);
+        nonpresidents.add(alfLandon);
+        nonpresidents.add(wendellWillkie);
+        nonpresidents.add(johnNanceGarner);
+        nonpresidents.add(henryFord);
+        nonpresidents.add(charlesSumner);
+        nonpresidents.add(johnBrown);
+        nonpresidents.add(danielWebster);
+        nonpresidents.add(johnBell);
+        nonpresidents.add(winfieldScott);
+        nonpresidents.add(johnCBreckinridge);
+        nonpresidents.add(jebBushh);
+        nonpresidents.add(mikePence);
+        
         
         meme.add(millFill);
         meme.add(jebBush);
@@ -919,6 +1119,53 @@ public class CardData {
             meme.add(michaelDukakis);
         }
         meme.add(warrenG);
+        meme.add(geraldMander);
+        meme.add(joeLiberal);
+        
+        if(preset.equals("generational")) {
+            presidents.remove(andrewJackson);
+            presidents.add(andrewJackson24);
+            presidents.add(andrewJackson32);
+            presidents.add(andrewJackson36);
+            presidents.remove(theodoreRoosevelt);
+            presidents.add(theodoreRoosevelt98);
+            presidents.add(theodoreRoosevelt04);
+            presidents.add(theodoreRoosevelt12);
+            presidents.remove(franklinDRoosevelt);
+            presidents.add(franklinDRoosevelt32);
+            presidents.add(franklinDRoosevelt40);
+            presidents.add(franklinDRoosevelt44);
+            presidents.remove(abrahamLincoln);
+            presidents.add(abrahamLincoln56);
+            presidents.add(abrahamLincoln60);
+            presidents.add(abrahamLincoln65);
+            presidents.remove(calvinCoolidge);
+            presidents.add(calvinCoolidge20);
+            presidents.add(calvinCoolidge23);
+            presidents.add(calvinCoolidge28);
+            presidents.remove(richardNixon);
+            presidents.add(richardNixon60);
+            presidents.add(richardNixon68);
+            presidents.add(richardNixon84);
+            presidents.remove(ronaldReagan);
+            presidents.add(ronaldReagan76);
+            presidents.add(ronaldReagan80);
+            presidents.add(ronaldReagan88);
+            presidents.remove(alGore);
+            presidents.add(alGore88);
+            presidents.add(alGore00);
+            presidents.remove(joeBiden);
+            presidents.add(joeBiden96);
+            presidents.add(joeBiden20);
+            presidents.remove(ulyssesSGrant);
+            presidents.add(ulyssesSGrant66);
+            presidents.add(ulyssesSGrant72);
+            presidents.add(ulyssesSGrant76);
+            presidents.addAll(nonpresidents);
+            System.out.println("GENERATIONAL CARD DECK");
+            Collections.shuffle(presidents);
+            return presidents;
+        }
         
         if (preset.equals("presidentsonly")) {
             System.out.println("PRESIDENTS ONLY CARD DECK");
@@ -1055,6 +1302,21 @@ public class CardData {
             presidents.add(ralphNader);
             presidents.add(georgeMcGovern);
             presidents.add(bobbyKennedy);
+            presidents.add(georgePatton);
+            presidents.add(shirleyChisholm);
+            presidents.add(bettyFord);
+            presidents.add(sarahPalin);
+            presidents.add(jackKemp);
+            presidents.add(howardDean);
+            presidents.add(rudyGiuliani);
+            presidents.add(martinLutherKingJr);
+            presidents.add(danQuayle);
+            presidents.add(hueyLong);
+            presidents.add(colinPowell);
+            presidents.add(susanBAnthony);
+            presidents.add(walterMondale);
+            presidents.add(spiroAgnew);
+            
         }
         if (memes) {
             presidents.add(millFill);
@@ -1074,7 +1336,7 @@ public class CardData {
             presidents.add(evilGeorgeWallace);
             presidents.add(postMalone);     
             presidents.add(ambroseBurnside);
-            for (int i = 0; i<10; i++) {
+            for (int i = 0; i<5; i++) {
                 presidents.add(michaelDukakis);
             }
         }
@@ -1116,7 +1378,7 @@ public class CardData {
         elections.add(e1900);
         elections.add(e1896);
         elections.add(e1892);
-        // elections.add(e1888);
+        elections.add(e1888);
         elections.add(e1884);
         elections.add(e1880);
         elections.add(e1876);
