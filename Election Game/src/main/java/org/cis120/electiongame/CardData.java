@@ -480,10 +480,10 @@ public class CardData {
             "Ronald Reagan '88", "West", 8, 9, 7, 10, "Conservative", "Tough Foreign Policy"
     );
     static President alGore88 = new President(
-            "Al Gore", "South", 4, 2, 3, 4, "Progressive", "Traditional Morality"
+            "Al Gore '88", "South", 4, 2, 3, 4, "Progressive", "Traditional Morality"
     );
     static President alGore00 = new President(
-            "Al Gore", "South", 8, 3, 6, 5, "Progressive", "Social Liberalism"
+            "Al Gore '00", "South", 8, 3, 6, 5, "Progressive", "Social Liberalism"
     );
     static President joeBiden96 = new President(
             "Joe Biden '96", "Northeast", 7, 2, 5, 2, "Progressive", "Social Programs"
