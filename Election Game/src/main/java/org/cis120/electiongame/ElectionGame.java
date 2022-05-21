@@ -36,6 +36,7 @@ public class ElectionGame {
     public int rounds = 0;
     
     public String deckPreset = "standard";
+    public String achievement = null;
 
     public void flipPlayer() {
         if (turn) {
@@ -70,6 +71,10 @@ public class ElectionGame {
 
     public Election getElection() {
         return current;
+    }
+    
+    public String getAchievement() {
+        return achievement;
     }
 
     /* For drawing the user's deck */
@@ -423,8 +428,8 @@ public class ElectionGame {
         
         p1score += current.getScore(c1, p1.get(0), p1.get(1));
         p2score += current.getScore(c2, p2.get(0), p2.get(1));
-        rounds++;
-
+        rounds++;        
+        
         boolean winner = current.getWinner(c1, p1.get(0), p1.get(1), c2, p2.get(0), p2.get(1));
         if (winner) {
             message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName()
@@ -453,6 +458,137 @@ public class ElectionGame {
                     + current.getSide2() + ".";
 
             player2.winRound();
+        }
+        
+        if (winner&&c1.getName().equals("George W. Bush")&&c2.getName().equals("Al Gore")) {
+            achievement = "ACHIEVEMENT: Win Florida (Defeat Al Gore with George W. Bush)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Al Gore")&&c2.getName().equals("George W. Bush")) {
+            achievement = "ACHIEVEMENT: Avenge 2000 (Defeat George W. Bush with Al Gore)";
+            System.out.println(achievement);
+        } else if (!winner&&c1.getName().equals("Donald Trump")&&c2.getName().equals("Joe Biden")) {
+            achievement = "ACHIEVEMENT: STOP THE STEAL! (Lose to Joe Biden with Donald Trump)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Donald Trump")&&c2.getName().equals("Joe Biden")) {
+            achievement = "ACHIEVEMENT: Steal stopped (Defeat Joe Biden with Donald Trump)";
+            System.out.println(achievement);
+        } else if (winner&&(c1.getName().equals("George W. Bush")&&c2.getName().equals("George H.W. Bush"))
+                ||(c1.getName().equals("John Quincy Adams")&&c2.getName().equals("John Adams"))
+                ||(c1.getName().equals("Robert A. Taft")&&c2.getName().equals("William Howard Taft"))) {
+            achievement = "ACHIEVEMENT: Take that, Dad! (Defeat a father with his son)";
+            System.out.println(achievement);
+        } else if (!winner&&(c1.getName().equals("George H.W. Bush")&&c2.getName().equals("George W. Bush"))
+                ||(c1.getName().equals("John Quincy Adams")&&c2.getName().equals("John Adams"))
+                ||(c1.getName().equals("Robert A. Taft")&&c2.getName().equals("William Howard Taft"))) {
+            achievement = "ACHIEVEMENT: Respect your parents (Lose to a father with his son)";
+            System.out.println(achievement);
+        } else if (winner&&(c1.getName().equals("Hillary Clinton")||c1.getName().equals("Betty Ford")
+                ||c1.getName().equals("Shirley Chisholm")||c1.getName().equals("Susan B. Anthony")
+                ||c1.getName().equals("Sarah Palin"))) {
+            achievement = "ACHIEVEMENT: Girlboss (Win with a female candidate)";
+            System.out.println(achievement);
+        } else if ((c1.getName().equals("William McKinley")&&c2.getName().equals("William Jennings Bryan"))
+                ||(c2.getName().equals("William McKinley")&&c1.getName().equals("William Jennings Bryan"))) {
+            achievement = "ACHIEVEMENT: Run it back (Have William McKinley and William Jennings Bryan run against each other";
+            System.out.println(achievement);
+        } else if (!winner&&c1.getName().equals("Andrew Jackson")&&(c2.getName().equals("Henry Clay")
+                ||c2.getName().equals("John C. Calhoun"))) {
+            achievement = "ACHIEVEMENT: 'I regret I was unable to shoot Henry Clay or to hangs John C. Calhoun "
+                    + "(Lose to Henry Clay or John C. Calhoun with Andrew Jackson)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Andrew Jackson")&&(p1.get(0).toString()=="Anti-Central Bank"
+                ||p1.get(1).toString()=="Anti-Central Bank")) {
+            achievement = "ACHIEVEMENT: I killed the Bank (Win using Andrew Jackson with Anti-Central Bank)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("William McKinley")&&(p1.get(0).toString()=="Tariffs"
+                ||p1.get(1).toString()=="Tariffs")) {
+            achievement = "ACHIEVEMENT: A tariff man through and through! (Win using William McKinley with Tariffs)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Donald Trump")&&(p1.get(0).toString()=="Closed Borders"
+                ||p1.get(1).toString()=="Closed Borders")) {
+            achievement = "ACHIEVEMENT: Build the wall! (Win using Donald Trump with Closed Borders)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("John F. Kennedy")&&current.getYear()==1964) {
+            achievement = "ACHIEVEMENT: Camelot lives on (Win re-election using JFK in 1964)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Richard Nixon")&&current.getYear()==1976) {
+            achievement = "ACHIEVEMENT: Tricky Dick (Win a third term after Watergate with Nixon in 1976)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Ulysses S. Grant")&&current.getYear()==1788) {
+            achievement = "ACHIEVEMENT: Wrong general! (Win with Ulysses S. Grant in America's first election)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Grover Clevelan")&&current.getYear()==1888) {
+            achievement = "ACHIEVEMENT: Consecutive terms (Win 1888 with Grover Cleveland)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Franklin D. Roosevelt")&&current.getYear()==1948) {
+            achievement = "ACHIEVEMENT: The New Deal is getting Old (Win a fifth term as FDR)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Thomas Dewey")&&c2.getName().equals("Harry Truman")) {
+            achievement = "ACHIEVEMENT: Dewey Defeats Truman (Defeat Harry Truman with Thomas Dewey)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Harry Truman")&&c2.getName().equals("Thomas Dewey")) {
+            achievement = "ACHIEVEMENT: 'Dewey Defeats Truman' (Defeat Thomas Dewey with Harry Truman)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Ralph Nader")&&c2.getName().equals("Al Gore")) {
+            achievement = "ACHIEVEMENT: Ultimate Spoiler (Defeat Al Gore with Ralph Nader)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Joe Biden")&&current.getYear()==1788) {
+            achievement = "ACHIEVEMENT: Old Man Joe (Win in 1788 with Joe Biden)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("William Jennings Bryan")&&(current.getYear()==1900
+                ||current.getYear()==1908)) {
+            achievement = "ACHIEVEMENT: If at first you don't succeed... (Win in 1900 or 1908 with William Jennings Bryan)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Theodore Roosevelt")&&current.getYear()==1912) {
+            achievement = "ACHIEVEMENT: It takes more than that to kill a Bull Moose (Win in 1912 with Teddy Roosevelt)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Ulysses S. Grant")&&current.getYear()==1864) {
+            achievement = "ACHIEVEMENT: Coup d'Etat (Win in 1864 with Ulysses S. Grant)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Dwight Eisenhower")&&current.getYear()==1944) {
+            achievement = "ACHIEVEMENT: Coup d'Etat (Win in 1944 with Dwight Eisenhower)";
+            System.out.println(achievement);
+        } else if (winner&&c2.getName().equals("Henry Clay")&&current.getYear()>1848) {
+            achievement = "ACHIEVEMENT: How many times do we have to teach you this lesson old man! "
+                    + "(Beat Henry Clay after his 5th presidential run in 1848)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Pat Buchanan")&&c2.getName().equals("George W. Bush")) {
+            achievement = "ACHIEVEMENT: Down with King George! (Defeat George W. Bush with Pat Buchanan)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("John C. Calhoun")&&c2.getName().equals("Andrew Jackson")) {
+            achievement = "ACHIEVEMENT: Revenge for Nullifcation (Defeat Andrew Jackson with John C. Calhoun)";
+            System.out.println(achievement);
+        } else if (winner&&c2.getName().equals("John C. Calhoun")&&c1.getName().equals("Andrew Jackson")) {
+            achievement = "ACHIEVEMENT: Nullification Crisis (Defeat John C. Calhoun with Andrew Jackson)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Alexander Hamilton")&&c2.getName().equals("George Washington")) {
+            achievement = "ACHIEVEMENT: Who's really in charge? (Defeat George Washington with Alexander Hamilton)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Abraham Lincoln")&&c2.getName().equals("Stephen A. Douglas")) {
+            achievement = "ACHIEVEMENT: Third Time's The Charm (Defeat Stephen A. Douglas with Abraham Lincoln)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Dwight Eisenhower")) {
+            achievement = "ACHIEVEMENT: I Like Ike (Win with Dwight Eisenhower)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Martin Luther King Jr.")&&current.getYear()>1967) {
+            achievement = "ACHIEVEMENT: The Good Ending (Win with MLK after 1968)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Bill Clinton")&&c2.getName().equals("Hillary Clinton")) {
+            achievement = "ACHIEVEMENT: Marriage Difficulty (Defeat Hillary Clinton with Bill Clinton)";
+            System.out.println(achievement);
+        } else if (winner&&c2.getName().equals("Bill Clinton")&&c1.getName().equals("Hillary Clinton")) {
+            achievement = "ACHIEVEMENT: Revenge for Monica (Defeat Bill Clinton with Hillary Clinton)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Betty Ford")&&c2.getName().equals("Gerald Ford")) {
+            achievement = "ACHIEVEMENT: You're sleeping on the couch tonight (Defeat Gerald Ford with Betty Ford)";
+            System.out.println(achievement);
+        } else if (winner&&c1.getName().equals("Betty Ford")&&c2.getName().equals("Gerald Ford")) {
+            achievement = "ACHIEVEMENT: You're sleeping on the couch tonight (Defeat Gerald Ford with Betty Ford)";
+            System.out.println(achievement);
+        }
+        
+        else {
+            achievement = null;
         }
 
         nullifyUser();
@@ -498,14 +634,22 @@ public class ElectionGame {
         // made this simulate a ton of games before with new and old methods
         // to test the AI and see if my "new" implementations performed better
         // than my "old" implementations of the AI
+        double swing = 0;
+        double con = 0;
+        double prog = 0;
+        double lib = 0;
+        double pop = 0;
+        double rounds = 0;
+        double marquees = 0;
+        
         ElectionGame e = new ElectionGame();
-
+        e.reset("expanded", 0, true, 0, true, 0, true);
         
 
         AI p1 = (AI) e.getPlayer1();
         AI p2 = (AI) e.getPlayer2();
-        p1.setDifficulty(.8);
-        p2.setDifficulty(.75);
+        p1.setDifficulty(1);
+        p2.setDifficulty(1);
 
         Deck prez = e.getPres();
 
@@ -514,10 +658,27 @@ public class ElectionGame {
         for (int i = 0; i < 1000; i++) {
             while (e.checkWinner() == 0) {
                 //e.printGameState();
+                rounds++;
                 President c1 = p1.play(prez, e.getElection());
                 President c2 = p2.play(prez, e.getElection());
+                if(c1.getRegion().equals(e.getElection().getRegion())) {
+                    swing++;
+                }
+                if(c1.getIdeology().equals("Conservative")) {
+                    con++;
+                } else if(c1.getIdeology().equals("Libertarian")) {
+                    lib++;
+                } else if(c1.getIdeology().equals("Populist")) {
+                    pop++;
+                } else {
+                    prog++;
+                }
+                ArrayList<Policy> pols = p1.playPolicies(c1, e.getPol());
+                if(c1.isMarquee(pols.get(0))||c1.isMarquee(pols.get(1))) {
+                    marquees++;
+                }
                 e.playRound(
-                        c1, p1.playPolicies(c1, e.getPol()), c2, p2.playPolicies(c2, e.getPol())
+                        c1, pols, c2, p2.playPolicies(c2, e.getPol())
                 );
                 if (e.checkWinner() != 0) {
                     break;
@@ -543,7 +704,7 @@ public class ElectionGame {
                 e.p2w++;
             }
             
-           e.reset();
+            e.reset("expanded", 0, true, 0, true, 0, true);
         }
         
         System.out.println();
@@ -553,5 +714,11 @@ public class ElectionGame {
         System.out.println();
         System.out.println("Player 1 wins: " + e.p1w);
         System.out.println("Player 2 wins: " + e.p2w);
+        System.out.println("Swing uses: " + swing/rounds);
+        System.out.println("Marquee uses: " + marquees/rounds);
+        System.out.println("Conservatives: " + con/rounds);
+        System.out.println("Progressives: " + prog/rounds);
+        System.out.println("Libertarians: " + lib/rounds);
+        System.out.println("Populists: " + pop/rounds);
     }
 }

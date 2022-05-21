@@ -45,6 +45,10 @@ public class President extends Card {
     String getRegion() {
         return region;
     }
+    
+    String getIdeology() {
+        return ideology;
+    }
 
     int getExp() {
         return experience;
@@ -132,6 +136,10 @@ public class President extends Card {
     int getTieBreaker() {
         return experience + influence + policy + nameRec;
     }
+    
+    boolean isMarquee(Policy p) {
+        return marquee.equals(p.getName());
+    }
 
     int checkScore(String att1, String att2, String reg) {
         int score = 0;
@@ -156,7 +164,7 @@ public class President extends Card {
 
     // I used this to easily get the file location of all the president cards
     public String getImageURL() {
-        String target = super.getName().replaceAll("\\s", "").replace(".", "");
+        String target = super.getName().replaceAll("\\s", "").replace(".", "").replace("'", "");
         target = target.toLowerCase();
         return "files/" + target + ".png";
     }
