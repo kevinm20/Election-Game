@@ -161,6 +161,11 @@ public class President extends Card {
         }
         return 0;
     }
+    
+    double getValue() {
+    	double av = (.15*experience+.35*influence+.25*policy+.25*nameRec);
+    	return (1.2868*(av*av)-0.6574*av-6.3713)*1000;
+    }
 
     // I used this to easily get the file location of all the president cards
     public String getImageURL() {

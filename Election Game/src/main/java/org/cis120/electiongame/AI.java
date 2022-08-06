@@ -24,6 +24,7 @@ public class AI extends Player {
     // I have no idea why eclipse is giving me a warning, I clearly use this
     // variable...
     private double difficulty;
+    private double presAttributes = 0;
 
     public AI(String name) {
         super(name);
@@ -196,9 +197,13 @@ public class AI extends Player {
             }
         }
         pointMap.remove(max);
+        presAttributes = e.getScore(max);
         return super.play(max, d);
     }
 
+    public double getPresAttributes() {
+    	return presAttributes;
+    }
     // This helper function is a little more complicated.
     public void mapScores(Election e) {
         // Track how many wins the opponent has

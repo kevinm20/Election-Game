@@ -445,7 +445,8 @@ public class RunElectionGameCombined implements Runnable {
         /*
          * Here, the game is started with all necessary inputs
          */
-        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "quandale" };
+        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "quandale", "Jack Harlow",
+        		"quandale dingle"};
 
         Object[] options = { "1-Player", "2-Player", "Quick 1-Player" };
         int gameMode = JOptionPane.showOptionDialog(
@@ -466,7 +467,7 @@ public class RunElectionGameCombined implements Runnable {
             election.namePlayer(names[ran]);
             election.namePlayer2("CPU");
             election.setAIDifficulty("Hard");
-            election.reset("standard", 0, true, 0, true, 0, true);
+            election.reset("expanded", 0, true, 0, true, 0, true);
             setLabel(status);
         } else {
             // Name Player 1

@@ -216,7 +216,7 @@ public class CardData {
             "Comrade McCain", "West", 8, 2, 4, 6, "Progressive", "Communism"
     );
     static President michaelDukakis = new President(
-            "Michael Dukakis", "Northeast", 5, 2, 5, 4, "Progressive", "Personal Freedom"
+            "Michael Dukakis", "Northeast", 4, 2, 4, 4, "Progressive", "Personal Freedom"
     );
     static President evilGeorgeWallace = new President(
             "Evil George Wallace", "South", 6, 5, 1, 4, "Progressive", "Civil Rights"
@@ -291,7 +291,7 @@ public class CardData {
             "Pat Buchanan", "Northeast", 1, 2, 8, 2, "Conservative", "Isolationism"
     );
     static President thomasPaine = new President(
-            "Thomas Paine", "Northeast", 1, 7, 5, 6, "Progressive", "Egalitarianism"
+            "Thomas Paine", "Northeast", 1, 7, 5, 6, "Populist", "Egalitarianism"
     );
     static President marcoRubio = new President(
             "Marco Rubio", "South", 3, 2, 5, 2, "Conservative", "Tax Cuts"
@@ -972,6 +972,14 @@ public class CardData {
         Collections.shuffle(policies);
         return policies;
     }
+    
+    public static List<President> getOnePresident() {
+    	List<President> presidents = new ArrayList<President>();
+    	for (int i = 0; i < 25; i++) {
+            presidents.add(barryGoldwater);
+        }
+    	return presidents;
+    }
 
     public static List<President> getPresidents(String preset, int pres, boolean presSort, int nonpres, 
             boolean nonPresSort, int memeCards, boolean memesSort) {
@@ -1162,24 +1170,24 @@ public class CardData {
             presidents.add(ulyssesSGrant72);
             presidents.add(ulyssesSGrant76);
             presidents.addAll(nonpresidents);
-            System.out.println("GENERATIONAL CARD DECK");
+            //System.out.println("GENERATIONAL CARD DECK");
             Collections.shuffle(presidents);
             return presidents;
         }
         
         if (preset.equals("presidentsonly")) {
-            System.out.println("PRESIDENTS ONLY CARD DECK");
+            //System.out.println("PRESIDENTS ONLY CARD DECK");
             Collections.shuffle(presidents);
             return presidents;
         } else if (preset.equals("expanded")) {
             presidents.addAll(nonpresidents);
-            System.out.println("EXPANDED CARD DECK");
+            //System.out.println("EXPANDED CARD DECK");
             Collections.shuffle(presidents);
             return presidents;
         } else if (preset.equals("memes")) {
             presidents.addAll(nonpresidents);
             presidents.addAll(meme);
-            System.out.println("MEME CARD DECK");
+            //System.out.println("MEME CARD DECK");
             Collections.shuffle(presidents);
             return presidents;
         } else if (preset.equals("standard")) {
@@ -1187,7 +1195,7 @@ public class CardData {
             for (int i = 0; i < 7; i++) {
                 presidents.add(nonpresidents.get(i));
             }
-            System.out.println("STANDARD CARD DECK");
+            //System.out.println("STANDARD CARD DECK");
             Collections.shuffle(presidents);
             for (President p : presidents) {
                 System.out.println(p.toString());

@@ -9,6 +9,7 @@ import java.util.List;
 public class ElectionGame {
 
     private Deck presidentDeck = new Deck();
+    private Deck singlePresidentDeck = new Deck();
     private Deck electionDeck = new Deck();
     private Deck policyDeck = new Deck();
 
@@ -34,6 +35,8 @@ public class ElectionGame {
     public int p1w = 0;
     public int p2w = 0;
     public int rounds = 0;
+    public boolean statTesting = false;
+    public boolean lastwinner = true;
     
     public String deckPreset = "standard";
     public String achievement = null;
@@ -52,6 +55,9 @@ public class ElectionGame {
         return turn;
     }
 
+    public boolean getLastWinner() {
+    	return lastwinner;
+    }
     /* For testing */
     public Player getPlayer1() {
         return player1;
@@ -63,6 +69,9 @@ public class ElectionGame {
 
     public Deck getPres() {
         return presidentDeck;
+    }
+    public Deck getSinglePres() {
+        return singlePresidentDeck;
     }
 
     public Deck getPol() {
@@ -111,6 +120,9 @@ public class ElectionGame {
         policyDeck.clear();
 
         presidentDeck.fillPres(CardData.getPresidents());
+        if(statTesting) {
+        	singlePresidentDeck.fillPres(CardData.getOnePresident());
+        }
         electionDeck.fillElec(CardData.getElections());
         policyDeck.fillPol(CardData.getPolicies());
 
@@ -120,8 +132,12 @@ public class ElectionGame {
 
         player1.reset();
         player2.reset();
-
+      
+        if(!statTesting) {
         player1.drawInit(presidentDeck, policyDeck);
+        } else {
+        	player1.drawInit(singlePresidentDeck, policyDeck);
+        }
         player2.drawInit(presidentDeck, policyDeck);
 
         current = (Election) electionDeck.draw();
@@ -154,6 +170,9 @@ public class ElectionGame {
                         preset, pres, presSort, nonpres, nonPresSort, memeCards, memesSort
                 )
         );
+        if(statTesting) {
+        	singlePresidentDeck.fillPres(CardData.getOnePresident());
+        }
         electionDeck.fillElec(CardData.getElections());
         policyDeck.fillPol(CardData.getPolicies());
 
@@ -164,7 +183,11 @@ public class ElectionGame {
         player1.reset();
         player2.reset();
 
-        player1.drawInit(presidentDeck, policyDeck);
+        if(!statTesting) {
+            player1.drawInit(presidentDeck, policyDeck);
+            } else {
+            	player1.drawInit(singlePresidentDeck, policyDeck);
+            }
         player2.drawInit(presidentDeck, policyDeck);
 
         current = (Election) electionDeck.draw();
@@ -431,6 +454,7 @@ public class ElectionGame {
         rounds++;        
         
         boolean winner = current.getWinner(c1, p1.get(0), p1.get(1), c2, p2.get(0), p2.get(1));
+        lastwinner = winner;
         if (winner) {
             message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName()
                     + "'s "
@@ -594,7 +618,7 @@ public class ElectionGame {
         nullifyUser();
         nullifyAI();
 
-        System.out.println(message);
+        //System.out.println(message);
         current = (Election) electionDeck.draw();
     }
 
@@ -630,10 +654,26 @@ public class ElectionGame {
 
     public static void main(String[] args) {
 
-        // This simulates a CPU vs. CPU game. I
-        // made this simulate a ton of games before with new and old methods
-        // to test the AI and see if my "new" implementations performed better
-        // than my "old" implementations of the AI
+    	Pack pack1 = new Pack(3, 50, CardData.calvinCoolidge,CardData.abrahamLincoln,
+    			CardData.georgeWashington,CardData.georgeHWBush, CardData.alGore);
+    	
+    	CampaignUser kevin = new CampaignUser("Kevin");
+    	System.out.println("Original Balance: " + kevin.getMoney());
+    	System.out.println("BOUGHT PACK");
+    	kevin.buyPack(pack1);
+    	kevin.printDeck();
+    	System.out.println();
+    	System.out.println("New Balance: " + kevin.getMoney());
+    	System.out.println("BOUGHT PACK");
+    	kevin.buyPack(pack1);
+    	kevin.printDeck();
+    	System.out.println();
+    	System.out.println("Final Balance: " + kevin.getMoney());
+    	System.out.println("LAST PACK");
+    	kevin.buyPack(pack1);
+    	
+    	/*
+        // This simulates a CPU vs. CPU game
         double swing = 0;
         double con = 0;
         double prog = 0;
@@ -641,6 +681,8 @@ public class ElectionGame {
         double pop = 0;
         double rounds = 0;
         double marquees = 0;
+        double attributes = 0;
+        int p1rdwins = 0;
         
         ElectionGame e = new ElectionGame();
         e.reset("expanded", 0, true, 0, true, 0, true);
@@ -652,14 +694,17 @@ public class ElectionGame {
         p2.setDifficulty(1);
 
         Deck prez = e.getPres();
+        Deck singlePrez = e.getSinglePres();
 
         System.out.println("Policy deck size " + e.getPol().getSize());
+        System.out.println(p1.toString());
         
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 5000; i++) {
             while (e.checkWinner() == 0) {
                 //e.printGameState();
                 rounds++;
                 President c1 = p1.play(prez, e.getElection());
+                attributes += p1.getPresAttributes();
                 President c2 = p2.play(prez, e.getElection());
                 if(c1.getRegion().equals(e.getElection().getRegion())) {
                     swing++;
@@ -680,33 +725,29 @@ public class ElectionGame {
                 e.playRound(
                         c1, pols, c2, p2.playPolicies(c2, e.getPol())
                 );
+                if(e.getLastWinner()) {
+                	p1rdwins++;
+                }
                 if (e.checkWinner() != 0) {
                     break;
                 }
             }
 
-            System.out.println();
+            //System.out.println();
             if (e.checkWinner() == 1) {
-                /*
-                System.out.println(
-                        p1.getName() + " has won! Final score: " + p1.getWins() + " to "
-                                + p2.getWins()
-                );
-                */
                 e.p1w++;                
             } else {
-                /*
-                System.out.println(
-                        p2.getName() + " has won! Final score: " + p2.getWins() + " to "
-                                + p1.getWins()
-                );
-                */
                 e.p2w++;
             }
             
             e.reset("expanded", 0, true, 0, true, 0, true);
         }
         
+        System.out.println();
+        System.out.println();
+        System.out.println("Win share: " + (double)p1rdwins/(double)e.rounds);
+        System.out.println();
+        System.out.println("Attributes Sum: " + attributes/(double)e.rounds);
         System.out.println();
         System.out.println("Player 1 av. score: " + (double)e.p1score/(double)e.rounds);
         System.out.println("Player 2 av. score: " + (double)e.p2score/(double)e.rounds);
@@ -720,5 +761,6 @@ public class ElectionGame {
         System.out.println("Progressives: " + prog/rounds);
         System.out.println("Libertarians: " + lib/rounds);
         System.out.println("Populists: " + pop/rounds);
+        */
     }
 }
