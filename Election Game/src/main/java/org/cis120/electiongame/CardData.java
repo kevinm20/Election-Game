@@ -565,6 +565,38 @@ public class CardData {
     		"Rand Paul", "South", 5, 2, 5, 2, "Libertarian", "Tax Cuts"
     );
     
+    static President dwightEisenhower48 = new President(
+    		"Dwight Eisenhower '48", "West", 1, 7, 1, 10, "Conservative", "Tough Foreign Policy"
+    );
+    
+    static President dwightEisenhower52 = new President(
+    		"Dwight Eisenhower '52", "West", 1, 8, 4, 10, "Conservative", "Tough Foreign Policy"
+    );
+    
+    static President dwightEisenhower60 = new President(
+    		"Dwight Eisenhower '60", "West", 7, 9, 5, 10, "Conservative", "Internal Improvements"
+    );
+    
+    static President lyndonbjohnson60 = new President(
+    		"Lyndon B. Johnson '60", "South", 7, 2, 6, 3, "Progressive", "Social Programs"
+    );
+    
+    static President lyndonbjohnson64 = new President(
+    		"Lyndon B. Johnson '64", "South", 10, 2, 7, 6, "Progressive", "Social Programs"
+    );
+    
+    static President johnfkennedy56 = new President(
+    		"John F. Kennedy '56", "Northeast", 3, 7, 5, 5, "Progressive", "Tough Foreign Policy"
+    );
+    
+    static President johnfkennedy60 = new President(
+    		"John F. Kennedy '60", "Northeast", 5, 9, 6, 7, "Progressive", "Tough Foreign Policy"
+    );
+    
+    static President johnfkennedy63 = new President(
+    		"John F. Kennedy '63", "Northeast", 8, 9, 6, 10, "Progressive", "Tough Foreign Policy"
+    );
+    
     
     
     
@@ -1236,6 +1268,18 @@ public class CardData {
             presidents.add(ulyssesSGrant66);
             presidents.add(ulyssesSGrant72);
             presidents.add(ulyssesSGrant76);
+            presidents.remove(dwightEisenhower);
+            presidents.add(dwightEisenhower48);
+            presidents.add(dwightEisenhower52);
+            presidents.add(dwightEisenhower60);
+            presidents.remove(lyndonBJohnson);
+            presidents.add(lyndonbjohnson60);
+            presidents.add(lyndonbjohnson64);
+            presidents.remove(johnFKennedy);
+            presidents.add(johnfkennedy56);
+            presidents.add(johnfkennedy60);
+            presidents.add(johnfkennedy63);
+            
             presidents.addAll(nonpresidents);
             //System.out.println("GENERATIONAL CARD DECK");
             Collections.shuffle(presidents);
