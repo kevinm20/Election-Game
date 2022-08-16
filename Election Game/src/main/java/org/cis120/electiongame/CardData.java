@@ -592,9 +592,55 @@ public class CardData {
     static President johnfkennedy60 = new President(
     		"John F. Kennedy '60", "Northeast", 5, 9, 6, 7, "Progressive", "Tough Foreign Policy"
     );
-    
+  
     static President johnfkennedy63 = new President(
     		"John F. Kennedy '63", "Northeast", 8, 9, 6, 10, "Progressive", "Tough Foreign Policy"
+    );
+    
+    static President williamMcKinley90 = new President(
+            "William McKinley '90", "Midwest", 4, 3, 7, 4, "Conservative", "Tariffs"
+    );
+    static President williamMcKinley96 = new President(
+            "William McKinley '96", "Midwest", 7, 5, 7, 6, "Conservative", "Tariffs"
+    );
+    static President williamMcKinley01 = new President(
+            "William McKinley '01", "Midwest", 10, 5, 8, 8, "Conservative", "Tough Foreign Policy"
+    );
+    static President jamesMadison88 = new President(
+            "James Madison '88", "South", 3, 2, 10, 3, "Conservative", "Constructionism"
+    );
+    static President jamesMadison08 = new President(
+            "James Madison '08", "South", 7, 4, 10, 8, "Libertarian", "Constructionism"
+    );
+    static President jamesMadison16 = new President(
+            "James Madison '16", "South", 10, 5, 10, 10, "Conservative", "Internal Improvements"
+    );
+    static President johnAdams76 = new President(
+            "John Adams '76", "Northeast", 5, 2, 6, 5, "Conservative", "Law and Order"
+    );
+    static President johnAdams96 = new President(
+            "John Adams '96", "Northeast", 10, 3, 7, 8, "Conservative", "Social Hierarchy"
+    );
+    static President johnAdams00 = new President(
+            "John Adams '00", "Northeast", 10, 4, 10, 10, "Conservative", "Social Hierarchy"
+    );
+    static President thomasJefferson96 = new President(
+            "Thomas Jefferson '96", "South", 3, 5, 6, 10, "Libertarian", "States' Rights"
+    );
+    static President thomasJefferson00 = new President(
+            "Thomas Jefferson '00", "South", 7, 7, 7, 10, "Libertarian", "Egalitarianism"
+    );
+    static President thomasJefferson08 = new President(
+            "Thomas Jefferson '08", "South", 10, 8, 10, 10, "Libertarian", "States' Rights"
+    );
+    static President georgeWashington83 = new President(
+            "George Washington '83", "South", 1, 8, 3, 10, "Libertarian", "Nationalism"
+    );
+    static President georgeWashington89 = new President(
+            "George Washington '89", "South", 3, 10, 6, 10, "Libertarian", "Nationalism"
+    );
+    static President georgeWashington97 = new President(
+            "George Washington '97", "South", 10, 10, 10, 10, "Conservative", "Centralization"
     );
     
     
@@ -1229,6 +1275,7 @@ public class CardData {
         meme.add(geraldMander);
         meme.add(joeLiberal);
         
+        // Generational
         if(preset.equals("generational")) {
             presidents.remove(andrewJackson);
             presidents.add(andrewJackson24);
@@ -1279,6 +1326,26 @@ public class CardData {
             presidents.add(johnfkennedy56);
             presidents.add(johnfkennedy60);
             presidents.add(johnfkennedy63);
+            presidents.remove(williamMcKinley);
+            presidents.add(williamMcKinley90);
+            presidents.add(williamMcKinley96);
+            presidents.add(williamMcKinley01);
+            presidents.remove(jamesMadison);
+            presidents.add(jamesMadison88);
+            presidents.add(jamesMadison08);
+            presidents.add(jamesMadison16);
+            presidents.remove(johnAdams);
+            presidents.add(johnAdams76);
+            presidents.add(johnAdams96);
+            presidents.add(johnAdams00);
+            presidents.remove(thomasJefferson);
+            presidents.add(thomasJefferson96);
+            presidents.add(thomasJefferson00);
+            presidents.add(thomasJefferson08);
+            presidents.remove(georgeWashington);
+            presidents.add(georgeWashington83);
+            presidents.add(georgeWashington89);
+            presidents.add(georgeWashington97);
             
             presidents.addAll(nonpresidents);
             //System.out.println("GENERATIONAL CARD DECK");
