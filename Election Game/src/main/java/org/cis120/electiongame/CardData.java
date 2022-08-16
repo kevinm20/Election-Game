@@ -443,8 +443,8 @@ public class CardData {
     static President franklinDRoosevelt44 = new President(
             "Franklin Roosevelt '44", "Northeast", 9, 8, 9, 10, "Progressive", "Tough Foreign Policy"
     );
-    static President abrahamLincoln56 = new President(
-            "Abraham Lincoln '56", "Midwest", 2, 6, 8, 5, "Conservative", "Civil Rights"
+    static President abrahamLincoln58 = new President(
+            "Abraham Lincoln '58", "Midwest", 2, 6, 8, 5, "Conservative", "Civil Rights"
     );
     static President abrahamLincoln60 = new President(
             "Abraham Lincoln '60", "Midwest", 3, 9, 10, 7, "Conservative", "Civil Rights"
@@ -1290,7 +1290,7 @@ public class CardData {
             presidents.add(franklinDRoosevelt40);
             presidents.add(franklinDRoosevelt44);
             presidents.remove(abrahamLincoln);
-            presidents.add(abrahamLincoln56);
+            presidents.add(abrahamLincoln58);
             presidents.add(abrahamLincoln60);
             presidents.add(abrahamLincoln65);
             presidents.remove(calvinCoolidge);
