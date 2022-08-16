@@ -507,10 +507,62 @@ public class CardData {
             "Jeb Bush", "South", 3, 1, 2, 4, "Conservative", "Establishment"
     );
     static President joeLiberal = new President(
-            "Joe Liberal", "Northest", 10, 1, 9, 5, "Progressive", "Social Liberalism"
+            "Joe Liberal", "Northeast", 10, 1, 9, 5, "Progressive", "Social Liberalism"
     );
     static President geraldMander = new President(
             "Gerald Mander", "South", 10, 1, 9, 5, "Conservative", "Tax Cuts"
+    );
+    
+    static President margaretChaseSmith = new President(
+    		"Margaret Chase Smith", "Northeast", 6, 4, 4, 4, "Conservative", "Tough Foreign Policy"
+    ); 
+
+    static President bobDole = new President(
+    		"Bob Dole", "West", 7, 3, 4, 4, "Conservative", "Tax Cuts"
+    );
+    
+    static President eugeneDebs = new President(
+    		"Eugene Debs", "Midwest", 1, 3, 3, 3, "Progressive", "Social Programs"
+    );
+    
+    static President garyHart = new President(
+    		"Gary Hart", "West", 5, 4, 2, 1, "Progressive", "Anti-Establishment"
+    );
+    
+    static President jerryBrown = new President(
+    		"Jerry Brown", "West", 3, 4, 1, 2, "Populist", "Anti-Establishment"
+    );
+    
+    static President newtGingrich = new President(
+    		"Newt Gingrich", "South", 6, 2, 5, 5, "Conservative", "Traditional Morality"
+    );
+    
+    static President paulTsongas = new President(
+    		"Paul Tsongas", "Northeast", 5, 2, 5, 2, "Progressive", "Deregulation"
+    );
+    
+    static President marioCuomo = new President(
+    		"Mario Cuomo", "Northeast", 5, 6, 3, 5, "Progressive", "Social Programs"
+    );
+    
+    static President jesseJackson = new President(
+    		"Jesse Jackson", "South", 1, 6, 3, 5, "Progressive", "Social Liberalism"
+    );
+    
+    static President pramilaJayapal = new President(
+    		"Pramila Jayapal", "West", 2, 1, 2, 1, "Progressive", "Social Liberalism"
+    );
+    
+    static President staceyAbrams = new President(
+    		"Stacey Abrams", "South", 1, 4, 2, 3, "Progressive", "Civil Rights"
+    );
+    
+    static President sherrodBrown = new President(
+    		"Sherrod Brown", "Midwest", 6, 2, 3, 1, "Progressive", "Tariffs"
+    );
+    
+    static President randPaul = new President(
+    		"Rand Paul", "South", 5, 2, 5, 2, "Libertarian", "Tax Cuts"
     );
     
     
@@ -980,7 +1032,8 @@ public class CardData {
         }
     	return presidents;
     }
-
+    
+    // use this please
     public static List<President> getPresidents(String preset, int pres, boolean presSort, int nonpres, 
             boolean nonPresSort, int memeCards, boolean memesSort) {
         List<President> presidents = new ArrayList<President>();
@@ -1104,6 +1157,20 @@ public class CardData {
         nonpresidents.add(johnCBreckinridge);
         nonpresidents.add(jebBushh);
         nonpresidents.add(mikePence);
+        nonpresidents.add(margaretChaseSmith);   
+        nonpresidents.add(bobDole);
+        nonpresidents.add(eugeneDebs);
+        nonpresidents.add(garyHart);
+        nonpresidents.add(jerryBrown);
+        nonpresidents.add(newtGingrich);
+        nonpresidents.add(paulTsongas);
+        nonpresidents.add(marioCuomo);
+        nonpresidents.add(jesseJackson);
+        nonpresidents.add(pramilaJayapal);
+        nonpresidents.add(staceyAbrams);
+        nonpresidents.add(sherrodBrown);
+        nonpresidents.add(randPaul);
+        
         
         
         meme.add(millFill);
