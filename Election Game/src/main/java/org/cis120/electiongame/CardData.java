@@ -1115,7 +1115,7 @@ public class CardData {
     	return presidents;
     }
     
-    // use this please
+    // Use this function to add presidents.
     public static List<President> getPresidents(String preset, int pres, boolean presSort, int nonpres, 
             boolean nonPresSort, int memeCards, boolean memesSort) {
         List<President> presidents = new ArrayList<President>();
