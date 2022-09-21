@@ -647,6 +647,14 @@ public class CardData {
             "\"Honest Liz\" Cheney", "West", 3, 9, 10, 7, "Conservative", "Constructionism"
     );
     
+    static President kimkardashian = new President(
+            "Kim Kardashian", "West", 1, 7, 1, 8, "Conserative", "Personal Freedom"
+    );
+    
+    static President lolalago = new President(
+            "Lola Lago", "Spain", 10, 10, 10, 10, "Populist", "Law and Order"
+    );
+    
     
     
     
@@ -1279,6 +1287,10 @@ public class CardData {
         meme.add(geraldMander);
         meme.add(joeLiberal);
         meme.add(honestLizCheney);
+        meme.add(kimkardashian);
+        meme.add(lolalago);
+        
+        
         
         // Generational
         if(preset.equals("generational")) {
