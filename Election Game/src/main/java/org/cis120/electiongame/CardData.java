@@ -642,9 +642,27 @@ public class CardData {
     static President georgeWashington97 = new President(
             "George Washington '97", "South", 10, 10, 10, 10, "Conservative", "Centralization"
     );
-    
+    // I think quotes are already filtered out of the name for image file
     static President honestLizCheney = new President(
             "\"Honest Liz\" Cheney", "West", 3, 9, 10, 7, "Conservative", "Constructionism"
+    );
+    static President williamEMiller = new President(
+            "William E. Miller", "Northeast", 5, 2, 2, 1, "Conservative", "Traditional Morality"
+    );
+    static President benjaminFranklin = new President(
+            "Benjamin Franklin", "Northeast", 8, 4, 9, 8, "Libertarian", "Limited Government"
+    );
+    static President frankKnox = new President(
+            "Frank Knox", "Northeast", 1, 1, 1, 2, "Conservative", "Tough Foreign Policy"
+    );
+    static President johnJay = new President(
+            "John Jay", "Northeast", 7, 2, 9, 5, "Conservative", "Isolationism"
+    );
+    static President eleanorRoosevelt = new President(
+            "Eleanor Roosevelt", "Northeast", 2, 7, 2, 8, "Progressive", "Civil Rights"
+    );
+    static President williamFBuckley = new President(
+            "William F. Buckley", "Northeast", 1, 2, 9, 4, "Conservative", "Traditional Morality"
     );
     
     static President kimkardashian = new President(
@@ -656,8 +674,7 @@ public class CardData {
     );
     
     
-    
-    
+    // ELECTIONS
     static Election e2020 = new Election(
             2020, "nam", "exp", "Midwest", "Regulation vs. Deregulation",
             "Tax Cuts vs. Social Programs", "Law and Order vs. Personal Freedom"
@@ -1260,7 +1277,12 @@ public class CardData {
         nonpresidents.add(staceyAbrams);
         nonpresidents.add(sherrodBrown);
         nonpresidents.add(randPaul);
-        
+        nonpresidents.add(williamEMiller);
+        nonpresidents.add(benjaminFranklin);
+        nonpresidents.add(frankKnox);
+        nonpresidents.add(johnJay);
+        nonpresidents.add(eleanorRoosevelt);
+        nonpresidents.add(williamFBuckley);
         
         
         meme.add(millFill);
