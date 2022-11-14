@@ -664,6 +664,42 @@ public class CardData {
     static President williamFBuckley = new President(
             "William F. Buckley", "Northeast", 1, 2, 9, 4, "Conservative", "Traditional Morality"
     );
+    static President williamLloydGarrison = new President(
+            "William Lloyd Garrison", "Northeast", 1, 4, 2, 4, "Progressive", "Civil Rights"
+    );
+    static President georgeClinton = new President(
+            "George Clinton", "Northeast", 9, 4, 4, 6, "Libertarian", "States' Rights"
+    );
+    static President jpMorgan = new President(
+            "J.P. Morgan", "Northeast", 1, 2, 4, 9, "Conservative", "Deregulation"
+    );
+    static President rufusKing = new President(
+            "Rufus King", "Northeast", 4, 2, 6, 2, "Conservative", "Civil Rights"
+    );
+    static President joeTRobinson = new President(
+            "Joe T. Robinson", "South", 6, 1, 2, 2, "Progressive", "Social Programs"
+    );
+    static President williamScranton = new President(
+            "William Scranton", "Northeast", 3, 2, 3, 3, "Conservative", "Social Liberalism"
+    );
+    static President georgeRomney = new President(
+            "George Romney", "Midwest", 4, 2, 5, 4, "Conservative", "Civil Rights"
+    );
+    static President elbridgeGerry = new President(
+            "Elbridge Gerry", "Northeast", 4, 2, 3, 3, "Libertarian", "States' Rights"
+    );
+    static President henryCabotLodgeJr = new President(
+            "Henry Cabot Lodge Jr.", "Northeast", 6, 2, 5, 5, "Conservative", "Tough Foreign Policy"
+    );
+    static President charlesCPinckney = new President(
+            "Charles C. Pinckney", "South", 2, 2, 4, 8, "Conservative", "Centralization"
+    );
+    static President adlaiStevensonII = new President(
+            "Adlai Stevenson II", "South", 2, 5, 2, 2, "Progressive", "Law and Order"
+    );
+    static President henryWilson = new President(
+            "Henry Wilson", "Northeast", 7, 2, 5, 3, "Progressive", "Civil Rights"
+    );
     
     
     // ELECTIONS
@@ -1275,6 +1311,18 @@ public class CardData {
         nonpresidents.add(johnJay);
         nonpresidents.add(eleanorRoosevelt);
         nonpresidents.add(williamFBuckley);
+        nonpresidents.add(williamLloydGarrison);
+        nonpresidents.add(georgeClinton);
+        nonpresidents.add(jpMorgan);
+        nonpresidents.add(rufusKing);
+        nonpresidents.add(joeTRobinson);
+        nonpresidents.add(williamScranton);
+        nonpresidents.add(georgeRomney);
+        nonpresidents.add(elbridgeGerry);
+        nonpresidents.add(henryCabotLodgeJr);
+        nonpresidents.add(charlesCPinckney);
+        nonpresidents.add(adlaiStevensonII);
+        nonpresidents.add(henryWilson);
         
         
         meme.add(millFill);
