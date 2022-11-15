@@ -1462,9 +1462,11 @@ public class CardData {
             }
             //System.out.println("STANDARD CARD DECK");
             Collections.shuffle(presidents);
+            /*
             for (President p : presidents) {
                 System.out.println(p.toString());
-            }       
+            } 
+           	*/
             return presidents;
         }
         
@@ -1476,7 +1478,7 @@ public class CardData {
         for (int i = 0; i < 7; i++) {
             presidents.add(nonpresidents.get(i));
         }
-        System.out.println("STANDARD CARD DECK");
+        //System.out.println("STANDARD CARD DECK");
         return presidents;
     }
    
