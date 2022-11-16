@@ -604,7 +604,7 @@ public class RunElectionGameCombined implements Runnable {
             election.namePlayer(names[ran]);
             election.namePlayer2("CPU");
             election.setAIDifficulty("Hard");
-            election.reset("expanded", 0, true, 0, true, 0, true);
+            election.reset("generational", 0, true, 0, true, 0, true);
             setLabel(status);
         } else {
             // Name Player 1
