@@ -644,7 +644,7 @@ public class CardData {
     );
     // I think quotes are already filtered out of the name for image file
     static President honestLizCheney = new President(
-            "\"Honest Liz\" Cheney", "West", 3, 9, 10, 7, "Conservative", "Constructionism"
+            "Honest Liz Cheney", "West", 3, 9, 10, 7, "Conservative", "Constructionism"
     );
     static President williamEMiller = new President(
             "William E. Miller", "Northeast", 5, 2, 2, 1, "Conservative", "Traditional Morality"
