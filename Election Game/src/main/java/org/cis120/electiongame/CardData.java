@@ -537,27 +537,21 @@ public class CardData {
     static President newtGingrich = new President(
     		"Newt Gingrich", "South", 6, 2, 5, 5, "Conservative", "Traditional Morality"
     );
-    
     static President paulTsongas = new President(
     		"Paul Tsongas", "Northeast", 5, 2, 5, 2, "Progressive", "Deregulation"
     );
-    
     static President marioCuomo = new President(
     		"Mario Cuomo", "Northeast", 5, 6, 3, 5, "Progressive", "Social Programs"
     );
-    
     static President jesseJackson = new President(
     		"Jesse Jackson", "South", 1, 6, 3, 5, "Progressive", "Social Liberalism"
     );
-    
     static President pramilaJayapal = new President(
     		"Pramila Jayapal", "West", 2, 1, 2, 1, "Progressive", "Social Liberalism"
     );
-    
     static President staceyAbrams = new President(
     		"Stacey Abrams", "South", 1, 4, 2, 3, "Progressive", "Civil Rights"
     );
-    
     static President sherrodBrown = new President(
     		"Sherrod Brown", "Midwest", 6, 2, 3, 1, "Progressive", "Tariffs"
     );
@@ -796,6 +790,42 @@ public class CardData {
     );
     static President lolalago = new President(
             "Lola Lago", "Spain", 10, 10, 10, 10, "Populist", "Law and Order"
+    );
+    static President charlesWFairbanks = new President(
+            "Charles W. Fairbanks", "Midwest", 6, 2, 3, 3, "Conservative", "Deregulation"
+    );
+    static President altonBParker = new President(
+            "Alton B. Parker", "Northeast", 2, 1, 3, 1, "Populist", "Isolationism"
+    );
+    static President jamesSSherman = new President(
+            "James S. Sherman", "Northeast", 5, 5, 1, 1, "Conservative", "Gold Standard"
+    );
+    static President adlaiStevensonI = new President(
+            "Adlai Stevenson I", "Midwest", 6, 3, 3, 4, "Populist", "Establishment"
+    );
+    static President henryGDavis = new President(
+            "Henry G. Davis", "Midwest", 3, 1, 1, 2, "Conservative", "Subsidies"
+    );
+    static President johnWKern = new President(
+            "John W. Kern", "Midwest", 3, 1, 3, 1, "Progressive", "Central Bank"
+    );
+    static President williamAWheeler = new President(
+            "William A. Wheeler", "Northeast", 4, 3, 1, 1, "Conservative", "Subsidies"
+    );
+    static President samuelJTilden = new President(
+            "Samuel J. Tilden", "Northeast", 3, 4, 3, 4, "Libertarian", "Anti-Establishment"
+    );
+    static President jamesGBlaine = new President(
+            "James G. Blaine", "Northeast", 8, 3, 2, 3, "Conservative", "Tough Foreign Policy"
+    );
+    static President thomasAHendricks = new President(
+            "Thomas A. Hendricks", "Midwest", 6, 3, 3, 2, "Libertarian", "Gold Standard"
+    );
+    static President winfieldScottHancock = new President(
+            "Winfield Scott Hancock", "Northeast", 1, 4, 1, 7, "Libertarian", "Free Trade"
+    );
+    static President williamHaydenEnglish = new President(
+            "William Hayden English", "Midwest", 3, 2, 2, 1, "Libertarian", "Gold Standard"
     );
     
     
@@ -1450,6 +1480,18 @@ public class CardData {
         nonpresidents.add(christopherGore);
         nonpresidents.add(thomasWilling);
         nonpresidents.add(williamPaterson);
+        nonpresidents.add(charlesWFairbanks);
+        nonpresidents.add(altonBParker);
+        nonpresidents.add(jamesSSherman);
+        nonpresidents.add(adlaiStevensonI);
+        nonpresidents.add(henryGDavis);
+        nonpresidents.add(johnWKern);
+        nonpresidents.add(williamAWheeler);
+        nonpresidents.add(samuelJTilden);
+        nonpresidents.add(jamesGBlaine);
+        nonpresidents.add(thomasAHendricks);
+        nonpresidents.add(winfieldScottHancock);
+        nonpresidents.add(williamHaydenEnglish);
         
         
         meme.add(millFill);
