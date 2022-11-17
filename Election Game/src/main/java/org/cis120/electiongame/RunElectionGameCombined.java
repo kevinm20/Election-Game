@@ -109,11 +109,12 @@ public class RunElectionGameCombined implements Runnable {
          * Play button: Where most of the real action happens
          */
         final JButton play = new JButton("Play");
+        /* Color can changed
         play.setBackground(new Color(47, 84, 150));
         play.setForeground(Color.YELLOW);
+        */  
         play.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-
                 if (election.getActivePinCard() == null
                         || election.getActivePinnedPolicies().get(0) == null
                         || election.getActivePinnedPolicies().get(1) == null) {
@@ -241,10 +242,146 @@ public class RunElectionGameCombined implements Runnable {
                             up.paintCards();
                         }
                     }
-                }
+                	}
             }
 
         });
+        // GOTTA be a more efficient way to do this than copy and pasting play function. Also this barely works.
+        play.addKeyListener(new KeyAdapter() {
+        	public void keyPressed(KeyEvent arg0) {
+        		if (arg0.getKeyCode() == KeyEvent.VK_ENTER) {
+                    if (election.getActivePinCard() == null
+                            || election.getActivePinnedPolicies().get(0) == null
+                            || election.getActivePinnedPolicies().get(1) == null) {
+                        JOptionPane.showMessageDialog(
+                                null, "Error: you haven't played all cards!", "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    } else {
+                        if (!mode) {
+                            election.printGameState();
+
+                            election.getPlayer1().draw(election.getPres());
+                            election.getPlayer1().drawPols(election.getPol());
+
+                            AI ai = (AI) election.getPlayer2();
+
+                            President cpuplay = ai.play(election.getPres(), election.getElection());
+
+                            election.player2PlayCard(cpuplay);
+                            election.pinAIPolicies(ai.playPolicies(cpuplay, election.getPol()));
+
+                            board.flipCPU();
+                            board.draw();
+
+                            election.playRound(
+                                    election.getPlayer1Card(), election.getPinned1(),
+                                    cpuplay, election.getPinned2()
+                            );
+
+                        } else {
+                            if (election.getTurn()) {
+                                election.flipPlayer();
+                                user_cards.hideCards(4);
+                                up.hideCards();
+                                board.draw();
+                                JOptionPane
+                                        .showMessageDialog(
+                                                null, "Please pass the computer to Player 2."
+                                        );
+                                user_cards.paintCards();
+                                up.paintCards();
+                                board.draw();
+                            } else {
+                                user_cards.hideCards(4);
+                                up.hideCards();
+                                board.flipUser();
+                                board.draw();
+                                JOptionPane
+                                        .showMessageDialog(
+                                                null, "Click 'OK' when both players are ready!"
+                                        );
+                                board.flipUser();
+                                election.printGameState();
+
+                                election.getPlayer2().draw(election.getPres());
+                                election.getPlayer2().drawPols(election.getPol());
+
+                                election.getPlayer1().draw(election.getPres());
+                                election.getPlayer1().drawPols(election.getPol());
+
+                                board.flipCPU();
+                                board.draw();
+
+                                election.playRound(
+                                        election.getPlayer1Card(), election.getPinned1(),
+                                        election.getPlayer2Card(), election.getPinned2()
+                                );
+                                election.flipPlayer();
+                            }
+                        }
+
+                        if (!mode || election.getTurn()) {
+                            setLabel(status);
+                            status.repaint();
+                            JOptionPane.showMessageDialog(null, election.getMessage());
+                            if(election.getAchievement()!=null) {
+                                JOptionPane.showMessageDialog(null, election.getAchievement());
+                            }
+
+                            if (election.checkWinner() == 1) {
+                                JOptionPane.showMessageDialog(
+                                        null,
+                                        election.getPlayer1().getName() + " has won!!! "
+                                                + election.finalScore(true)
+                                );
+                                if (mode) {
+                                    JOptionPane.showMessageDialog(
+                                            null, "Please pass the computer to Player 1."
+                                    );
+                                }
+                                election.reset(deckSet, 0, true, 0, true, 0, true);
+                                user_cards.reset();
+                                up.reset();
+                                board.reset();
+                                setLabel(status);
+                                status.repaint();
+                            } else if (election.checkWinner() == 2) {
+                                JOptionPane.showMessageDialog(
+                                        null,
+                                        election.getPlayer2().getName() + " has won!!! "
+                                                + election.finalScore(false)
+                                );
+                                if (mode) {
+                                    JOptionPane.showMessageDialog(
+                                            null, "Please pass the computer to Player 1."
+                                    );
+                                }
+                                election.reset(deckSet, 0, true, 0, true, 0, true);
+                                user_cards.reset();
+                                up.reset();
+                                board.reset();
+                                setLabel(status);
+                                status.repaint();
+                            } else {
+                                election.player1PlayCard(null);
+                                election.player2PlayCard(null);
+                                board.flipCPU();
+                                board.draw();
+                                if (mode) {
+                                    JOptionPane.showMessageDialog(
+                                            null, "Please pass the computer to Player 1."
+                                    );
+                                }
+                                user_cards.paintCards();
+                                up.paintCards();
+                            }
+                        }
+                    	}
+        		}
+        	}
+        });
+
 
         final JButton undo = new JButton("Undo Cards");
         undo.addActionListener(new ActionListener() {
@@ -445,8 +582,8 @@ public class RunElectionGameCombined implements Runnable {
         /*
          * Here, the game is started with all necessary inputs
          */
-        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "quandale", "Jack Harlow",
-        		"quandale dingle"};
+        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "Quandale", "Jack Harlow",
+        		"Quandale Dingle", "Senor Dingle", "Mr. Dingle", "Daquavious Bingleton"};
 
         Object[] options = { "1-Player", "2-Player", "Quick 1-Player" };
         int gameMode = JOptionPane.showOptionDialog(
@@ -467,7 +604,7 @@ public class RunElectionGameCombined implements Runnable {
             election.namePlayer(names[ran]);
             election.namePlayer2("CPU");
             election.setAIDifficulty("Hard");
-            election.reset("expanded", 0, true, 0, true, 0, true);
+            election.reset("generational", 0, true, 0, true, 0, true);
             setLabel(status);
         } else {
             // Name Player 1

@@ -792,6 +792,14 @@ public class CardData {
             "William Paterson", "Northeast", 3, 1, 4, 1, "Conservative", "States' Rights"
     );
     
+    static President kimkardashian = new President(
+            "Kim Kardashian", "West", 1, 7, 1, 8, "Conserative", "Personal Freedom"
+    );
+    
+    static President lolalago = new President(
+            "Lola Lago", "Spain", 10, 10, 10, 10, "Populist", "Law and Order"
+    );
+    
     
     // ELECTIONS
     static Election e2020 = new Election(
@@ -1470,6 +1478,10 @@ public class CardData {
         meme.add(geraldMander);
         meme.add(joeLiberal);
         meme.add(honestLizCheney);
+        meme.add(kimkardashian);
+        meme.add(lolalago);
+        
+        
         
         // Generational
         if(preset.equals("generational")) {
@@ -1571,9 +1583,11 @@ public class CardData {
             }
             //System.out.println("STANDARD CARD DECK");
             Collections.shuffle(presidents);
+            /*
             for (President p : presidents) {
                 System.out.println(p.toString());
-            }       
+            } 
+           	*/
             return presidents;
         }
         
@@ -1585,7 +1599,7 @@ public class CardData {
         for (int i = 0; i < 7; i++) {
             presidents.add(nonpresidents.get(i));
         }
-        System.out.println("STANDARD CARD DECK");
+        //System.out.println("STANDARD CARD DECK");
         return presidents;
     }
    
