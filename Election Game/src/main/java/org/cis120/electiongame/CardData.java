@@ -791,11 +791,9 @@ public class CardData {
     static President williamPaterson = new President(
             "William Paterson", "Northeast", 3, 1, 4, 1, "Conservative", "States' Rights"
     );
-    
     static President kimkardashian = new President(
             "Kim Kardashian", "West", 1, 7, 1, 8, "Conserative", "Personal Freedom"
     );
-    
     static President lolalago = new President(
             "Lola Lago", "Spain", 10, 10, 10, 10, "Populist", "Law and Order"
     );
