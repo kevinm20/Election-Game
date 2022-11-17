@@ -674,7 +674,7 @@ public class CardData {
             "J.P. Morgan", "Northeast", 1, 2, 4, 9, "Conservative", "Deregulation"
     );
     static President rufusKing = new President(
-            "Rufus King", "Northeast", 4, 2, 6, 2, "Conservative", "Civil Rights"
+            "Rufus King", "Northeast", 4, 2, 6, 4, "Conservative", "Civil Rights"
     );
     static President joeTRobinson = new President(
             "Joe T. Robinson", "South", 6, 1, 2, 2, "Progressive", "Social Programs"
@@ -692,13 +692,103 @@ public class CardData {
             "Henry Cabot Lodge Jr.", "Northeast", 6, 2, 5, 5, "Conservative", "Tough Foreign Policy"
     );
     static President charlesCPinckney = new President(
-            "Charles C. Pinckney", "South", 2, 2, 4, 8, "Conservative", "Centralization"
+            "Charles C. Pinckney", "South", 2, 3, 4, 8, "Conservative", "Centralization"
     );
     static President adlaiStevensonII = new President(
             "Adlai Stevenson II", "South", 2, 5, 2, 2, "Progressive", "Law and Order"
     );
     static President henryWilson = new President(
             "Henry Wilson", "Northeast", 7, 2, 5, 3, "Progressive", "Civil Rights"
+    );
+    static President ronJohnson = new President(
+            "Ron Johnson", "Midwest", 6, 2, 3, 2, "Conservative", "Deregulation"
+    );
+    static President johnMarshall = new President(
+            "John Marshall", "Northeast", 5, 3, 6, 6, "Conservative", "Implied Powers"
+    );
+    static President thomasPinckney = new President(
+            "Thomas Pinckney", "South", 4, 3, 1, 8, "Conservative", "Tough Foreign Policy"
+    );
+    static President charlesPinckney = new President(
+            "Charles Pinckney", "South", 5, 1, 3, 8, "Conservative", "Constructionism"
+    );
+    static President henryLeeIII = new President(
+            "Henry Lee III", "South", 3, 3, 1, 4, "Conservative", "Law and Order"
+    );
+    static President jamesDuane = new President(
+            "James Duane", "Northeast", 3, 1, 3, 3, "Conservative", "Law and Order"
+    );
+    static President georgeCabot = new President(
+            "George Cabot", "Northeast", 3, 1, 2, 3, "Conservative", "Isolationism"
+    );
+    static President timothyPickering = new President(
+            "Timothy Pickering", "Northeast", 6, 1, 2, 3, "Conservative", "States' Rights"
+    );
+    static President henryKnox = new President(
+            "Henry Knox", "Northeast", 3, 4, 1, 7, "Conservative", "Tough Foreign Policy"
+    );
+    static President philipSchuyler = new President(
+            "Philip Schuyler", "Northeast", 3, 4, 2, 3, "Conservative", "Centralization"
+    );
+    static President calebStrong = new President(
+            "Caleb Strong", "Northeast", 7, 4, 2, 3, "Conservative", "Centralization"
+    );
+    static President johnLowellJr = new President(
+            "John Lowell Jr.", "Northeast", 1, 3, 4, 1, "Conservative", "Social Hierarchy"
+    );
+    static President johnEagerHoward = new President(
+            "John Eager Howard", "Northeast", 4, 3, 1, 3, "Conservative", "Personal Freedom"
+    );
+    static President edmundRandolph = new President(
+            "Edmund Randolph", "South", 5, 4, 4, 2, "Conservative", "Centralization"
+    );
+    static President jonathanDayton = new President(
+            "Jonathan Dayton", "Northeast", 6, 1, 2, 2, "Conservative", "Implied Powers"
+    );
+    static President williamLivingston = new President(
+            "William Livingston", "Northeast", 5, 5, 3, 3, "Conservative", "Centralization"
+    );
+    static President samuelHuntington = new President(
+            "Samuel Huntington", "Northeast", 8, 5, 1, 4, "Conservative", "Nationalism"
+    );
+    static President richardVarick = new President(
+            "Richard Varick", "Northeast", 4, 2, 7, 3, "Conservative", "Central Bank"
+    );
+    static President noahWebster = new President(
+            "Noah Webster", "Northeast", 2, 1, 7, 5, "Conservative", "Social Hierarchy"
+    );
+    static President increaseSumner = new President(
+            "Increase Sumner", "Northeast", 4, 3, 4, 2, "Conservative", "Law and Order"
+    );
+    static President oliverWolcottJr = new President(
+            "Oliver Wolcott Jr.", "Northeast", 5, 1, 2, 1, "Conservative", "Central Bank"
+    );
+    static President gouverneurMorris = new President(
+            "Gouverneur Morris", "Northeast", 2, 4, 6, 2, "Conservative", "Civil Rights"
+    );
+    static President josiahQuincyIII = new President(
+            "Josiah Quincy III", "Northeast", 2, 1, 3, 1, "Conservative", "States' Rights"
+    );
+    static President jamesWilson = new President(
+            "James Wilson", "Northeast", 2, 2, 5, 1, "Conservative", "Active Executive"
+    );
+    static President oliverEllsworth = new President(
+            "Oliver Ellsworth", "Northeast", 5, 5, 4, 3, "Conservative", "Centralization"
+    );
+    static President jamesMcHenry = new President(
+            "James McHenry", "Northeast", 2, 2, 2, 1, "Conservative", "Tough Foreign Policy"
+    );
+    static President johnBrooks = new President(
+            "John Brooks", "Northeast", 2, 6, 1, 2, "Conservative", "Nationalism"
+    );
+    static President christopherGore = new President(
+            "Christopher Gore", "Northeast", 4, 1, 2, 1, "Conservative", "Internal Improvements"
+    );
+    static President thomasWilling = new President(
+            "Thomas Willing", "Northeast", 1, 1, 3, 2, "Conservative", "Central Bank"
+    );
+    static President williamPaterson = new President(
+            "William Paterson", "Northeast", 3, 1, 4, 1, "Conservative", "States' Rights"
     );
     
     
@@ -1323,6 +1413,36 @@ public class CardData {
         nonpresidents.add(charlesCPinckney);
         nonpresidents.add(adlaiStevensonII);
         nonpresidents.add(henryWilson);
+        nonpresidents.add(ronJohnson);
+        nonpresidents.add(johnMarshall);
+        nonpresidents.add(thomasPinckney);
+        nonpresidents.add(charlesPinckney);
+        nonpresidents.add(henryLeeIII);
+        nonpresidents.add(jamesDuane);
+        nonpresidents.add(georgeCabot);
+        nonpresidents.add(timothyPickering);
+        nonpresidents.add(henryKnox);
+        nonpresidents.add(philipSchuyler);
+        nonpresidents.add(calebStrong);
+        nonpresidents.add(johnLowellJr);
+        nonpresidents.add(johnEagerHoward);
+        nonpresidents.add(edmundRandolph);
+        nonpresidents.add(jonathanDayton);
+        nonpresidents.add(williamLivingston);
+        nonpresidents.add(samuelHuntington);
+        nonpresidents.add(richardVarick);
+        nonpresidents.add(noahWebster);
+        nonpresidents.add(increaseSumner);
+        nonpresidents.add(oliverWolcottJr);
+        nonpresidents.add(gouverneurMorris);
+        nonpresidents.add(josiahQuincyIII);
+        nonpresidents.add(jamesWilson);
+        nonpresidents.add(oliverEllsworth);
+        nonpresidents.add(jamesMcHenry);
+        nonpresidents.add(johnBrooks);
+        nonpresidents.add(christopherGore);
+        nonpresidents.add(thomasWilling);
+        nonpresidents.add(williamPaterson);
         
         
         meme.add(millFill);
