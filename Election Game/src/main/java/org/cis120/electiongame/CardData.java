@@ -12,6 +12,7 @@ public class CardData {
     private static boolean expanded = false;
     private static boolean standard = false;
 
+    // PRESIDENTS
     static President calvinCoolidge = new President(
             "Calvin Coolidge", "Northeast", 7, 6, 8, 5, "Libertarian", "Tax Cuts"
     );
