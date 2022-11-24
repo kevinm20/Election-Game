@@ -717,7 +717,7 @@ public class CardData {
             "George Cabot", "Northeast", 3, 1, 2, 3, "Conservative", "Isolationism"
     );
     static President timothyPickering = new President(
-            "Timothy Pickering", "Northeast", 6, 1, 2, 3, "Conservative", "States' Rights"
+            "Timothy Pickering", "Northeast", 7, 3, 4, 4, "Conservative", "States' Rights"
     );
     static President henryKnox = new President(
             "Henry Knox", "Northeast", 3, 4, 1, 7, "Conservative", "Tough Foreign Policy"
