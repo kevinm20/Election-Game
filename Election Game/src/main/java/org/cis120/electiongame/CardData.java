@@ -828,6 +828,55 @@ public class CardData {
             "William Hayden English", "Midwest", 3, 2, 2, 1, "Libertarian", "Gold Standard"
     );
     
+    static President joshHawley = new President(
+            "Josh Hawley", "South", 3, 4, 4, 3, "Populist", "Regulation"
+    );
+    
+    static President maryPeltola = new President(
+            "Mary Peltola", "West", 1, 2, 2, 1, "Progressive", "Personal Freedom"
+    );
+    
+    static President leeZeldin = new President(
+            "Lee Zeldin", "Northeast", 3, 5, 6, 3, "Conservative", "Law and Order"
+    );
+    
+    static President glennYoungkin = new President(
+            "Glenn Youngkin", "South", 2, 5, 7, 4, "Conservative", "Traditional Morality"
+    );
+    
+    static President gretchenWhitmer = new President(
+            "Gretchen Whitmer", "Midwest", 4, 5, 5, 3, "Progressive", "Social Liberalism"
+    );
+    
+    static President kamalaHarris = new President(
+            "Kamala Harris", "West", 7, 1, 4, 6, "Progressive", "Social Liberalism"
+    );
+    
+    /** no parentheses? :(
+    static President charliecristrep = new President(
+            "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Traditional Morality"
+    );
+    
+    static President charliecristdem = new President(
+            "Charlie Crist", "South", 4, 2, 2, 4, "Progressive", "Social Liberalism"
+    );
+    
+    static President charliecristind = new President(
+            "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Anti-Establishment"
+    );
+    static President charliecristwhig = new President(
+            "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Subsidies"
+    );
+    static President charliecristdemrep = new President(
+            "Charlie Crist", "South", 4, 2, 2, 4, "Libertarian", "Constructionism"
+    );
+    static President charliecristfed = new President(
+            "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Central Bank"
+    );
+    **/
+    
+    
+    
     
     // ELECTIONS
     static Election e2020 = new Election(
@@ -1492,6 +1541,12 @@ public class CardData {
         nonpresidents.add(thomasAHendricks);
         nonpresidents.add(winfieldScottHancock);
         nonpresidents.add(williamHaydenEnglish);
+        nonpresidents.add(joshHawley);
+        nonpresidents.add(maryPeltola); 
+        nonpresidents.add(leeZeldin);
+        nonpresidents.add(glennYoungkin);
+        nonpresidents.add(gretchenWhitmer);
+        nonpresidents.add(kamalaHarris);
         
         
         meme.add(millFill);
@@ -1520,6 +1575,15 @@ public class CardData {
         meme.add(honestLizCheney);
         meme.add(kimkardashian);
         meme.add(lolalago);
+        /** no parentheses? :(
+        meme.add(charliecristrep);
+        meme.add(charliecristind);
+        meme.add(charliecristdem);
+        meme.add(charliecristwhig);
+        meme.add(charliecristdemrep);
+        meme.add(charliecristfed);
+        **/
+        
         
         
         
