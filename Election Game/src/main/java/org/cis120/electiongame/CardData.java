@@ -1673,14 +1673,12 @@ public class CardData {
         nonpresidents.add(thomasAHendricks);
         nonpresidents.add(winfieldScottHancock);
         nonpresidents.add(williamHaydenEnglish);
-<<<<<<< HEAD
         nonpresidents.add(joshHawley);
         nonpresidents.add(maryPeltola); 
         nonpresidents.add(leeZeldin);
         nonpresidents.add(glennYoungkin);
         nonpresidents.add(gretchenWhitmer);
         nonpresidents.add(kamalaHarris);
-=======
         nonpresidents.add(johnHancock);
         nonpresidents.add(danielDTompkins);
         nonpresidents.add(samuelAdams);
@@ -1725,7 +1723,6 @@ public class CardData {
         nonpresidents.add(jamesBarbour);
         nonpresidents.add(jamesGarrard);
         nonpresidents.add(nicholasGilman);
->>>>>>> refs/remotes/origin/master
         
         
         meme.add(millFill);
