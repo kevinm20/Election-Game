@@ -984,6 +984,10 @@ public class CardData {
             "Kamala Harris", "West", 7, 1, 4, 6, "Progressive", "Social Liberalism"
     );
     
+    static President rickSantorum = new President(
+            "Rick Santorum", "Midwest", 5, 2, 3, 3, "Conservative", "Traditional Morality"
+    );
+    
     /** no parentheses? :(
     static President charliecristrep = new President(
             "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Traditional Morality"
@@ -1723,7 +1727,7 @@ public class CardData {
         nonpresidents.add(jamesBarbour);
         nonpresidents.add(jamesGarrard);
         nonpresidents.add(nicholasGilman);
-        
+        nonpresidents.add(rickSantorum);
         
         meme.add(millFill);
         meme.add(jebBush);
