@@ -11,6 +11,15 @@ public class CardData {
     private static boolean memes = false;
     private static boolean expanded = false;
     private static boolean standard = false;
+    
+    // For custom deck
+    private static int presCountRem = 0;
+    private static boolean presSortBoolRem = false;
+    private static int nonPresCountRem = 0;
+    private static boolean nonPresSortBoolRem = false;
+    private static int memeCountRem = 0;
+    private static boolean memeSortBoolRem = false;
+    private static boolean remembered = false;
 
     // PRESIDENTS
     static President calvinCoolidge = new President(
@@ -1875,8 +1884,99 @@ public class CardData {
             return presidents;
         }
         
-        if(preset.equals("custom")) {
-            
+        if(preset.equals("custom")&&(!remembered)) {
+        	List<President> custom = new ArrayList<President>();
+        	if(presSort) {
+        		presidents.sort((o1, o2) -> Double.compare(o1.getWeightedAve(), o2.getWeightedAve()));
+        		Collections.reverse(presidents);
+        	} else {
+        		Collections.shuffle(presidents);
+        	}
+        	if(nonPresSort) {
+        		nonpresidents.sort((o1, o2) -> Double.compare(o1.getWeightedAve(), o2.getWeightedAve()));
+        		Collections.reverse(nonpresidents);
+        	} else {
+        		Collections.shuffle(nonpresidents);
+        	}
+        	if(memesSort) {
+        		meme.sort((o1, o2) -> Double.compare(o1.getWeightedAve(), o2.getWeightedAve()));
+        		Collections.reverse(meme);
+        	} else {
+        		Collections.shuffle(meme);
+        	}
+        	pres = Math.min(pres, presidents.size());
+        	nonpres = Math.min(nonpres, nonpresidents.size());
+        	memeCards = Math.min(memeCards, meme.size());
+        	for (int i = 0; i < pres; i++) {
+                custom.add(presidents.get(i));             
+            }
+        	for (int i = 0; i < nonpres; i++) {
+                custom.add(nonpresidents.get(i));
+            }
+        	for (int i = 0; i < memeCards; i++) {
+                custom.add(meme.get(i));
+            }
+        	for (President p: custom) {
+        		System.out.println(p);
+        	}
+        	// If I make custom president deck playing sizes, this 20 has to change
+        	if (custom.size()<20) {
+        		int to_count = 20-custom.size();
+        		for (int i = 0; i < to_count; i++) {
+        			custom.add(presidents.get(i+pres));
+        		}
+        	}
+        	
+        	presCountRem = pres;
+        	presSortBoolRem = presSort;
+        	nonPresCountRem = nonpres;
+        	nonPresSortBoolRem = nonPresSort;
+        	memeCountRem = memeCards;
+        	memeSortBoolRem = memesSort;
+        	remembered=true;
+        	
+        	return custom;
+        	
+        } else if (preset.equals("custom")&&remembered) {
+        	List<President> custom = new ArrayList<President>();
+        	if(presSortBoolRem) {
+        		presidents.sort((o1, o2) -> Double.compare(o1.getWeightedAve(), o2.getWeightedAve()));
+        		Collections.reverse(presidents);
+        	} else {
+        		Collections.shuffle(presidents);
+        	}
+        	if(nonPresSortBoolRem) {
+        		nonpresidents.sort((o1, o2) -> Double.compare(o1.getWeightedAve(), o2.getWeightedAve()));
+        		Collections.reverse(nonpresidents);
+        	} else {
+        		Collections.shuffle(nonpresidents);
+        	}
+        	if(memeSortBoolRem) {
+        		meme.sort((o1, o2) -> Double.compare(o1.getWeightedAve(), o2.getWeightedAve()));
+        		Collections.reverse(meme);
+        	} else {
+        		Collections.shuffle(meme);
+        	}
+        	pres = Math.min(pres, presidents.size());
+        	nonpres = Math.min(nonpres, nonpresidents.size());
+        	memeCards = Math.min(memeCards, meme.size());
+        	for (int i = 0; i < presCountRem; i++) {
+                custom.add(presidents.get(i));
+            }
+        	for (int i = 0; i < nonPresCountRem; i++) {
+                custom.add(nonpresidents.get(i));
+            }
+        	for (int i = 0; i < memeCountRem; i++) {
+                custom.add(meme.get(i));
+            }
+        	// If I make custom president deck playing sizes, this 20 has to change
+        	if (custom.size()<20) {
+        		int to_count = 20-custom.size();
+        		for (int i = 0; i < to_count; i++) {
+        			custom.add(presidents.get(i+pres));
+        		}
+        	}
+        	return custom;
         }
         
         Collections.shuffle(nonpresidents);

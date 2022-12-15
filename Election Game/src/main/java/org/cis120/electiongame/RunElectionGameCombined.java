@@ -31,6 +31,11 @@ public class RunElectionGameCombined implements Runnable {
     private UserPolicies up;
     private boolean mode = false;
     private String deckSet = "standard";
+    private int cumulativeWins = 0;
+    private int cumulativeGames = 0;
+    private int roundsWon = 0;
+    private int roundsPlayed = 0;
+    private int totalPoints = 0;
 
     // Change this if the screen is wacky
     int cardSize = 225;
@@ -44,6 +49,8 @@ public class RunElectionGameCombined implements Runnable {
     }
     
     public void run() {
+    	//Used to track stats
+    	long startTime = System.nanoTime();
 
         // Top-level frame in which game components live
         final JFrame frame = new JFrame("Election Game");
@@ -108,7 +115,7 @@ public class RunElectionGameCombined implements Runnable {
 
         	
             ImageIcon img = new ImageIcon(
-                    new ImageIcon("aicard.png").getImage()
+                    new ImageIcon("files/aicard.png").getImage()
                             .getScaledInstance(60, 79, Image.SCALE_SMOOTH)
             );
             final JLabel aicardlabel = new JLabel(img);
@@ -173,7 +180,7 @@ public class RunElectionGameCombined implements Runnable {
                     );
                 } else {
                     if (!mode) {
-                        election.printGameState();
+                        //election.printGameState();
 
                         election.getPlayer1().draw(election.getPres());
                         election.getPlayer1().drawPols(election.getPol());
@@ -216,7 +223,7 @@ public class RunElectionGameCombined implements Runnable {
                                             null, "Click 'OK' when both players are ready!"
                                     );
                             board.flipUser();
-                            election.printGameState();
+                            //election.printGameState();
 
                             election.getPlayer2().draw(election.getPres());
                             election.getPlayer2().drawPols(election.getPol());
@@ -254,7 +261,9 @@ public class RunElectionGameCombined implements Runnable {
                                         null, "Please pass the computer to Player 1."
                                 );
                             }
-                            election.reset(deckSet, 0, true, 0, true, 0, true);
+                            cumulativeWins++;
+                            cumulativeGames++;
+                            election.reset(deckSet, 0, true, 0, true, 0, true, 5);
                             user_cards.reset();
                             up.reset();
                             board.reset();
@@ -271,7 +280,8 @@ public class RunElectionGameCombined implements Runnable {
                                         null, "Please pass the computer to Player 1."
                                 );
                             }
-                            election.reset(deckSet, 0, true, 0, true, 0, true);
+                            cumulativeGames++;
+                            election.reset(deckSet, 0, true, 0, true, 0, true, 5);
                             user_cards.reset();
                             up.reset();
                             board.reset();
@@ -294,141 +304,6 @@ public class RunElectionGameCombined implements Runnable {
                 	}
             }
 
-        });
-        // GOTTA be a more efficient way to do this than copy and pasting play function. Also this barely works.
-        play.addKeyListener(new KeyAdapter() {
-        	public void keyPressed(KeyEvent arg0) {
-        		if (arg0.getKeyCode() == KeyEvent.VK_ENTER) {
-                    if (election.getActivePinCard() == null
-                            || election.getActivePinnedPolicies().get(0) == null
-                            || election.getActivePinnedPolicies().get(1) == null) {
-                        JOptionPane.showMessageDialog(
-                                null, "Error: you haven't played all cards!", "Error",
-                                JOptionPane.ERROR_MESSAGE
-                        );
-                    } else {
-                        if (!mode) {
-                            election.printGameState();
-
-                            election.getPlayer1().draw(election.getPres());
-                            election.getPlayer1().drawPols(election.getPol());
-
-                            AI ai = (AI) election.getPlayer2();
-
-                            President cpuplay = ai.play(election.getPres(), election.getElection());
-
-                            election.player2PlayCard(cpuplay);
-                            election.pinAIPolicies(ai.playPolicies(cpuplay, election.getPol()));
-
-                            board.flipCPU();
-                            board.draw();
-
-                            election.playRound(
-                                    election.getPlayer1Card(), election.getPinned1(),
-                                    cpuplay, election.getPinned2()
-                            );
-
-                        } else {
-                            if (election.getTurn()) {
-                                election.flipPlayer();
-                                user_cards.hideCards(4);
-                                up.hideCards();
-                                board.draw();
-                                JOptionPane
-                                        .showMessageDialog(
-                                                null, "Please pass the computer to Player 2."
-                                        );
-                                user_cards.paintCards();
-                                up.paintCards();
-                                board.draw();
-                            } else {
-                                user_cards.hideCards(4);
-                                up.hideCards();
-                                board.flipUser();
-                                board.draw();
-                                JOptionPane
-                                        .showMessageDialog(
-                                                null, "Click 'OK' when both players are ready!"
-                                        );
-                                board.flipUser();
-                                election.printGameState();
-
-                                election.getPlayer2().draw(election.getPres());
-                                election.getPlayer2().drawPols(election.getPol());
-
-                                election.getPlayer1().draw(election.getPres());
-                                election.getPlayer1().drawPols(election.getPol());
-
-                                board.flipCPU();
-                                board.draw();
-
-                                election.playRound(
-                                        election.getPlayer1Card(), election.getPinned1(),
-                                        election.getPlayer2Card(), election.getPinned2()
-                                );
-                                election.flipPlayer();
-                            }
-                        }
-
-                        if (!mode || election.getTurn()) {
-                            setLabel(status);
-                            status.repaint();
-                            JOptionPane.showMessageDialog(null, election.getMessage());
-                            if(election.getAchievement()!=null) {
-                                JOptionPane.showMessageDialog(null, election.getAchievement());
-                            }
-
-                            if (election.checkWinner() == 1) {
-                                JOptionPane.showMessageDialog(
-                                        null,
-                                        election.getPlayer1().getName() + " has won!!! "
-                                                + election.finalScore(true)
-                                );
-                                if (mode) {
-                                    JOptionPane.showMessageDialog(
-                                            null, "Please pass the computer to Player 1."
-                                    );
-                                }
-                                election.reset(deckSet, 0, true, 0, true, 0, true);
-                                user_cards.reset();
-                                up.reset();
-                                board.reset();
-                                setLabel(status);
-                                status.repaint();
-                            } else if (election.checkWinner() == 2) {
-                                JOptionPane.showMessageDialog(
-                                        null,
-                                        election.getPlayer2().getName() + " has won!!! "
-                                                + election.finalScore(false)
-                                );
-                                if (mode) {
-                                    JOptionPane.showMessageDialog(
-                                            null, "Please pass the computer to Player 1."
-                                    );
-                                }
-                                election.reset(deckSet, 0, true, 0, true, 0, true);
-                                user_cards.reset();
-                                up.reset();
-                                board.reset();
-                                setLabel(status);
-                                status.repaint();
-                            } else {
-                                election.player1PlayCard(null);
-                                election.player2PlayCard(null);
-                                board.flipCPU();
-                                board.draw();
-                                if (mode) {
-                                    JOptionPane.showMessageDialog(
-                                            null, "Please pass the computer to Player 1."
-                                    );
-                                }
-                                user_cards.paintCards();
-                                up.paintCards();
-                            }
-                        }
-                    	}
-        		}
-        	}
         });
 
 
@@ -478,7 +353,8 @@ public class RunElectionGameCombined implements Runnable {
                 JOptionPane.showMessageDialog(
                         null, "You have resigned. " + election.finalScore(false)
                 );
-                election.reset(deckSet, 0, true, 0, true, 0, true);
+                cumulativeGames++;
+                election.reset(deckSet, 0, true, 0, true, 0, true, 5);
                 setLabel(status);
                 status.repaint();
                 user_cards.reset();
@@ -586,6 +462,180 @@ public class RunElectionGameCombined implements Runnable {
                 );
             }
         });
+        
+        final JButton stats = new JButton("Stats/Settings");
+        stats.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	long endTime   = System.nanoTime();
+            	long totalTime = endTime - startTime;
+            	long totalTimeInSeconds = totalTime/1000000000;
+            	long totalTimeMinutes = totalTimeInSeconds/60;
+            	long totalTimeSeconds = totalTimeInSeconds%60;
+            	
+            	int winPct;
+            	if (cumulativeGames==0) {
+            		winPct = 0;
+            	} else {
+            		winPct = (int)(Math.round(((float)(cumulativeWins)*100.0)/cumulativeGames));
+            	}
+                
+
+                Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice"};
+                int settingToChange = JOptionPane.showOptionDialog(
+                        null, "Stats for " + election.getPlayer1().getName() + " this session: \n" +
+                                "Total play time: " + totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" +
+                                "Total wins: " + cumulativeWins + " wins out of " + cumulativeGames + " (" + 
+                                winPct + "%). \n \n" +
+                                "Select one of the settings below to change (will reset game):",
+                        "Stats/Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+                        settingOptions, -1
+                );
+                
+                // Change Name
+                if (settingToChange==0) {
+                    String playername = election.getPlayer1().getName();
+                    
+                    playername = JOptionPane.showInputDialog(
+                    		null, "What would you like to change your name to?"
+                    );
+                    election.namePlayer(playername);
+                    setLabel(status);
+                    status.repaint();
+                }
+                
+                // Change Difficulty
+                if (settingToChange==1) {
+                	Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+                    int diff = JOptionPane.showOptionDialog(
+                            null, "What would you like to change the AI difficulty to?",
+                            "Select Difficulty", JOptionPane.DEFAULT_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            diffs, election.aiDifficulty
+                    );
+                    String difficulty = "Medium";
+                    switch (diff) {
+                        case 0:
+                            difficulty = "Easy";
+                            break;
+                        case 1:
+                            difficulty = "Medium";
+                            break;
+                        case 2:
+                            difficulty = "Hard";
+                            break;
+                        case 3:
+                            difficulty = "Impossible";
+                            break;
+                        default:
+                        	difficulty = election.aiDifficulty;
+                            break;
+                    }
+                    election.setAIDifficulty(difficulty);
+                }
+                
+                // Change Deck
+                if (settingToChange==2) {
+                	Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom"};
+                    int deck = JOptionPane.showOptionDialog(
+                            null, "What would you like to change the deck to?",
+                            "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            cardDecks, election.deckPreset
+                    );
+
+                    if (deck == 0) {
+                        election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
+                        deckSet = "presidentsonly";
+                    }
+                    if (deck == 1) {
+                        election.reset("standard", 0, true, 0, true, 0, true, 5);
+                        deckSet = "standard";
+                    }
+                    if (deck == 2) {
+                        election.reset("expanded", 0, true, 0, true, 0, true, 5);
+                        deckSet = "expanded";
+                    }
+                    if (deck == 3) {
+						election.reset("memes", 0, true, 0, true, 0, true, 5);
+						deckSet = "memes";
+					}
+					if (deck == 4) {
+						election.reset("generational", 0, true, 0, true, 0, true, 5);
+						deckSet = "generational";
+					} 
+					if (deck == 5) {
+		            	// Find a way to screen this so it doesn't get broken. Also find ways to be more creative with this, maybe
+		            	// add generational cards, sort all presidents/nonpresidents and get the top 50 from there, etc.
+		            	try {
+		            	int presCount = Integer.parseInt(JOptionPane.showInputDialog(
+		                        null, "How many actual presidents would you like to include?"
+		                ));
+		            	Object[] yesno = { "Yes", "No" };
+		            	int presSort = JOptionPane.showOptionDialog(
+		                        null, "Would you like the best presidents to be in the deck first?",
+		                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+		                        null,
+		                        yesno, 0
+		                );
+		            	boolean presSortBool = false;
+		            	if (presSort==0) {
+		            		presSortBool = true;
+		            	}
+		            	int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(
+		                        null, "How many non-presidents would you like to include?"
+		                ));
+		            	int nonPresSort = JOptionPane.showOptionDialog(
+		                        null, "Would you like the best non-presidents to be in the deck first?",
+		                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+		                        null,
+		                        yesno, 0
+		                );
+		            	boolean nonPresSortBool = false;
+		            	if (nonPresSort==0) {
+		            		nonPresSortBool = true;
+		            	}
+		            	int memeCount = Integer.parseInt(JOptionPane.showInputDialog(
+		                        null, "How many meme cards would you like to include?"
+		                ));
+		            	int memeSort = JOptionPane.showOptionDialog(
+		                        null, "Would you like the best meme cards to be in the deck first?",
+		                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+		                        null,
+		                        yesno, 0
+		                );
+		            	boolean memeSortBool = false;
+		            	if (memeSort==0) {
+		            		memeSortBool = true;
+		            	}
+		            	election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount, memeSortBool, 5);
+		            	deckSet = "custom";
+		            	} catch (Exception ex){
+		            		JOptionPane.showMessageDialog(
+		                            board,
+		                            "Error: One of your inputs was invalid. Standard deck will be used.",
+		                            "Error",
+		                            JOptionPane.ERROR_MESSAGE
+		                    );
+		            		election.reset("standard", 0, true, 0, true, 0, true, 5);
+		                    deckSet = "standard";
+		            	}
+		            }
+				}
+
+				if (settingToChange >= 1) {
+					cumulativeGames++;
+					election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+					setLabel(status);
+					status.repaint();
+					user_cards.reset();
+					up.reset();
+					board.reset();
+				}
+
+			}
+        });
+        
 
         // Swaps between policies and presidents in view
         final JButton swap = new JButton("Policies ->");
@@ -614,9 +664,10 @@ public class RunElectionGameCombined implements Runnable {
         });
 
         control_panel.add(play);
-        control_panel.add(undo);
-        control_panel.add(reset);
+        //control_panel.add(undo);
         control_panel.add(help);
+        control_panel.add(stats);
+        control_panel.add(reset);
         control_panel.add(swap);
         control_panel.setPreferredSize(new Dimension(175, 200));
         control_panel.setLayout(new GridLayout(5, 1));
@@ -653,7 +704,7 @@ public class RunElectionGameCombined implements Runnable {
             election.namePlayer(names[ran]);
             election.namePlayer2("CPU");
             election.setAIDifficulty("Hard");
-            election.reset("generational", 0, true, 0, true, 0, true);
+            election.reset("generational", 0, true, 0, true, 0, true, 5);
             setLabel(status);
         } else {
             // Name Player 1
@@ -710,7 +761,7 @@ public class RunElectionGameCombined implements Runnable {
                 election.setAIDifficulty(difficulty);
             }
 
-            Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational" };
+            Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom" };
             int deck = JOptionPane.showOptionDialog(
                     null, "Choose the game deck:",
                     "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
@@ -719,32 +770,82 @@ public class RunElectionGameCombined implements Runnable {
             );
 
             if (deck == 0) {
-                election.reset("presidentsonly", 0, true, 0, true, 0, true);
+                election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
                 deckSet = "presidentsonly";
             }
             if (deck == 1) {
-                election.reset("standard", 0, true, 0, true, 0, true);
+                election.reset("standard", 0, true, 0, true, 0, true, 5);
                 deckSet = "standard";
             }
             if (deck == 2) {
-                election.reset("expanded", 0, true, 0, true, 0, true);
+                election.reset("expanded", 0, true, 0, true, 0, true, 5);
                 deckSet = "expanded";
             }
             if (deck == 3) {
-                election.reset("memes", 0, true, 0, true, 0, true);
+                election.reset("memes", 0, true, 0, true, 0, true, 5);
                 deckSet = "memes";
             }
             if (deck == 4) {
-                election.reset("generational", 0, true, 0, true, 0, true);
+                election.reset("generational", 0, true, 0, true, 0, true, 5);
                 deckSet = "generational";
             }
-
-            // Final message to start the game
-            JOptionPane.showMessageDialog(
-                    null,
-                    "To begin, please set your screen to fullscreen, and click the \"Help\" "
-                            + "\nbutton for the instructions if this is your first time playing!"
-            );
+            if (deck == 5) {
+            	// Find a way to screen this so it doesn't get broken. Also find ways to be more creative with this, maybe
+            	// add generational cards, sort all presidents/nonpresidents and get the top 50 from there, etc.
+            	try {
+            	int presCount = Integer.parseInt(JOptionPane.showInputDialog(
+                        null, "How many actual presidents would you like to include?"
+                ));
+            	Object[] yesno = { "Yes", "No" };
+            	int presSort = JOptionPane.showOptionDialog(
+                        null, "Would you like the best presidents to be in the deck first?",
+                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        yesno, 0
+                );
+            	boolean presSortBool = false;
+            	if (presSort==0) {
+            		presSortBool = true;
+            	}
+            	int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(
+                        null, "How many non-presidents would you like to include?"
+                ));
+            	int nonPresSort = JOptionPane.showOptionDialog(
+                        null, "Would you like the best non-presidents to be in the deck first?",
+                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        yesno, 0
+                );
+            	boolean nonPresSortBool = false;
+            	if (nonPresSort==0) {
+            		nonPresSortBool = true;
+            	}
+            	int memeCount = Integer.parseInt(JOptionPane.showInputDialog(
+                        null, "How many meme cards would you like to include?"
+                ));
+            	int memeSort = JOptionPane.showOptionDialog(
+                        null, "Would you like the best meme cards to be in the deck first?",
+                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        yesno, 0
+                );
+            	boolean memeSortBool = false;
+            	if (memeSort==0) {
+            		memeSortBool = true;
+            	}
+            	election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount, memeSortBool, 5);
+            	deckSet = "custom";
+            	} catch (Exception ex){
+            		JOptionPane.showMessageDialog(
+                            board,
+                            "Error: One of your inputs was invalid. Standard deck will be used.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+            		election.reset("standard", 0, true, 0, true, 0, true, 5);
+                    deckSet = "standard";
+            	}
+            }
         }
         user_cards.paintCards();
         starting = false;

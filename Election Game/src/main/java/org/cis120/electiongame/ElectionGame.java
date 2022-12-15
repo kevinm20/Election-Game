@@ -40,6 +40,7 @@ public class ElectionGame {
     
     public String deckPreset = "standard";
     public String achievement = null;
+    public String aiDifficulty = "";
 
     public void flipPlayer() {
         if (turn) {
@@ -134,11 +135,11 @@ public class ElectionGame {
         player2.reset();
       
         if(!statTesting) {
-        player1.drawInit(presidentDeck, policyDeck);
+        player1.drawInit(presidentDeck, policyDeck, 5);
         } else {
-        	player1.drawInit(singlePresidentDeck, policyDeck);
+        	player1.drawInit(singlePresidentDeck, policyDeck, 5);
         }
-        player2.drawInit(presidentDeck, policyDeck);
+        player2.drawInit(presidentDeck, policyDeck, 5);
 
         current = (Election) electionDeck.draw();
 
@@ -149,7 +150,7 @@ public class ElectionGame {
     }
     
     public void reset(String preset, int pres, boolean presSort, int nonpres, 
-            boolean nonPresSort, int memeCards, boolean memesSort) {
+            boolean nonPresSort, int memeCards, boolean memesSort, int presCount) {
         player1play = null;
         player2play = null;
 
@@ -184,11 +185,11 @@ public class ElectionGame {
         player2.reset();
 
         if(!statTesting) {
-            player1.drawInit(presidentDeck, policyDeck);
+            player1.drawInit(presidentDeck, policyDeck, presCount);
             } else {
-            	player1.drawInit(singlePresidentDeck, policyDeck);
+            	player1.drawInit(singlePresidentDeck, policyDeck, presCount);
             }
-        player2.drawInit(presidentDeck, policyDeck);
+        player2.drawInit(presidentDeck, policyDeck, presCount);
 
         current = (Election) electionDeck.draw();
         
@@ -224,8 +225,8 @@ public class ElectionGame {
         player1.reset();
         player2.reset();
 
-        player1.drawInit(presidentDeck, policyDeck);
-        player2.drawInit(presidentDeck, policyDeck);
+        player1.drawInit(presidentDeck, policyDeck, 5);
+        player2.drawInit(presidentDeck, policyDeck, 5);
 
         current = (Election) electionDeck.draw();
 
@@ -244,6 +245,7 @@ public class ElectionGame {
         if (s==null) {
             return;
         }
+        aiDifficulty = s;
         switch (s) {
             case "Impossible":
                 player2.setDifficulty(1.0);
@@ -295,7 +297,7 @@ public class ElectionGame {
      * Constructor sets up game state.
      */
     public ElectionGame() {
-        reset(deckPreset, 0, true, 0, true, 0, true);
+        reset(deckPreset, 0, true, 0, true, 0, true, 5);
     }
 
     // These 4 methods are about the card that the player/AI is "about" to play

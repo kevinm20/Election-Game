@@ -65,6 +65,10 @@ public class President extends Card {
     int getNam() {
         return nameRec;
     }
+    
+    double getWeightedAve() {
+    	return (double)(.15*experience)+(double)(.35*influence)+(double)(.25*policy)+(double)(.25*nameRec);
+    }
 
     // This is used for the AI
     int getBestAttributes() {

@@ -60,8 +60,11 @@ public class Player {
     }
 
     // Draw the initial cards for the player
-    public void drawInit(Deck d, Deck poldeck) {
-        for (int i = 0; i < 5; i++) {
+    public void drawInit(Deck d, Deck poldeck, int presCount) {
+    	if (presCount>6) {
+    		presCount  = 6;
+    	}
+        for (int i = 0; i < presCount; i++) {
             Card c = d.draw();
             hand.add((President) c);
         }
