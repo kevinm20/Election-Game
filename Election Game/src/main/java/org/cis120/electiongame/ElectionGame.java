@@ -453,38 +453,45 @@ public class ElectionGame {
         
         p1score += current.getScore(c1, p1.get(0), p1.get(1));
         p2score += current.getScore(c2, p2.get(0), p2.get(1));
-        rounds++;        
         
-        boolean winner = current.getWinner(c1, p1.get(0), p1.get(1), c2, p2.get(0), p2.get(1));
-        lastwinner = winner;
-        if (winner) {
-            message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName()
-                    + "'s "
-                    + c2.toString() + "! \n" + player1.getName() + " played the policies "
-                    + p1.get(0).toString() + " and " + p1.get(1) + " while " + player2.getName()
-                    + " played " + p2.get(0) + " and " + p2.get(1) + "." + "\nRound score: "
-                    + current.getScore(c1, p1.get(0), p1.get(1)) + " to "
-                    + current.getScore(c2, p2.get(0), p2.get(1)) + "\nKey Attributes were: "
-                    + current.getAttrOne().toUpperCase()
-                    + ", " + current.getAttrTwo().toUpperCase() + "." + "\nKey Issues were: "
-                    + current.getMain() + " (Main), " + current.getSide1() + ", and "
-                    + current.getSide2() + ".";
-            player1.winRound();
-        } else {
-            message = player2.getName() + "'s " + c2.toString() + " beat " + player1.getName()
-                    + "'s "
-                    + c1.toString() + "! \n" + player2.getName() + " played the policies "
-                    + p2.get(0).toString() + " and " + p2.get(1) + " while " + player1.getName()
-                    + " played " + p1.get(0) + " and " + p1.get(1) + "." + "\nRound score: "
-                    + current.getScore(c2, p2.get(0), p2.get(1)) + " to "
-                    + current.getScore(c1, p1.get(0), p1.get(1)) + "\nKey Attributes were: "
-                    + current.getAttrOne().toUpperCase()
-                    + ", " + current.getAttrTwo().toUpperCase() + "." + "\nKey Issues were: "
-                    + current.getMain() + " (Main), " + current.getSide1() + ", and "
-                    + current.getSide2() + ".";
+		double p1pct = (double)(Math.round(((float) (current.getScore(c1, p1.get(0), p1.get(1))) * 100.0)
+				/ (current.getScore(c2, p2.get(0), p2.get(1)) + current.getScore(c1, p1.get(0), p1.get(1)))*100))/100.0;
+		double p2pct = 100 - p1pct;
+		rounds++;     
+        
+		boolean winner = current.getWinner(c1, p1.get(0), p1.get(1), c2, p2.get(0), p2.get(1));
+		lastwinner = winner;
+		if (winner) {
+			message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName() + "'s " + c2.toString()
+					+ "! \n" + player1.getName() + " played the policies " + p1.get(0).toString() + " and " + p1.get(1)
+					+ " while " + player2.getName() + " played " + p2.get(0) + " and " + p2.get(1) + "."
+					+ "\nRound score: " + current.getScore(c1, p1.get(0), p1.get(1)) + " to "
+					+ current.getScore(c2, p2.get(0), p2.get(1)) + "\nKey Attributes were: "
+					+ current.getAttrOne().toUpperCase() + ", " + current.getAttrTwo().toUpperCase() + "."
+					+ "\nKey Issues were: " + current.getMain() + " (Main), " + current.getSide1() + ", and "
+					+ current.getSide2() + ".\n" + "Final vote count: "
+					+ c1.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
+					+ " " + p1pct + "% to "
+					+ c2.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
+					+ " " + p2pct + "%.";
+			player1.winRound();
+		} else {
+			message = player2.getName() + "'s " + c2.toString() + " beat " + player1.getName() + "'s " + c1.toString()
+					+ "! \n" + player2.getName() + " played the policies " + p2.get(0).toString() + " and " + p2.get(1)
+					+ " while " + player1.getName() + " played " + p1.get(0) + " and " + p1.get(1) + "."
+					+ "\nRound score: " + current.getScore(c2, p2.get(0), p2.get(1)) + " to "
+					+ current.getScore(c1, p1.get(0), p1.get(1)) + "\nKey Attributes were: "
+					+ current.getAttrOne().toUpperCase() + ", " + current.getAttrTwo().toUpperCase() + "."
+					+ "\nKey Issues were: " + current.getMain() + " (Main), " + current.getSide1() + ", and "
+					+ current.getSide2() + ".\n" + "Final vote count: "
+					+ c1.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
+					+ " " + p1pct + "% to "
+					+ c2.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
+					+ " " + p2pct + "%.";
+			;
 
-            player2.winRound();
-        }
+			player2.winRound();
+		}
         
         if (winner&&c1.getName().equals("George W. Bush")&&c2.getName().equals("Al Gore")) {
             achievement = "ACHIEVEMENT: Win Florida (Defeat Al Gore with George W. Bush)";
