@@ -8,7 +8,15 @@ package org.cis120.electiongame;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 /**
@@ -26,7 +34,15 @@ public class RunElectionGameCombined implements Runnable {
 
     // Change this if the screen is wacky
     int cardSize = 225;
-
+    
+    public static InputStream loadImage(String path) {
+    	InputStream input = RunElectionGameCombined.class.getResourceAsStream(path);
+    	if (input==null) {
+    		input = RunElectionGameCombined.class.getResourceAsStream("/" + path);
+    	}
+    	return input;
+    }
+    
     public void run() {
 
         // Top-level frame in which game components live
@@ -58,8 +74,41 @@ public class RunElectionGameCombined implements Runnable {
         frame.add(ai_cards, BorderLayout.NORTH);
         
         for (int i = 0; i < 5; i++) {
+        	/*
+        	try {
+        		ImageIcon iid = new ImageIcon(this.getClass().getResource("/aicard.png"));
+        	} 
+        	catch (NullPointerException e) {
+        		
+        		StringWriter sw = new StringWriter();
+        		PrintWriter pw = new PrintWriter(sw);
+        		e.printStackTrace(pw);
+        		
+        		JOptionPane.showMessageDialog(
+                        null, sw.toString(), "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+        	}
+        	*/
+        	
+        	/*
+        	Image iid;
+			try {
+				iid = ImageIO.read(loadImage("/aicard.png"));
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				iid = null;
+				e1.printStackTrace();
+			}
+        	ImageIcon imic = new ImageIcon(iid);
+        	*/
+        	
+        	//InputStream inputStream = this.getClass().getResourceAsStream("/aicard.png");
+        	//ImageIcon iid = new ImageIcon(ImageIO.read(inputStream));
+
+        	
             ImageIcon img = new ImageIcon(
-                    new ImageIcon("files/aicard.png").getImage()
+                    new ImageIcon("aicard.png").getImage()
                             .getScaledInstance(60, 79, Image.SCALE_SMOOTH)
             );
             final JLabel aicardlabel = new JLabel(img);
