@@ -100,7 +100,9 @@ public class Policy extends Card {
             case ("Anti-Central Bank"):
                 return "Central Bank vs. Anti-Central Bank";
             case ("Nationalism"):
-                return "Nationalism";
+                return "Nationalism vs. Class Unity";
+            case ("Class Unity"):
+                return "Nationalism vs. Class Unity";
             case ("Establishment"):
                 return "Establishment vs. Anti-Establishment";
             case ("Anti-Establishment"):

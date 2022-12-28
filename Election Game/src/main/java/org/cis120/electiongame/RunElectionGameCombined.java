@@ -677,8 +677,6 @@ public class RunElectionGameCombined implements Runnable {
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
-        com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame,true);
-        //com.apple.eawt.Application.getApplication().requestToggleFullScreen(frame);
         user_cards.hideCards(5);
 
         /*

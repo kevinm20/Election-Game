@@ -1159,6 +1159,24 @@ public class CardData {
     static President henryTazewell = new President(
             "Henry Tazewell", "South", 3, 2, 1, 1, "Libertarian", "Egalitarianism"
     );
+    static President jamesHillhouse = new President(
+            "James Hillhouse", "Northeast", 6, 1, 1, 1, "Conservative", "States' Rights"
+    );
+    static President williamRichardsonDavie = new President(
+            "William Richardson Davie", "South", 2, 1, 1, 2, "Conservative", "Active Executive"
+    );
+    static President jamesLloyd = new President(
+            "James Lloyd", "Northeast", 4, 3, 1, 1, "Conservative", "Free Trade"
+    );
+    static President peterMuhlenberg = new President(
+            "Peter Muhlenberg", "Northeast", 3, 2, 1, 2, "Libertarian", "Limited Government"
+    );
+    static President johnMilledge = new President(
+            "John Milledge", "South", 3, 3, 2, 1, "Libertarian", "Anti-Establishment"
+    );
+    static President nathanWilliams = new President(
+            "Nathan Williams", "Northeast", 2, 1, 1, 1, "Libertarian", "Civil Rights"
+    );
     static President thomasMifflin = new President(
             "Thomas Mifflin", "Northeast", 6, 2, 2, 3, "Conservative", "Active Executive"
     );
@@ -1176,6 +1194,24 @@ public class CardData {
     );
     static President benjaminFranklinBache = new President(
             "Benjamin Franklin Bache", "Northeast", 1, 4, 1, 4, "Libertarian", "Anti-Establishment"
+    );
+    static President josephHemphill = new President(
+            "Joseph Hemphill", "Northeast", 4, 2, 1, 1, "Populist", "Civil Rights"
+    );
+    static President aaronOgden = new President(
+            "Aaron Ogden", "Northeast", 3, 2, 1, 5, "Conservative", "Deregulation"
+    );
+    static President williamShepard = new President(
+            "William Shepard", "Northeast", 2, 3, 1, 2, "Conservative", "Law and Order"
+    );
+    static President johnChandler = new President(
+            "John Chandler", "Northeast", 3, 1, 3, 1, "Libertarian", "Tough Foreign Policy"
+    );
+    static President philipVanCortland = new President(
+            "Philip Van Cortland", "Northeast", 3, 3, 1, 1, "Libertarian", "Limited Government"
+    );
+    static President edwardTiffin = new President(
+            "Edward Tiffin", "Midwest", 4, 3, 6, 1, "Libertarian", "Active Executive"
     );
 
     
@@ -1227,7 +1263,7 @@ public class CardData {
     );
     static Election e1980 = new Election(
             1980, "nam", "infl", "South", "Tax Cuts vs. Social Programs",
-            "Tough Foreign Policy vs. Isolationism", "Nationalism"
+            "Tough Foreign Policy vs. Isolationism", "Nationalism vs. Class Unity"
     );
     static Election e1976 = new Election(
             1976, "infl", "pol", "West", "Regulation vs. Deregulation",
@@ -1358,10 +1394,10 @@ public class CardData {
     );
     static Election e1852 = new Election(
             1852, "infl", "exp", "Northeast", "Civil Rights vs. Racism",
-            "States' Rights vs. Centralization", "Nationalism"
+            "States' Rights vs. Centralization", "Nationalism vs. Class Unity"
     );
     static Election e1848 = new Election(
-            1848, "infl", "nam", "Midwest", "Nationalism", "Tough Foreign Policy vs. Isolationism",
+            1848, "infl", "nam", "Midwest", "Nationalism vs. Class Unity", "Tough Foreign Policy vs. Isolationism",
             "Gold Standard vs. Inflation"
     );
     static Election e1844 = new Election(
@@ -1441,8 +1477,8 @@ public class CardData {
     static Policy isolationism3 = new Policy(
             "Isolationism", "Progressive", "Libertarian", "Populist"
     );
-    static Policy taxcuts1 = new Policy("Tax Cuts", "Conservative", "Libertarian", "Populist");
-    static Policy taxcuts2 = new Policy("Tax Cuts", "Conservative", "Libertarian", "Populist");
+    static Policy taxcuts1 = new Policy("Tax Cuts", "Conservative", "Libertarian");
+    static Policy taxcuts2 = new Policy("Tax Cuts", "Conservative", "Libertarian");
     static Policy socialprogram1 = new Policy("Social Programs", "Progressive", "Populist");
     static Policy socialprogram2 = new Policy("Social Programs", "Progressive", "Populist");
     static Policy tradmorality1 = new Policy(
@@ -1479,7 +1515,7 @@ public class CardData {
     static Policy regulation2 = new Policy("Regulation", "Progressive", "Populist");
     static Policy deregulation1 = new Policy("Deregulation", "Conservative", "Libertarian");
     static Policy deregulation2 = new Policy("Deregulation", "Conservative", "Libertarian");
-    static Policy socialhierarchy = new Policy("Social Hierarchy", "Conservative");
+    static Policy socialhierarchy = new Policy("Social Hierarchy", "Conservative", "Libertarian");
     static Policy egalitarianism = new Policy(
             "Egalitarianism", "Progressive", "Populist", "Libertarian"
     );
@@ -1488,8 +1524,8 @@ public class CardData {
     static Policy laissez1 = new Policy("Laissez-Faire", "Libertarian", "Populist");
     static Policy laissez2 = new Policy("Laissez-Faire", "Libertarian", "Populist");
     static Policy openb = new Policy("Open Borders", "Progressive", "Libertarian");
-    static Policy closedb = new Policy("Closed Borders", "Conservative", "Populist");
-    static Policy activeexec = new Policy("Active Executive", "Progressive");
+    static Policy closedb = new Policy("Closed Borders", "Conservative", "Populist", "Libertarian");
+    static Policy activeexec = new Policy("Active Executive", "Progressive", "Conservative", "Populist");
     static Policy limitedgov = new Policy(
             "Limited Government", "Conservative", "Libertarian", "Populist"
     );
@@ -1498,11 +1534,11 @@ public class CardData {
             "Constructionism", "Conservative", "Libertarian", "Populist"
     );
     static Policy laworder = new Policy("Law and Order", "Conservative", "Populist");
-    static Policy pfreedom = new Policy("Personal Freedom", "Progressive", "Libertarian");
+    static Policy pfreedom = new Policy("Personal Freedom", "Progressive", "Libertarian", "Populist");
     static Policy bank = new Policy("Central Bank", "Progressive", "Conservative");
     static Policy antibank = new Policy("Anti-Central Bank", "Libertarian", "Populist");
     static Policy nationalism1 = new Policy("Nationalism", "Conservative", "Libertarian");
-    static Policy nationalism2 = new Policy("Nationalism", "Conservative", "Libertarian");
+    static Policy classunity = new Policy("Class Unity", "Progressive", "Populist");
     static Policy establishment = new Policy("Establishment", "Conservative", "Progressive");
     static Policy antiestablishment = new Policy(
             "Anti-Establishment", "Progressive", "Libertarian", "Populist"
@@ -1535,7 +1571,7 @@ public class CardData {
     static String consti = "Constructionism vs. Implied Powers";
     static String law = "Law and Order vs. Personal Freedom";
     static String banking = "Central Bank vs. Anti-Central Bank";
-    static String nation = "Nationalism";
+    static String nation = "Nationalism vs. Class Unity";
     static String estab = "Establishment vs. Anti-Establishment";
 
     public CardData() {
@@ -1626,7 +1662,7 @@ public class CardData {
         policies.add(bank);
         policies.add(antibank);
         policies.add(nationalism1);
-        policies.add(nationalism2);
+        policies.add(classunity);
         policies.add(establishment);
         policies.add(antiestablishment);
         if (memes) {
@@ -1949,6 +1985,18 @@ public class CardData {
         nonpresidents.add(benjaminHawkins);
         nonpresidents.add(williamCCClaiborne);
         nonpresidents.add(henryTazewell);
+        nonpresidents.add(jamesHillhouse);
+        nonpresidents.add(williamRichardsonDavie);
+        nonpresidents.add(jamesLloyd);
+        nonpresidents.add(peterMuhlenberg);
+        nonpresidents.add(johnMilledge);
+        nonpresidents.add(nathanWilliams);
+        nonpresidents.add(josephHemphill);
+        nonpresidents.add(aaronOgden);
+        nonpresidents.add(williamShepard);
+        nonpresidents.add(johnChandler);
+        nonpresidents.add(philipVanCortland);
+        nonpresidents.add(edwardTiffin);
         
         
         meme.add(millFill);
