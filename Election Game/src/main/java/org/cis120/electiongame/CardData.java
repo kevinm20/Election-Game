@@ -991,7 +991,6 @@ public class CardData {
     static President rickSantorum = new President(
             "Rick Santorum", "Midwest", 5, 2, 3, 3, "Conservative", "Traditional Morality"
     );
-    
     /** no parentheses? :(
     static President charliecristrep = new President(
             "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Traditional Morality"
