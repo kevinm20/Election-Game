@@ -1212,6 +1212,24 @@ public class CardData {
     static President edwardTiffin = new President(
             "Edward Tiffin", "Midwest", 4, 3, 6, 1, "Libertarian", "Active Executive"
     );
+    static President theodoreDwight = new President(
+            "Theodore Dwight", "Northeast", 2, 2, 1, 2, "Conservative", "Isolationism"
+    );
+    static President jamesRoss = new President(
+            "James Ross", "Northeast", 3, 1, 1, 2, "Conservative", "Establishment"
+    );
+    static President samuelWhite = new President(
+            "Samuel White", "Northeast", 3, 2, 1, 1, "Conservative", "Isolationism"
+    );
+    static President meriwetherLewis = new President(
+            "Meriwether Lewis", "South", 2, 4, 1, 7, "Libertarian", "Nationalism"
+    );
+    static President davidStone = new President(
+            "David Stone", "South", 4, 3, 3, 1, "Libertarian", "Social Liberalism"
+    );
+    static President williamWyattBibb = new President(
+            "William Wyatt Bibb", "South", 5, 2, 2, 2, "Libertarian", "Egalitarianism"
+    );
 
     
     
@@ -1996,6 +2014,12 @@ public class CardData {
         nonpresidents.add(johnChandler);
         nonpresidents.add(philipVanCortland);
         nonpresidents.add(edwardTiffin);
+        nonpresidents.add(theodoreDwight);
+        nonpresidents.add(jamesRoss);
+        nonpresidents.add(samuelWhite);
+        nonpresidents.add(meriwetherLewis);
+        nonpresidents.add(davidStone);
+        nonpresidents.add(williamWyattBibb);
         
         
         meme.add(millFill);
