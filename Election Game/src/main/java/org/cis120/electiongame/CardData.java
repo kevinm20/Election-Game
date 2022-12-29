@@ -1230,6 +1230,42 @@ public class CardData {
     static President williamWyattBibb = new President(
             "William Wyatt Bibb", "South", 5, 2, 2, 2, "Libertarian", "Egalitarianism"
     );
+    static President johnWitherspoon = new President(
+            "John Witherspoon", "Northeast", 1, 2, 3, 3, "Conservative", "Centralization"
+    );
+    static President edwardRutledge = new President(
+            "Edward Rutledge", "South", 2, 2, 2, 3, "Conservative", "Nationalism"
+    );
+    static President johnFenno = new President(
+            "johnFenno", "Northeast", 1, 3, 1, 3, "Conservative", "Social Hierarchy"
+    );
+    static President georgeClintonJr = new President(
+            "George Clinton Jr.", "Northeast", 2, 1, 1, 5, "Libertarian", "States' Rights"
+    );
+    static President thomasSumter = new President(
+            "Thomas Sumter", "South", 5, 3, 1, 2, "Libertarian", "Nationalism"
+    );
+    static President josephAnderson = new President(
+            "Joseph Anderson", "South", 7, 1, 3, 1, "Libertarian", "Open Borders"
+    );
+    static President stephenVanRensselaer = new President(
+            "Stephen Van Rensselaer", "Northeast", 3, 1, 3, 4, "Conservative", "Egalitarianism"
+    );
+    static President robertGoodloeHarper = new President(
+            "Robert Goodloe Harper", "Northeast", 3, 2, 2, 3, "Conservative", "Tough Foreign Policy"
+    );
+    static President danielOfStThomas = new President(
+            "Daniel of St. T. Jenifer", "Northeast", 5, 2, 3, 1, "Conservative", "Centralization"
+    );
+    static President wadeHamptonI = new President(
+            "Wade Hampton I", "South", 2, 1, 1, 3, "Libertarian", "Racism"
+    );
+    static President williamFindley = new President(
+            "William Findley", "Northeast", 8, 3, 1, 2, "Libertarian", "States' Rights"
+    );
+    static President georgeLogan = new President(
+            "George Logan", "Northeast", 2, 2, 1, 3, "Libertarian", "Egalitarianism"
+    );
 
     
     
@@ -2020,6 +2056,19 @@ public class CardData {
         nonpresidents.add(meriwetherLewis);
         nonpresidents.add(davidStone);
         nonpresidents.add(williamWyattBibb);
+        nonpresidents.add(johnWitherspoon);
+        nonpresidents.add(edwardRutledge);
+        nonpresidents.add(johnFenno);
+        nonpresidents.add(georgeClintonJr);
+        nonpresidents.add(thomasSumter);
+        nonpresidents.add(josephAnderson);
+        nonpresidents.add(stephenVanRensselaer);
+        nonpresidents.add(robertGoodloeHarper);
+        nonpresidents.add(danielOfStThomas);
+        nonpresidents.add(wadeHamptonI);
+        nonpresidents.add(williamFindley);
+        nonpresidents.add(georgeLogan);
+        
         
         
         meme.add(millFill);
