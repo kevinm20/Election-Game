@@ -1266,6 +1266,60 @@ public class CardData {
     static President georgeLogan = new President(
             "George Logan", "Northeast", 2, 2, 1, 3, "Libertarian", "Egalitarianism"
     );
+    static President alexanderMartin = new President(
+            "Alexander Martin", "Northeast", 6, 3, 1, 3, "Conservative", "Closed Borders"
+    );
+    static President georgeMathews = new President(
+            "George Mathews", "South", 2, 1, 1, 2, "Conservative", "Establishment"
+    );
+    static President georgeWythe = new President(
+            "George Wythe", "South", 2, 4, 3, 1, "Conservative", "Centralization"
+    );
+    static President leviLincolnSr = new President(
+            "Levi Lincoln Sr.", "Northeast", 4, 2, 3, 2, "Libertarian", "Establishment"
+    );
+    static President josephDesha = new President(
+            "Joseph Desha", "South", 4, 4, 1, 3, "Populist", "Social Programs"
+    );
+    static President samuelDexter = new President(
+            "Samuel Dexter", "Northeast", 3, 2, 1, 1, "Libertarian", "Traditional Morality"
+    );
+    static President williamSamuelJohnson = new President(
+            "William Samuel Johnson", "Northeast", 2, 4, 3, 1, "Conservative", "Centralization"
+    );
+    static President stephenHigginson = new President(
+            "Stephen Higginson", "South", 1, 2, 1, 1, "Conservative", "Isolationism"
+    );
+    static President jaredIngersoll = new President(
+            "Jared Ingersoll", "Northeast", 3, 1, 6, 2, "Conservative", "Implied Powers"
+    );
+    static President samuelSmith = new President(
+            "Samuel Smith", "Northeast", 7, 5, 1, 2, "Libertarian", "Tariffs"
+    );
+    static President jamesTurner = new President(
+            "James Turner", "South", 4, 1, 4, 1, "Libertarian", "Civil Rights"
+    );
+    static President lafayette = new President(
+            "Lafayette", "Northeast", 1, 7, 4, 9, "Libertarian", "Limited Government"
+    );
+    static President harrisonGrayOtis = new President(
+            "Harrison Gray Otis", "Northeast", 4, 2, 4, 4, "Conservative", "Isolationism"
+    );
+    static President jamesGunn = new President(
+            "James Gunn", "South", 4, 1, 2, 2, "Conservative", "Centralization"
+    );
+    static President williamBingham = new President(
+            "William Bingam", "Northeast", 3, 1, 2, 3, "Conservative", "Social Hierarchy"
+    );
+    static President williamDuane = new President(
+            "William Duane", "Northeast", 1, 3, 1, 2, "Populist", "Egalitarianism"
+    );
+    static President williamPinkney = new President(
+            "William Pinkney", "Northeast", 3, 1, 3, 1, "Libertarian", "Isolationism"
+    );
+    static President thomasRandolphJr = new President(
+            "Thomas Randolph Jr.", "South", 3, 2, 2, 3, "Libertarian", "Egalitarianism"
+    );
 
     
     
@@ -2068,6 +2122,24 @@ public class CardData {
         nonpresidents.add(wadeHamptonI);
         nonpresidents.add(williamFindley);
         nonpresidents.add(georgeLogan);
+        nonpresidents.add(alexanderMartin);
+        nonpresidents.add(georgeMathews);
+        nonpresidents.add(georgeWythe);
+        nonpresidents.add(leviLincolnSr);
+        nonpresidents.add(josephDesha);
+        nonpresidents.add(samuelDexter);
+        nonpresidents.add(williamSamuelJohnson);
+        nonpresidents.add(stephenHigginson);
+        nonpresidents.add(jaredIngersoll);
+        nonpresidents.add(samuelSmith);
+        nonpresidents.add(jamesTurner);
+        nonpresidents.add(lafayette);
+        nonpresidents.add(harrisonGrayOtis);
+        nonpresidents.add(jamesGunn);
+        nonpresidents.add(williamBingham);
+        nonpresidents.add(williamDuane);
+        nonpresidents.add(williamPinkney);
+        nonpresidents.add(thomasRandolphJr);
         
         
         
