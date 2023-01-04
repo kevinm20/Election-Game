@@ -23,19 +23,63 @@ public class CardData {
 
     // PRESIDENTS
     static President calvinCoolidge = new President(
-            "Calvin Coolidge", "Northeast", 7, 6, 8, 5, "Libertarian", "Tax Cuts"
+            "Calvin Coolidge", "Northeast", 7, 6, 8, 5, "Libertarian", "Tax Cuts",
+            "<center><b>Calvin Coolidge</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1923-1929<br><br>"
+	                + "Vice President: 1921-1923<br><br>"
+	                + "Governor: 1919-1921<br><br>"
+	                + "Lt. Governor: 1916-1919<br><br>"
+	                + "Other: 1907-1915<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1920 (won VP), 1924 (won)"
     );
     static President thomasJefferson = new President(
-            "Thomas Jefferson", "South", 7, 7, 7, 10, "Libertarian", "States' Rights"
+            "Thomas Jefferson", "South", 7, 7, 7, 10, "Libertarian", "States' Rights", 
+            "<center><b>Thomas Jefferson</b></center><br><br>"
+		            + "<b>Political Experience:</b><br><br>"
+		            + "President: 1801-1809<br><br>"
+		            + "Vice President: 1797-1801<br><br>"
+		            + "Secretary of State: 1790-1793<br><br>"
+		            + "Diplomat: 1785-1789<br><br>"
+		            + "Governor: 1779-1781<br><br>"
+		            + "<b>Presidential Runs:</b><br><br>"
+		            + "1796 (lost), 1800 (won), 1804 (won)"
     );
     static President henryClay = new President(
-            "Henry Clay", "South", 9, 2, 8, 7, "Conservative", "Subsidies"
+            "Henry Clay", "South", 9, 2, 8, 7, "Conservative", "Subsidies",
+            "<center><b>Henry Clay</b></center><br><br>"
+		            + "<b>Political Experience:</b><br><br>"
+		            + "Senator: 1806-1807, 1810-1811, 1831-1842, 1849-1852<br><br>"
+		            + "Sec. of State: 1825-1829<br><br>"
+		            + "House: 1811-1821, 1823-1825<br><br>"
+		            + "<br><br>"
+		            + "<b>Presidential Runs:</b><br><br>"
+		            + "1824 (lost), 1832 (lost), 1840 (lost primary), 1844 (lost), 1848 (lost primary)"
     );
     static President alexanderHamilton = new President(
-            "Alexander Hamilton", "Northeast", 4, 1, 10, 8, "Conservative", "Centralization"
+            "Alexander Hamilton", "Northeast", 4, 1, 10, 8, "Conservative", "Centralization",
+            "<center><b>Alexander Hamilton</b></center><br><br>"
+                    + "<b>Political Experience:</b><br><br>"
+                    + "Sec. of Treasury: 1789-1795<br><br>"
+                    + "Sr. Officer of Army: 1799-1800<br><br>"
+                    + "Other: 1782-1789<br><br>"
+                    + "<br><br>"
+                    + "<br><br>"
+                    + "<b>Presidential Runs:</b><br><br>"
+                    + "None"
     );
     static President lyndonBJohnson = new President(
-            "Lyndon B. Johnson", "South", 10, 2, 7, 6, "Progressive", "Social Programs"
+            "Lyndon B. Johnson", "South", 10, 2, 7, 6, "Progressive", "Social Programs",
+            "<center><b>Lyndon B. Johnson</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1963-1969<br><br>"
+	                + "Vice President: 1961-1963<br><br>"
+	                + "Senator: 1949-1961<br><br>"
+	                + "Sen. Maj. Lead.: 1955-1956, 1957-1961<br><br>"
+	                + "House: 1937-1949<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1960 (won VP), 1964 (won), 1968 (lost primary)"
     );
     static President donaldTrump = new President(
             "Donald Trump", "Northeast", 1, 6, 1, 7, "Conservative", "Nationalism"
@@ -1309,7 +1353,7 @@ public class CardData {
             "James Gunn", "South", 4, 1, 2, 2, "Conservative", "Centralization"
     );
     static President williamBingham = new President(
-            "William Bingam", "Northeast", 3, 1, 2, 3, "Conservative", "Social Hierarchy"
+            "William Bingham", "Northeast", 3, 1, 2, 3, "Conservative", "Social Hierarchy"
     );
     static President williamDuane = new President(
             "William Duane", "Northeast", 1, 3, 1, 2, "Populist", "Egalitarianism"

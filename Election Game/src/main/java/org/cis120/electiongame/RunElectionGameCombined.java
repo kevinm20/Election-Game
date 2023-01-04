@@ -1,9 +1,7 @@
 package org.cis120.electiongame;
 
 /**
- * CIS 120 HW09 - TicTacToe Demo
- * (c) University of Pennsylvania
- * Created by Bayley Tuch, Sabrina Green, and Nicolas Corona in Fall 2020.
+ * Kevin Mani - Election game
  */
 
 import java.awt.*;
@@ -14,616 +12,510 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
-
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 /**
  * This class sets up the top-level frame and widgets for the GUI.
  */
 public class RunElectionGameCombined implements Runnable {
 
-    private ElectionGame election = new ElectionGame();
-    private boolean starting = true;
-    final GameBoard board = new GameBoard();
-    private UserDeck user_cards;
-    private UserPolicies up;
-    private boolean mode = false;
-    private String deckSet = "standard";
-    private int cumulativeWins = 0;
-    private int cumulativeGames = 0;
-    private int roundsWon = 0;
-    private int roundsPlayed = 0;
-    private int totalPoints = 0;
+	private ElectionGame election = new ElectionGame();
+	private boolean starting = true;
+	final GameBoard board = new GameBoard();
+	private UserDeck user_cards;
+	private UserPolicies up;
+	private boolean mode = false;
+	private String deckSet = "standard";
+	private int cumulativeWins = 0;
+	private int cumulativeGames = 0;
+	private boolean cardInfoMode = false;
 
-    // Change this if the screen is wacky
-    int cardSize = 225;
-    
-    public static InputStream loadImage(String path) {
-    	InputStream input = RunElectionGameCombined.class.getResourceAsStream(path);
-    	if (input==null) {
-    		input = RunElectionGameCombined.class.getResourceAsStream("/" + path);
-    	}
-    	return input;
-    }
-    
-    public void run() {
-    	//Used to track stats
-    	long startTime = System.nanoTime();
+	// Change this if the screen is wacky
+	int cardSize = 225;
 
-        // Top-level frame in which game components live
-        final JFrame frame = new JFrame("Election Game");
-        frame.setLocation(0, 0);
+	public static InputStream loadImage(String path) {
+		InputStream input = RunElectionGameCombined.class.getResourceAsStream(path);
+		if (input == null) {
+			input = RunElectionGameCombined.class.getResourceAsStream("/" + path);
+		}
+		return input;
+	}
 
-        // User Policy Deck, I added a scrollbar since you get 15 policies
-        up = new UserPolicies();
-        JScrollPane userPolicies = new JScrollPane(
-                up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS
-        );
-        userPolicies.getHorizontalScrollBar().setUnitIncrement(100);
+	public void run() {
+		// Used to track stats
+		long startTime = System.nanoTime();
 
-        userPolicies.setPreferredSize(new Dimension(600, 325));
+		// Top-level frame in which game components live
+		final JFrame frame = new JFrame("Election Game");
+		frame.setLocation(0, 0);
 
-        // User Card Deck
-        // final UserDeck user_cards = new UserDeck();
-        user_cards = new UserDeck();
-        user_cards.setPreferredSize(new Dimension(600, 325));
-        frame.add(user_cards, BorderLayout.SOUTH);
+		// User Policy Deck, I added a scrollbar since you get 15 policies
+		up = new UserPolicies();
+		JScrollPane userPolicies = new JScrollPane(up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+		userPolicies.getHorizontalScrollBar().setUnitIncrement(100);
 
-        // Game board/Election Area
-        frame.add(board, BorderLayout.CENTER);
-        board.setLayout(new GridLayout(1, 7));
+		userPolicies.setPreferredSize(new Dimension(600, 325));
 
-        // AI Card Deck, just for visuals
-        final JPanel ai_cards = new JPanel();
-        frame.add(ai_cards, BorderLayout.NORTH);
-        
-        for (int i = 0; i < 5; i++) {
-        	/*
-        	try {
-        		ImageIcon iid = new ImageIcon(this.getClass().getResource("/aicard.png"));
-        	} 
-        	catch (NullPointerException e) {
-        		
-        		StringWriter sw = new StringWriter();
-        		PrintWriter pw = new PrintWriter(sw);
-        		e.printStackTrace(pw);
-        		
-        		JOptionPane.showMessageDialog(
-                        null, sw.toString(), "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-        	}
-        	*/
-        	
-        	/*
-        	Image iid;
-			try {
-				iid = ImageIO.read(loadImage("/aicard.png"));
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				iid = null;
-				e1.printStackTrace();
+		// User Card Deck
+		// final UserDeck user_cards = new UserDeck();
+		user_cards = new UserDeck();
+		user_cards.setPreferredSize(new Dimension(600, 325));
+		frame.add(user_cards, BorderLayout.SOUTH);
+
+		// Game board/Election Area
+		frame.add(board, BorderLayout.CENTER);
+		board.setLayout(new GridLayout(1, 7));
+
+		// AI Card Deck, just for visuals
+		final JPanel ai_cards = new JPanel();
+		frame.add(ai_cards, BorderLayout.NORTH);
+
+		for (int i = 0; i < 5; i++) {
+			/*
+			 * try { ImageIcon iid = new
+			 * ImageIcon(this.getClass().getResource("/aicard.png")); } catch
+			 * (NullPointerException e) {
+			 * 
+			 * StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw);
+			 * e.printStackTrace(pw);
+			 * 
+			 * JOptionPane.showMessageDialog( null, sw.toString(), "Error",
+			 * JOptionPane.ERROR_MESSAGE ); }
+			 */
+
+			/*
+			 * Image iid; try { iid = ImageIO.read(loadImage("/aicard.png")); } catch
+			 * (IOException e1) { // TODO Auto-generated catch block iid = null;
+			 * e1.printStackTrace(); } ImageIcon imic = new ImageIcon(iid);
+			 */
+
+			// InputStream inputStream = this.getClass().getResourceAsStream("/aicard.png");
+			// ImageIcon iid = new ImageIcon(ImageIO.read(inputStream));
+
+			ImageIcon img = new ImageIcon(
+					new ImageIcon("files/aicard.png").getImage().getScaledInstance(60, 79, Image.SCALE_SMOOTH));
+			final JLabel aicardlabel = new JLabel(img);
+			ai_cards.add(aicardlabel);
+		}
+
+		// Deck Area and status, for visuals
+		final JPanel decks = new JPanel();
+		decks.setPreferredSize(new Dimension(175, 200));
+
+		frame.add(decks, BorderLayout.WEST);
+		final JLabel status = new JLabel(election.currentScore(), SwingConstants.CENTER);
+		setLabel(status);
+		decks.add(status);
+
+		final JLabel elecdeck = new JLabel(new ImageIcon(
+				new ImageIcon("files/electionsdeck.png").getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+		decks.add(elecdeck);
+
+		final JLabel prezdeck = new JLabel(new ImageIcon(
+				new ImageIcon("files/presidentdeck.png").getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+		decks.add(prezdeck);
+
+		final JLabel poldeck = new JLabel(new ImageIcon(
+				new ImageIcon("files/policydeck.png").getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+		decks.add(poldeck);
+
+		decks.setLayout(new GridLayout(4, 1));
+
+		// Control panel
+		final JPanel control_panel = new JPanel();
+		frame.add(control_panel, BorderLayout.EAST);
+
+		/*
+		 * Play button: Where most of the real action happens
+		 */
+		final JButton play = new JButton("Play");
+		/*
+		 * Color can changed play.setBackground(new Color(47, 84, 150));
+		 * play.setForeground(Color.YELLOW);
+		 */
+		play.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
+						|| election.getActivePinnedPolicies().get(1) == null) {
+					JOptionPane.showMessageDialog(null, "Error: you haven't played all cards!", "Error",
+							JOptionPane.ERROR_MESSAGE);
+				} else {
+					if (!mode) {
+						// election.printGameState();
+
+						election.getPlayer1().draw(election.getPres());
+						election.getPlayer1().drawPols(election.getPol());
+
+						AI ai = (AI) election.getPlayer2();
+
+						President cpuplay = ai.play(election.getPres(), election.getElection());
+
+						election.player2PlayCard(cpuplay);
+						election.pinAIPolicies(ai.playPolicies(cpuplay, election.getPol()));
+
+						board.flipCPU();
+						board.draw();
+
+						election.playRound(election.getPlayer1Card(), election.getPinned1(), cpuplay,
+								election.getPinned2());
+
+					} else {
+						if (election.getTurn()) {
+							election.flipPlayer();
+							user_cards.hideCards(4);
+							up.hideCards();
+							board.draw();
+							JOptionPane.showMessageDialog(null, "Please pass the computer to Player 2.");
+							user_cards.paintCards();
+							up.paintCards();
+							board.draw();
+						} else {
+							user_cards.hideCards(4);
+							up.hideCards();
+							board.flipUser();
+							board.draw();
+							JOptionPane.showMessageDialog(null, "Click 'OK' when both players are ready!");
+							board.flipUser();
+							// election.printGameState();
+
+							election.getPlayer2().draw(election.getPres());
+							election.getPlayer2().drawPols(election.getPol());
+
+							election.getPlayer1().draw(election.getPres());
+							election.getPlayer1().drawPols(election.getPol());
+
+							board.flipCPU();
+							board.draw();
+
+							election.playRound(election.getPlayer1Card(), election.getPinned1(),
+									election.getPlayer2Card(), election.getPinned2());
+							election.flipPlayer();
+						}
+					}
+
+					if (!mode || election.getTurn()) {
+						setLabel(status);
+						status.repaint();
+						JOptionPane.showMessageDialog(null, election.getMessage());
+						if (election.getAchievement() != null) {
+							JOptionPane.showMessageDialog(null, election.getAchievement());
+						}
+
+						if (election.checkWinner() == 1) {
+							JOptionPane.showMessageDialog(null,
+									election.getPlayer1().getName() + " has won!!! " + election.finalScore(true));
+							if (mode) {
+								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
+							}
+							cumulativeWins++;
+							cumulativeGames++;
+							election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+							user_cards.reset();
+							up.reset();
+							board.reset();
+							setLabel(status);
+							status.repaint();
+						} else if (election.checkWinner() == 2) {
+							JOptionPane.showMessageDialog(null,
+									election.getPlayer2().getName() + " has won!!! " + election.finalScore(false));
+							if (mode) {
+								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
+							}
+							cumulativeGames++;
+							election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+							user_cards.reset();
+							up.reset();
+							board.reset();
+							setLabel(status);
+							status.repaint();
+						} else {
+							election.player1PlayCard(null);
+							election.player2PlayCard(null);
+							board.flipCPU();
+							board.draw();
+							if (mode) {
+								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
+							}
+							user_cards.paintCards();
+							up.paintCards();
+						}
+					}
+				}
 			}
-        	ImageIcon imic = new ImageIcon(iid);
-        	*/
-        	
-        	//InputStream inputStream = this.getClass().getResourceAsStream("/aicard.png");
-        	//ImageIcon iid = new ImageIcon(ImageIO.read(inputStream));
 
-        	
-            ImageIcon img = new ImageIcon(
-                    new ImageIcon("files/aicard.png").getImage()
-                            .getScaledInstance(60, 79, Image.SCALE_SMOOTH)
-            );
-            final JLabel aicardlabel = new JLabel(img);
-            ai_cards.add(aicardlabel);
-        }
+		});
 
-        // Deck Area and status, for visuals
-        final JPanel decks = new JPanel();
-        decks.setPreferredSize(new Dimension(175, 200));
+		final JButton undo = new JButton("Undo Cards");
+		undo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 
-        frame.add(decks, BorderLayout.WEST);
-        final JLabel status = new JLabel(election.currentScore(), SwingConstants.CENTER);
-        setLabel(status);
-        decks.add(status);
+				if (election.getActivePinCard() == null && election.getActivePinnedPolicies().get(0) == null
+						&& election.getActivePinnedPolicies().get(1) == null) {
+					JOptionPane.showMessageDialog(null, "Error: you haven't played a card", "Error",
+							JOptionPane.ERROR_MESSAGE);
+				} else {
 
-        final JLabel elecdeck = new JLabel(
-                new ImageIcon(
-                        new ImageIcon("files/electionsdeck.png").getImage()
-                                .getScaledInstance(85, 65, Image.SCALE_SMOOTH)
-                )
-        );
-        decks.add(elecdeck);
+					if (election.getActivePinCard() != null) {
+						election.getActivePlayer().add(election.getActivePinCard());
+					}
 
-        final JLabel prezdeck = new JLabel(
-                new ImageIcon(
-                        new ImageIcon("files/presidentdeck.png").getImage()
-                                .getScaledInstance(85, 65, Image.SCALE_SMOOTH)
-                )
-        );
-        decks.add(prezdeck);
+					if (election.getActivePinnedPolicies().get(0) != null) {
+						election.getActivePlayer().add(election.getActivePinnedPolicies().get(0));
+					}
 
-        final JLabel poldeck = new JLabel(
-                new ImageIcon(
-                        new ImageIcon("files/policydeck.png").getImage()
-                                .getScaledInstance(85, 65, Image.SCALE_SMOOTH)
-                )
-        );
-        decks.add(poldeck);
+					if (election.getActivePinnedPolicies().get(1) != null) {
+						election.getActivePlayer().add(election.getActivePinnedPolicies().get(1));
+					}
 
-        decks.setLayout(new GridLayout(4, 1));
+					user_cards.paintCards();
 
-        // Control panel
-        final JPanel control_panel = new JPanel();
-        frame.add(control_panel, BorderLayout.EAST);
+					election.activePinCard(null);
 
-        /*
-         * Play button: Where most of the real action happens
-         */
-        final JButton play = new JButton("Play");
-        /* Color can changed
-        play.setBackground(new Color(47, 84, 150));
-        play.setForeground(Color.YELLOW);
-        */  
-        play.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (election.getActivePinCard() == null
-                        || election.getActivePinnedPolicies().get(0) == null
-                        || election.getActivePinnedPolicies().get(1) == null) {
-                    JOptionPane.showMessageDialog(
-                            null, "Error: you haven't played all cards!", "Error",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-                } else {
-                    if (!mode) {
-                        //election.printGameState();
+					election.nullifyActive();
 
-                        election.getPlayer1().draw(election.getPres());
-                        election.getPlayer1().drawPols(election.getPol());
+					up.paintCards();
 
-                        AI ai = (AI) election.getPlayer2();
+					board.draw();
 
-                        President cpuplay = ai.play(election.getPres(), election.getElection());
+				}
+			}
 
-                        election.player2PlayCard(cpuplay);
-                        election.pinAIPolicies(ai.playPolicies(cpuplay, election.getPol()));
+		});
 
-                        board.flipCPU();
-                        board.draw();
+		final JButton reset = new JButton("Resign");
+		reset.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
+				cumulativeGames++;
+				election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+				setLabel(status);
+				status.repaint();
+				user_cards.reset();
+				up.reset();
+				board.reset();
+			}
+		});
 
-                        election.playRound(
-                                election.getPlayer1Card(), election.getPinned1(),
-                                cpuplay, election.getPinned2()
-                        );
+		final JButton help = new JButton("Help");
+		help.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Object[] settingOptions = { "Card Info", "Instructions" };
+				int helpMode = JOptionPane.showOptionDialog(null, "What would you like help with?", "Help",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, settingOptions, -1);
 
-                    } else {
-                        if (election.getTurn()) {
-                            election.flipPlayer();
-                            user_cards.hideCards(4);
-                            up.hideCards();
-                            board.draw();
-                            JOptionPane
-                                    .showMessageDialog(
-                                            null, "Please pass the computer to Player 2."
-                                    );
-                            user_cards.paintCards();
-                            up.paintCards();
-                            board.draw();
-                        } else {
-                            user_cards.hideCards(4);
-                            up.hideCards();
-                            board.flipUser();
-                            board.draw();
-                            JOptionPane
-                                    .showMessageDialog(
-                                            null, "Click 'OK' when both players are ready!"
-                                    );
-                            board.flipUser();
-                            //election.printGameState();
+				if (helpMode == 1) {
+					JOptionPane.showMessageDialog(null,
+							"Welcome to Election Game! First, I will explain how to play the game in s"
+									+ "hort, and then we'll dive into the details of each card. \n"
+									+ "Simply put, each round, there is a certain election chosen. You d"
+									+ "raw 5 Candidate cards and 15 Policy cards, \n"
+									+ "and based on traits or policies desired by the election, you have"
+									+ " to play your best combo of these cards. A new election is chos"
+									+ "en each round\n" + " and the game is best-of-five.\n"
+									+ "Now, we'll look at each type of card.");
+					JOptionPane.showMessageDialog(null,
+							"The first type of card is an ELECTION CARD. There is one for each US elec"
+									+ "tion historically. In the 'Context' section, the election will" + " imply wh"
+									+ "at attributes\n"
+									+ "to focus on, or what policies are important that year. Each elect"
+									+ "ion has 2 'desired attributes' from the President cards,\n"
+									+ "1 'main' policy issue, and two 'side' policy issues. The details"
+									+ " of scoring will be explained last.\n"
+									+ "Finally, each election has a 'swing region', and if your Preside"
+									+ "nt is from the same region, you receive a bonus.");
+					JOptionPane.showMessageDialog(null,
+							"The next type of card is a PRESIDENT CARD. They are a combination of all"
+									+ " US presidents, and other prominent political figures. These ca" + "rds have"
+									+ " quite a decent amount of information.\n"
+									+ "First, each president has 4 attributes, EXP, INFL, POL, and NAM. "
+									+ "Each election year will desire 2 of these attributes, \n"
+									+ "and the attributes are rated 1-10, with 5 being average. Here's w"
+									+ "hat they mean: \n"
+									+ "Experience (EXP): How long the candidate has been involved in pol"
+									+ "itics, and their highest office.\n"
+									+ "Influence (INFL): How well a candidate can convince and sway peop"
+									+ "le, and other personality aspects like leadership, charisma, " + "etc.\n"
+									+ "Policy (POL): How well-versed the candidate is in ideas and polic"
+									+ "y, and their knowledge of the issues.\n"
+									+ "Name Recogntion (NAM): How well-known the candidate is to the gen"
+									+ "eral public, including outside of political life.\n"
+									+ "The cards have a little more information. One of them is their ho"
+									+ "me region, giving a bonus if this matches the election's swing " + "region.\n"
+									+ "Also, the cards show the candidates ideology. These are used to "
+									+ "get bonuses if the policies played 'match' the candidates ideo" + "logy.\n"
+									+ "Finally, each candidate also has a 'Marquee Policy', which always"
+									+ " gives them a bonus if paired with the candidate.");
+					JOptionPane.showMessageDialog(null,
+							"Last, here is the specific breakdown of the scoring for each round: \n"
+									+ "First, add the two key attributes of the president card, based "
+									+ "on the desired attributes of the election.\n"
+									+ "You get 3 points if one of your policies is the main issue, and"
+									+ " 2 for either of the side issues.\n"
+									+ "For each policy that matches the president's ideology, you get" + " 2 points.\n"
+									+ "If you played the president's Marquee Policy, you get 3 points"
+									+ " (and the ideology match always).\n"
+									+ "Finally, you get 3 points if your candidates' region is the same"
+									+ " as the swing region.\n"
+									+ "Whichever player has the highest round score wins, and "
+									+ "best-of-five wins it all.\n"
+									+ "In case of a tie, the first tiebreaker is the sum of the "
+									+ "candidate's attributes, then just chosen randomly.\n" + "Good luck!");
+				} else if (helpMode == 0) {
+					cardInfoMode = !cardInfoMode;
+					board.draw();
+					user_cards.paintCards();
+				}
+			}
+		});
 
-                            election.getPlayer2().draw(election.getPres());
-                            election.getPlayer2().drawPols(election.getPol());
+		final JButton stats = new JButton("Stats/Settings");
+		stats.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				long endTime = System.nanoTime();
+				long totalTime = endTime - startTime;
+				long totalTimeInSeconds = totalTime / 1000000000;
+				long totalTimeMinutes = totalTimeInSeconds / 60;
+				long totalTimeSeconds = totalTimeInSeconds % 60;
 
-                            election.getPlayer1().draw(election.getPres());
-                            election.getPlayer1().drawPols(election.getPol());
+				int winPct;
+				if (cumulativeGames == 0) {
+					winPct = 0;
+				} else {
+					winPct = (int) (Math.round(((float) (cumulativeWins) * 100.0) / cumulativeGames));
+				}
 
-                            board.flipCPU();
-                            board.draw();
+				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice" };
+				int settingToChange = JOptionPane.showOptionDialog(null,
+						"Stats for " + election.getPlayer1().getName() + " this session: \n" + "Total play time: "
+								+ totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" + "Total wins: "
+								+ cumulativeWins + " wins out of " + cumulativeGames + " (" + winPct + "%). \n \n"
+								+ "Select one of the settings below to change (may reset game):",
+						"Stats/Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+						settingOptions, -1);
 
-                            election.playRound(
-                                    election.getPlayer1Card(), election.getPinned1(),
-                                    election.getPlayer2Card(), election.getPinned2()
-                            );
-                            election.flipPlayer();
-                        }
-                    }
+				// Change Name
+				if (settingToChange == 0) {
+					String playername = election.getPlayer1().getName();
 
-                    if (!mode || election.getTurn()) {
-                        setLabel(status);
-                        status.repaint();
-                        JOptionPane.showMessageDialog(null, election.getMessage());
-                        if(election.getAchievement()!=null) {
-                            JOptionPane.showMessageDialog(null, election.getAchievement());
-                        }
+					playername = JOptionPane.showInputDialog(null, "What would you like to change your name to?");
+					election.namePlayer(playername);
+					setLabel(status);
+					status.repaint();
+				}
 
-                        if (election.checkWinner() == 1) {
-                            JOptionPane.showMessageDialog(
-                                    null,
-                                    election.getPlayer1().getName() + " has won!!! "
-                                            + election.finalScore(true)
-                            );
-                            if (mode) {
-                                JOptionPane.showMessageDialog(
-                                        null, "Please pass the computer to Player 1."
-                                );
-                            }
-                            cumulativeWins++;
-                            cumulativeGames++;
-                            election.reset(deckSet, 0, true, 0, true, 0, true, 5);
-                            user_cards.reset();
-                            up.reset();
-                            board.reset();
-                            setLabel(status);
-                            status.repaint();
-                        } else if (election.checkWinner() == 2) {
-                            JOptionPane.showMessageDialog(
-                                    null,
-                                    election.getPlayer2().getName() + " has won!!! "
-                                            + election.finalScore(false)
-                            );
-                            if (mode) {
-                                JOptionPane.showMessageDialog(
-                                        null, "Please pass the computer to Player 1."
-                                );
-                            }
-                            cumulativeGames++;
-                            election.reset(deckSet, 0, true, 0, true, 0, true, 5);
-                            user_cards.reset();
-                            up.reset();
-                            board.reset();
-                            setLabel(status);
-                            status.repaint();
-                        } else {
-                            election.player1PlayCard(null);
-                            election.player2PlayCard(null);
-                            board.flipCPU();
-                            board.draw();
-                            if (mode) {
-                                JOptionPane.showMessageDialog(
-                                        null, "Please pass the computer to Player 1."
-                                );
-                            }
-                            user_cards.paintCards();
-                            up.paintCards();
-                        }
-                    }
-                	}
-            }
+				// Change Difficulty
+				if (settingToChange == 1) {
+					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+					int diff = JOptionPane.showOptionDialog(null, "What would you like to change the AI difficulty to?",
+							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
+							election.aiDifficulty);
+					String difficulty = "Medium";
+					switch (diff) {
+					case 0:
+						difficulty = "Easy";
+						break;
+					case 1:
+						difficulty = "Medium";
+						break;
+					case 2:
+						difficulty = "Hard";
+						break;
+					case 3:
+						difficulty = "Impossible";
+						break;
+					default:
+						difficulty = election.aiDifficulty;
+						break;
+					}
+					election.setAIDifficulty(difficulty);
+				}
 
-        });
+				// Change Deck
+				if (settingToChange == 2) {
+					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational",
+							"Custom" };
+					int deck = JOptionPane.showOptionDialog(null, "What would you like to change the deck to?",
+							"Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks,
+							election.deckPreset);
 
-
-        final JButton undo = new JButton("Undo Cards");
-        undo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                if (election.getActivePinCard() == null
-                        && election.getActivePinnedPolicies().get(0) == null
-                        && election.getActivePinnedPolicies().get(1) == null) {
-                    JOptionPane.showMessageDialog(
-                            null, "Error: you haven't played a card", "Error",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-                } else {
-
-                    if (election.getActivePinCard() != null) {
-                        election.getActivePlayer().add(election.getActivePinCard());
-                    }
-
-                    if (election.getActivePinnedPolicies().get(0) != null) {
-                        election.getActivePlayer().add(election.getActivePinnedPolicies().get(0));
-                    }
-
-                    if (election.getActivePinnedPolicies().get(1) != null) {
-                        election.getActivePlayer().add(election.getActivePinnedPolicies().get(1));
-                    }
-
-                    user_cards.paintCards();
-
-                    election.activePinCard(null);
-
-                    election.nullifyActive();
-
-                    up.paintCards();
-
-                    board.draw();
-
-                }
-            }
-
-        });
-
-        final JButton reset = new JButton("Resign");
-        reset.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(
-                        null, "You have resigned. " + election.finalScore(false)
-                );
-                cumulativeGames++;
-                election.reset(deckSet, 0, true, 0, true, 0, true, 5);
-                setLabel(status);
-                status.repaint();
-                user_cards.reset();
-                up.reset();
-                board.reset();
-            }
-        });
-
-        final JButton help = new JButton("Help");
-        help.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Welcome to Election Game! First, I will explain how to play the game in s"
-                                + "hort, and then we'll dive into the details of each card. \n"
-                                +
-                                "Simply put, each round, there is a certain election chosen. You d"
-                                + "raw 5 Candidate cards and 15 Policy cards, \n"
-                                +
-                                "and based on traits or policies desired by the election, you have"
-                                + " to play your best combo of these cards. A new election is chos"
-                                + "en each round\n"
-                                +
-                                " and the game is best-of-five.\n" +
-                                "Now, we'll look at each type of card."
-                );
-                JOptionPane.showMessageDialog(
-                        null,
-                        "The first type of card is an ELECTION CARD. There is one for each US elec"
-                                + "tion historically. In the 'Context' section, the election will"
-                                + " imply wh"
-                                + "at attributes\n"
-                                +
-                                "to focus on, or what policies are important that year. Each elect"
-                                + "ion has 2 'desired attributes' from the President cards,\n"
-                                +
-                                "1 'main' policy issue, and two 'side' policy issues. The details"
-                                + " of scoring will be explained last.\n"
-                                +
-                                "Finally, each election has a 'swing region', and if your Preside"
-                                + "nt is from the same region, you receive a bonus."
-                );
-                JOptionPane.showMessageDialog(
-                        null,
-                        "The next type of card is a PRESIDENT CARD. They are a combination of all"
-                                + " US presidents, and other prominent political figures. These ca"
-                                + "rds have"
-                                + " quite a decent amount of information.\n"
-                                +
-                                "First, each president has 4 attributes, EXP, INFL, POL, and NAM. "
-                                + "Each election year will desire 2 of these attributes, \n"
-                                +
-                                "and the attributes are rated 1-10, with 5 being average. Here's w"
-                                + "hat they mean: \n"
-                                +
-                                "Experience (EXP): How long the candidate has been involved in pol"
-                                + "itics, and their highest office.\n"
-                                +
-                                "Influence (INFL): How well a candidate can convince and sway peop"
-                                + "le, and other personality aspects like leadership, charisma, "
-                                + "etc.\n"
-                                +
-                                "Policy (POL): How well-versed the candidate is in ideas and polic"
-                                + "y, and their knowledge of the issues.\n"
-                                +
-                                "Name Recogntion (NAM): How well-known the candidate is to the gen"
-                                + "eral public, including outside of political life.\n"
-                                +
-                                "The cards have a little more information. One of them is their ho"
-                                + "me region, giving a bonus if this matches the election's swing "
-                                + "region.\n"
-                                +
-                                "Also, the cards show the candidates ideology. These are used to "
-                                + "get bonuses if the policies played 'match' the candidates ideo"
-                                + "logy.\n"
-                                +
-                                "Finally, each candidate also has a 'Marquee Policy', which always"
-                                + " gives them a bonus if paired with the candidate."
-                );
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Last, here is the specific breakdown of the scoring for each round: \n" +
-                                "First, add the two key attributes of the president card, based "
-                                + "on the desired attributes of the election.\n"
-                                +
-                                "You get 3 points if one of your policies is the main issue, and"
-                                + " 2 for either of the side issues.\n"
-                                +
-                                "For each policy that matches the president's ideology, you get"
-                                + " 2 points.\n"
-                                +
-                                "If you played the president's Marquee Policy, you get 3 points"
-                                + " (and the ideology match always).\n"
-                                +
-                                "Finally, you get 3 points if your candidates' region is the same"
-                                + " as the swing region.\n"
-                                +
-                                "Whichever player has the highest round score wins, and "
-                                + "best-of-five wins it all.\n"
-                                +
-                                "In case of a tie, the first tiebreaker is the sum of the "
-                                + "candidate's attributes, then just chosen randomly.\n"
-                                +
-                                "Good luck!"
-                );
-            }
-        });
-        
-        final JButton stats = new JButton("Stats/Settings");
-        stats.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-            	long endTime   = System.nanoTime();
-            	long totalTime = endTime - startTime;
-            	long totalTimeInSeconds = totalTime/1000000000;
-            	long totalTimeMinutes = totalTimeInSeconds/60;
-            	long totalTimeSeconds = totalTimeInSeconds%60;
-            	
-            	int winPct;
-            	if (cumulativeGames==0) {
-            		winPct = 0;
-            	} else {
-            		winPct = (int)(Math.round(((float)(cumulativeWins)*100.0)/cumulativeGames));
-            	}
-                
-
-                Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice"};
-                int settingToChange = JOptionPane.showOptionDialog(
-                        null, "Stats for " + election.getPlayer1().getName() + " this session: \n" +
-                                "Total play time: " + totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" +
-                                "Total wins: " + cumulativeWins + " wins out of " + cumulativeGames + " (" + 
-                                winPct + "%). \n \n" +
-                                "Select one of the settings below to change (will reset game):",
-                        "Stats/Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-                        settingOptions, -1
-                );
-                
-                // Change Name
-                if (settingToChange==0) {
-                    String playername = election.getPlayer1().getName();
-                    
-                    playername = JOptionPane.showInputDialog(
-                    		null, "What would you like to change your name to?"
-                    );
-                    election.namePlayer(playername);
-                    setLabel(status);
-                    status.repaint();
-                }
-                
-                // Change Difficulty
-                if (settingToChange==1) {
-                	Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-                    int diff = JOptionPane.showOptionDialog(
-                            null, "What would you like to change the AI difficulty to?",
-                            "Select Difficulty", JOptionPane.DEFAULT_OPTION,
-                            JOptionPane.QUESTION_MESSAGE,
-                            null,
-                            diffs, election.aiDifficulty
-                    );
-                    String difficulty = "Medium";
-                    switch (diff) {
-                        case 0:
-                            difficulty = "Easy";
-                            break;
-                        case 1:
-                            difficulty = "Medium";
-                            break;
-                        case 2:
-                            difficulty = "Hard";
-                            break;
-                        case 3:
-                            difficulty = "Impossible";
-                            break;
-                        default:
-                        	difficulty = election.aiDifficulty;
-                            break;
-                    }
-                    election.setAIDifficulty(difficulty);
-                }
-                
-                // Change Deck
-                if (settingToChange==2) {
-                	Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom"};
-                    int deck = JOptionPane.showOptionDialog(
-                            null, "What would you like to change the deck to?",
-                            "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                            null,
-                            cardDecks, election.deckPreset
-                    );
-
-                    if (deck == 0) {
-                        election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
-                        deckSet = "presidentsonly";
-                    }
-                    if (deck == 1) {
-                        election.reset("standard", 0, true, 0, true, 0, true, 5);
-                        deckSet = "standard";
-                    }
-                    if (deck == 2) {
-                        election.reset("expanded", 0, true, 0, true, 0, true, 5);
-                        deckSet = "expanded";
-                    }
-                    if (deck == 3) {
+					if (deck == 0) {
+						election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
+						deckSet = "presidentsonly";
+					}
+					if (deck == 1) {
+						election.reset("standard", 0, true, 0, true, 0, true, 5);
+						deckSet = "standard";
+					}
+					if (deck == 2) {
+						election.reset("expanded", 0, true, 0, true, 0, true, 5);
+						deckSet = "expanded";
+					}
+					if (deck == 3) {
 						election.reset("memes", 0, true, 0, true, 0, true, 5);
 						deckSet = "memes";
 					}
 					if (deck == 4) {
 						election.reset("generational", 0, true, 0, true, 0, true, 5);
 						deckSet = "generational";
-					} 
+					}
 					if (deck == 5) {
-		            	// Find a way to screen this so it doesn't get broken. Also find ways to be more creative with this, maybe
-		            	// add generational cards, sort all presidents/nonpresidents and get the top 50 from there, etc.
-		            	try {
-		            	int presCount = Integer.parseInt(JOptionPane.showInputDialog(
-		                        null, "How many actual presidents would you like to include?"
-		                ));
-		            	Object[] yesno = { "Yes", "No" };
-		            	int presSort = JOptionPane.showOptionDialog(
-		                        null, "Would you like the best presidents to be in the deck first?",
-		                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-		                        null,
-		                        yesno, 0
-		                );
-		            	boolean presSortBool = false;
-		            	if (presSort==0) {
-		            		presSortBool = true;
-		            	}
-		            	int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(
-		                        null, "How many non-presidents would you like to include?"
-		                ));
-		            	int nonPresSort = JOptionPane.showOptionDialog(
-		                        null, "Would you like the best non-presidents to be in the deck first?",
-		                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-		                        null,
-		                        yesno, 0
-		                );
-		            	boolean nonPresSortBool = false;
-		            	if (nonPresSort==0) {
-		            		nonPresSortBool = true;
-		            	}
-		            	int memeCount = Integer.parseInt(JOptionPane.showInputDialog(
-		                        null, "How many meme cards would you like to include?"
-		                ));
-		            	int memeSort = JOptionPane.showOptionDialog(
-		                        null, "Would you like the best meme cards to be in the deck first?",
-		                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-		                        null,
-		                        yesno, 0
-		                );
-		            	boolean memeSortBool = false;
-		            	if (memeSort==0) {
-		            		memeSortBool = true;
-		            	}
-		            	election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount, memeSortBool, 5);
-		            	deckSet = "custom";
-		            	} catch (Exception ex){
-		            		JOptionPane.showMessageDialog(
-		                            board,
-		                            "Error: One of your inputs was invalid. Standard deck will be used.",
-		                            "Error",
-		                            JOptionPane.ERROR_MESSAGE
-		                    );
-		            		election.reset("standard", 0, true, 0, true, 0, true, 5);
-		                    deckSet = "standard";
-		            	}
-		            }
+						// Find a way to screen this so it doesn't get broken. Also find ways to be more
+						// creative with this, maybe
+						// add generational cards, sort all presidents/nonpresidents and get the top 50
+						// from there, etc.
+						try {
+							int presCount = Integer.parseInt(JOptionPane.showInputDialog(null,
+									"How many actual presidents would you like to include?"));
+							Object[] yesno = { "Yes", "No" };
+							int presSort = JOptionPane.showOptionDialog(null,
+									"Would you like the best presidents to be in the deck first?", "Select Deck",
+									JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
+							boolean presSortBool = false;
+							if (presSort == 0) {
+								presSortBool = true;
+							}
+							int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(null,
+									"How many non-presidents would you like to include?"));
+							int nonPresSort = JOptionPane.showOptionDialog(null,
+									"Would you like the best non-presidents to be in the deck first?", "Select Deck",
+									JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
+							boolean nonPresSortBool = false;
+							if (nonPresSort == 0) {
+								nonPresSortBool = true;
+							}
+							int memeCount = Integer.parseInt(JOptionPane.showInputDialog(null,
+									"How many meme cards would you like to include?"));
+							int memeSort = JOptionPane.showOptionDialog(null,
+									"Would you like the best meme cards to be in the deck first?", "Select Deck",
+									JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
+							boolean memeSortBool = false;
+							if (memeSort == 0) {
+								memeSortBool = true;
+							}
+							election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount,
+									memeSortBool, 5);
+							deckSet = "custom";
+						} catch (Exception ex) {
+							JOptionPane.showMessageDialog(board,
+									"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
+									JOptionPane.ERROR_MESSAGE);
+							election.reset("standard", 0, true, 0, true, 0, true, 5);
+							deckSet = "standard";
+						}
+					}
 				}
 
-				if (settingToChange >= 1) {
+				if (settingToChange >= 2) {
 					cumulativeGames++;
 					election.reset(deckSet, 0, true, 0, true, 0, true, 5);
 					setLabel(status);
@@ -634,740 +526,991 @@ public class RunElectionGameCombined implements Runnable {
 				}
 
 			}
-        });
-        
-
-        // Swaps between policies and presidents in view
-        final JButton swap = new JButton("Policies ->");
-        swap.addActionListener(new ActionListener() {
-            boolean mode = true;
-
-            public void actionPerformed(ActionEvent e) {
-                if (!mode) {
-                    swap.setText("Policies ->");
-                    swap.repaint();
-                    frame.add(user_cards, BorderLayout.SOUTH);
-                    frame.remove(userPolicies);
-                    user_cards.paintCards();
-                    up.paintCards();
-                    mode = !mode;
-                } else {
-                    swap.setText("<- Presidents");
-                    swap.repaint();
-                    frame.add(userPolicies, BorderLayout.SOUTH);
-                    frame.remove(user_cards);
-                    user_cards.paintCards();
-                    up.paintCards();
-                    mode = !mode;
-                }
-            }
-        });
-
-        control_panel.add(play);
-        //control_panel.add(undo);
-        control_panel.add(help);
-        control_panel.add(stats);
-        control_panel.add(reset);
-        control_panel.add(swap);
-        control_panel.setPreferredSize(new Dimension(175, 200));
-        control_panel.setLayout(new GridLayout(5, 1));
-
-        // Put the frame on the screen
-        frame.pack();
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-        user_cards.hideCards(5);
-
-        /*
-         * Here, the game is started with all necessary inputs
-         */
-        String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "Quandale", "Jack Harlow",
-        		"Quandale Dingle", "Senor Dingle", "Mr. Dingle", "Daquavious Bingleton"};
-
-        Object[] options = { "1-Player", "2-Player", "Quick 1-Player" };
-        int gameMode = JOptionPane.showOptionDialog(
-                null, "Welcome to Election Game! Please select your game mode:",
-                "Select Game Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-                options, options[0]
-        );
-
-        if (gameMode == -1 || gameMode == 0 || gameMode == 2) {            
-            mode = false;
-        } else {
-            mode = true;
-        }
-
-        if (gameMode == 2) {
-            int ran = (int) Math.round(Math.random()*names.length);
-            CardData.flipExpanded();
-            election.namePlayer(names[ran]);
-            election.namePlayer2("CPU");
-            election.setAIDifficulty("Hard");
-            election.reset("generational", 0, true, 0, true, 0, true, 5);
-            setLabel(status);
-        } else {
-            // Name Player 1
-            String playername = "Player 1";
-            if (mode) {
-                playername = JOptionPane.showInputDialog(
-                        null,
-                        "Hello and welcome to the Election Game! Player 1, please enter your name: "
-                );
-            } else {
-                playername = JOptionPane.showInputDialog(
-                        null, "Hello and welcome to the Election Game! Please enter your name: "
-                );
-                election.namePlayer2("CPU");
-            }
-            election.namePlayer(playername);
-            setLabel(status);
-            status.repaint();
-
-            // Name Player 2 or set AI difficulty
-            if (mode) {
-                String player2name = JOptionPane.showInputDialog(
-                        null, "Player 2, please enter your name: "
-                );
-                election.namePlayer2(player2name);
-                setLabel(status);
-                status.repaint();
-            } else {
-                Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-                int diff = JOptionPane.showOptionDialog(
-                        null, "Choose the difficulty of the AI:",
-                        "Select Difficulty", JOptionPane.DEFAULT_OPTION,
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        diffs, diffs[1]
-                );
-                String difficulty = "Medium";
-                switch (diff) {
-                    case 0:
-                        difficulty = "Easy";
-                        break;
-                    case 1:
-                        difficulty = "Medium";
-                        break;
-                    case 2:
-                        difficulty = "Hard";
-                        break;
-                    case 3:
-                        difficulty = "Impossible";
-                        break;
-                    default:
-                        break;
-                }
-                election.setAIDifficulty(difficulty);
-            }
-
-            Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom" };
-            int deck = JOptionPane.showOptionDialog(
-                    null, "Choose the game deck:",
-                    "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    cardDecks, cardDecks[1]
-            );
-
-            if (deck == 0) {
-                election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
-                deckSet = "presidentsonly";
-            }
-            if (deck == 1) {
-                election.reset("standard", 0, true, 0, true, 0, true, 5);
-                deckSet = "standard";
-            }
-            if (deck == 2) {
-                election.reset("expanded", 0, true, 0, true, 0, true, 5);
-                deckSet = "expanded";
-            }
-            if (deck == 3) {
-                election.reset("memes", 0, true, 0, true, 0, true, 5);
-                deckSet = "memes";
-            }
-            if (deck == 4) {
-                election.reset("generational", 0, true, 0, true, 0, true, 5);
-                deckSet = "generational";
-            }
-            if (deck == 5) {
-            	// Find a way to screen this so it doesn't get broken. Also find ways to be more creative with this, maybe
-            	// add generational cards, sort all presidents/nonpresidents and get the top 50 from there, etc.
-            	try {
-            	int presCount = Integer.parseInt(JOptionPane.showInputDialog(
-                        null, "How many actual presidents would you like to include?"
-                ));
-            	Object[] yesno = { "Yes", "No" };
-            	int presSort = JOptionPane.showOptionDialog(
-                        null, "Would you like the best presidents to be in the deck first?",
-                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        yesno, 0
-                );
-            	boolean presSortBool = false;
-            	if (presSort==0) {
-            		presSortBool = true;
-            	}
-            	int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(
-                        null, "How many non-presidents would you like to include?"
-                ));
-            	int nonPresSort = JOptionPane.showOptionDialog(
-                        null, "Would you like the best non-presidents to be in the deck first?",
-                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        yesno, 0
-                );
-            	boolean nonPresSortBool = false;
-            	if (nonPresSort==0) {
-            		nonPresSortBool = true;
-            	}
-            	int memeCount = Integer.parseInt(JOptionPane.showInputDialog(
-                        null, "How many meme cards would you like to include?"
-                ));
-            	int memeSort = JOptionPane.showOptionDialog(
-                        null, "Would you like the best meme cards to be in the deck first?",
-                        "Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        yesno, 0
-                );
-            	boolean memeSortBool = false;
-            	if (memeSort==0) {
-            		memeSortBool = true;
-            	}
-            	election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount, memeSortBool, 5);
-            	deckSet = "custom";
-            	} catch (Exception ex){
-            		JOptionPane.showMessageDialog(
-                            board,
-                            "Error: One of your inputs was invalid. Standard deck will be used.",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-            		election.reset("standard", 0, true, 0, true, 0, true, 5);
-                    deckSet = "standard";
-            	}
-            }
-        }
-        user_cards.paintCards();
-        starting = false;
-        board.draw();
-    }
-
-    /*
-     * This is my first inner class used to represent the deck of the user.
-     * It does things like draw the user's cards, and lets the user click on them
-     * to place them.
-     */
-    @SuppressWarnings("serial")
-    public class UserDeck extends JPanel {
-
-        private List<President> hand;
-
-        public static final int BOARD_WIDTH = 600;
-        public static final int BOARD_HEIGHT = 325;
-
-        public UserDeck() {
-
-            setFocusable(true);
-
-            this.hand = election.getActivePlayer().getHand();
-            paintCards();
-
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    board.draw();
-                    paintCards();
-                    repaint();
-                }
-            });
-        }
-
-        // This is the most important method. Loop through the hand, draw all the cards
-        public void paintCards() {
-            this.removeAll();
-            this.updateUI();
-            this.hand = election.getActivePlayer().getHand();
-
-            for (President curr : hand) {
-                ImageIcon img = new ImageIcon(
-                        new ImageIcon(curr.getImageURL()).getImage()
-                                .getScaledInstance(
-                                        cardSize, (int) Math.round(1.32713755 * cardSize),
-                                        Image.SCALE_SMOOTH
-                                )
-                );
-                final JButton usercd = new JButton(img);
-                this.add(usercd);
-                usercd.setPreferredSize(
-                        new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize))
-                );
-
-                // This makes all of the cards buttons that play the card if clicked
-                usercd.addMouseListener(new MouseAdapter() {
-                    public void mouseReleased(MouseEvent e) {
-                        if (election.getActivePinCard() != null) {
-                            election.getActivePlayer().add(election.getActivePinCard());
-                        }
-                        election.activePinCard(curr);
-                        election.getActivePlayer().place(curr);
-                        board.draw();
-                        paintCards();
-                        repaint();
-                    }
-                });
-
-            }
-
-            repaint();
-        }
-
-        public void reset() {
-            this.removeAll();
-            this.updateUI();
-            hand = election.userHand();
-            paintCards();
-
-            requestFocusInWindow();
-        }
-
-        public void hideCards(int cds) {
-            this.removeAll();
-            this.updateUI();
-
-            for (int i = 0; i < cds; i++) {
-                ImageIcon img = new ImageIcon(
-                        new ImageIcon("files/aicard.png").getImage()
-                                .getScaledInstance(
-                                        cardSize, (int) Math.round(1.32713755 * cardSize),
-                                        Image.SCALE_SMOOTH
-                                )
-                );
-                final JButton usercd = new JButton(img);
-                this.add(usercd);
-                usercd.setPreferredSize(
-                        new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize))
-                );
-            }
-        }
-
-        @Override
-        public void paintComponent(Graphics g) {
-            super.paintComponent(g);
-
-        }
-
-        @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
-        }
-    }
-
-    // This is very similar to the UserDeck, but with some changes geared towards
-    // policies
-    @SuppressWarnings("serial")
-    public class UserPolicies extends JPanel {
-
-        private List<Policy> hand;
-
-        public static final int BOARD_WIDTH = 3600;
-        public static final int BOARD_HEIGHT = 325;
-
-        public UserPolicies() {
-
-            setFocusable(true);
-
-            this.hand = election.getActivePlayer().getPolicies();
-            paintCards();
-
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseReleased(MouseEvent e) {
-
-                    board.draw();
-                    paintCards();
-                    repaint();
-                }
-            });
-        }
-
-        public void paintCards() {
-            this.removeAll();
-            this.updateUI();
-
-            this.hand = election.getActivePlayer().getPolicies();
-
-            for (Policy curr : hand) {
-
-                ImageIcon img = new ImageIcon(
-                        new ImageIcon(curr.getImageURL()).getImage()
-                                .getScaledInstance(
-                                        cardSize, (int) Math.round(1.32713755 * cardSize),
-                                        Image.SCALE_SMOOTH
-                                )
-                );
-                final JButton usercd = new JButton(img);
-                this.add(usercd);
-                usercd.setPreferredSize(
-                        new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize))
-                );
-
-                usercd.addMouseListener(new MouseAdapter() {
-                    public void mouseReleased(MouseEvent e) {
-                        // Maintains the invariant that you can't play the same/opposite policies
-                        if ((election.getActivePinnedPolicies().get(0) != null
-                                && election.getActivePinnedPolicies().get(0).sameCategory(curr))
-                                || election.getActivePinnedPolicies().get(0) == null
-                                        && election.getActivePinnedPolicies().get(1) != null
-                                        && election.getActivePinnedPolicies().get(1)
-                                                .sameCategory(curr)) {
-                            JOptionPane.showMessageDialog(
-                                    board,
-                                    "Error: you can't play the same or opposite policy together!",
-                                    "Error",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
-                        } else if (election.getActivePinnedPolicies().get(0) == null) {
-                            election.pinActivePolicy(election.getActivePlayer().place(curr), 0);
-                            board.draw();
-                            paintCards();
-                        } else if (election.getActivePinnedPolicies().get(1) == null) {
-                            election.pinActivePolicy(election.getActivePlayer().place(curr), 1);
-                            board.draw();
-                            paintCards();
-                        } else {
-                            Policy pol = election
-                                    .pinActivePolicy(election.getActivePlayer().place(curr));
-                            if (pol != null) {
-                                election.getActivePlayer().add(pol);
-                            }
-                            board.draw();
-                            paintCards();
-                        }
-                    }
-                });
-
-            }
-
-            repaint();
-        }
-
-        public void hideCards() {
-            this.removeAll();
-            this.updateUI();
-
-            for (int i = 0; i < 13; i++) {
-                ImageIcon img = new ImageIcon(
-                        new ImageIcon("files/aicard.png").getImage()
-                                .getScaledInstance(
-                                        cardSize, (int) Math.round(1.32713755 * cardSize),
-                                        Image.SCALE_SMOOTH
-                                )
-                );
-                final JButton usercd = new JButton(img);
-                this.add(usercd);
-                usercd.setPreferredSize(
-                        new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize))
-                );
-            }
-        }
-
-        public void reset() {
-            this.removeAll();
-            this.updateUI();
-            hand = election.getPlayer1().getPolicies();
-            paintCards();
-
-            requestFocusInWindow();
-        }
-
-        @Override
-        public void paintComponent(Graphics g) {
-            super.paintComponent(g);
-
-        }
-
-        @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
-        }
-    }
-
-    /// This class represents the game board
-    @SuppressWarnings("serial")
-    public class GameBoard extends JPanel {
-        private boolean cpuPlayed;
-        private boolean hideUsers;
-
-        // Game constants
-        public static final int BOARD_WIDTH = 600;
-        public static final int BOARD_HEIGHT = 250;
-
-        /**
-         * Initializes the game board.
-         */
-        public GameBoard() {
-            cpuPlayed = false;
-
-            draw();
-
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseReleased(MouseEvent e) {
-
-                    repaint(); // repaints the game board
-                }
-            });
-        }
-
-        // Flip CPU cards when cards are played
-        public void flipCPU() {
-            cpuPlayed = !cpuPlayed;
-        }
-
-        public void flipUser() {
-            hideUsers = !hideUsers;
-        }
-
-        // This method basically draws all the cards, the "pinned"
-        // cards that the player is about to play along with others
-        public void draw() {
-            this.removeAll();
-            this.updateUI();
-
-            // Player 1 played policies
-            JPanel userpin = new JPanel();
-
-            for (int i = 0; i < 2; i++) {
-                if (hideUsers && mode) {
-                    ImageIcon usercard = new ImageIcon(
-                            new ImageIcon("files/aicard.png").getImage()
-                                    .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                    );
-                    final JLabel label = new JLabel(usercard);
-                    userpin.add(label);
-                } else {
-                    int pos = i;
-                    Policy curr = election.getActivePinnedPolicies().get(i);
-                    if (curr != null) {
-                        ImageIcon usercard = new ImageIcon(
-                                new ImageIcon(curr.getImageURL()).getImage()
-                                        .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                        );
-                        final JLabel label = new JLabel(usercard);
-                        label.addMouseListener(new MouseAdapter() {
-                            public void mouseReleased(MouseEvent e) {
-                                election.getActivePlayer().add(election.pinActivePolicy(null, pos));
-                                draw();
-                                up.paintCards();
-                            }
-                        });
-                        userpin.add(label);
-                    } else {
-                        ImageIcon usercard = new ImageIcon(
-                                new ImageIcon("files/placeholder.png").getImage()
-                                        .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                        );
-                        final JLabel label = new JLabel(usercard);
-                        userpin.add(label);
-                    }
-                }
-            }
-
-            userpin.setLayout(new GridLayout(2, 1));
-            this.add(userpin);
-
-            /*
-             * Player 1 played president
-             */
-            if (hideUsers && mode) {
-                ImageIcon aicard = new ImageIcon(
-                        new ImageIcon("files/aicard.png").getImage()
-                                .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                );
-                final JLabel label = new JLabel(aicard);
-                this.add(label);
-            } else if (election.getActivePinCard() != null) {
-                ImageIcon usercard = new ImageIcon(
-                        new ImageIcon(election.getActivePinCard().getImageURL()).getImage()
-                                .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                );
-                final JLabel butt = new JLabel(usercard);
-                this.add(butt);
-                butt.addMouseListener(new MouseAdapter() {
-
-                    public void mouseReleased(MouseEvent e) {
-                        election.getActivePlayer().add(election.getActivePinCard());
-                        election.activePinCard(null);
-                        draw();
-                        user_cards.paintCards();
-                    }
-                });
-            } else {
-                ImageIcon usercard = new ImageIcon(
-                        new ImageIcon("files/placeholder.png").getImage()
-                                .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                );
-                final JLabel label = new JLabel(usercard);
-                this.add(label);
-            }
-
-            /*
-             * Current Election Card
-             */
-
-            if (starting) {
-                ImageIcon currelection = new ImageIcon(
-                        new ImageIcon("files/placeholder.png").getImage()
-                                .getScaledInstance(200, 265, Image.SCALE_SMOOTH)
-                );
-                final JLabel elec = new JLabel(currelection);
-                this.add(elec);
-            } else {
-                ImageIcon currelection = new ImageIcon(
-                        new ImageIcon(election.getElection().getImageURL()).getImage()
-                                .getScaledInstance(200, 265, Image.SCALE_SMOOTH)
-                );
-                final JLabel elec = new JLabel(currelection);
-                this.add(elec);
-            }
-
-            /*
-             * CPU Pinned Cards
-             */
-            if (starting) {
-                ImageIcon aicard = new ImageIcon(
-                        new ImageIcon("files/placeholder.png").getImage()
-                                .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                );
-                final JLabel label = new JLabel(aicard);
-                this.add(label);
-
-                JPanel cpupin = new JPanel();
-                for (int i = 0; i < 2; i++) {
-                    ImageIcon place = new ImageIcon(
-                            new ImageIcon("files/placeholder.png").getImage()
-                                    .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                    );
-                    final JLabel placeLab = new JLabel(place);
-                    cpupin.add(placeLab);
-                }
-                cpupin.setLayout(new GridLayout(2, 1));
-                this.add(cpupin);
-
-            } else if (!mode) {
-                /*
-                 * 1-Player Mode
-                 */
-                if (!cpuPlayed || election.getPlayer2Card() == null) {
-                    ImageIcon aicard = new ImageIcon(
-                            new ImageIcon("files/aicard.png").getImage()
-                                    .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                    );
-                    final JLabel label = new JLabel(aicard);
-                    this.add(label);
-                } else {
-                    ImageIcon aicard = new ImageIcon(
-                            new ImageIcon(election.getPlayer2Card().getImageURL()).getImage()
-                                    .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                    );
-                    final JLabel label = new JLabel(aicard);
-                    this.add(label);
-                }
-
-                JPanel cpupin = new JPanel();
-
-                for (Policy curr : election.getPinned2()) {
-                    if (!cpuPlayed || curr == null) {
-                        ImageIcon aicard = new ImageIcon(
-                                new ImageIcon("files/aicard.png").getImage()
-                                        .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                        );
-                        final JLabel label = new JLabel(aicard);
-                        cpupin.add(label);
-                    } else {
-                        ImageIcon aicard = new ImageIcon(
-                                new ImageIcon(curr.getImageURL()).getImage()
-                                        .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                        );
-                        final JLabel label = new JLabel(aicard);
-                        cpupin.add(label);
-                    }
-                }
-
-                cpupin.setLayout(new GridLayout(2, 1));
-                this.add(cpupin);
-            } else {
-                String cd = "files/placeholder.png";
-                if (!election.getTurn()) {
-                    cd = "files/aicard.png";
-                }
-                if (!cpuPlayed || election.getPlayer1Card() == null) {
-                    ImageIcon aicard = new ImageIcon(
-                            new ImageIcon(cd).getImage()
-                                    .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                    );
-                    final JLabel label = new JLabel(aicard);
-                    this.add(label);
-                } else {
-                    ImageIcon aicard = new ImageIcon(
-                            new ImageIcon(election.getPlayer1Card().getImageURL()).getImage()
-                                    .getScaledInstance(150, 199, Image.SCALE_SMOOTH)
-                    );
-                    final JLabel label = new JLabel(aicard);
-                    this.add(label);
-                }
-
-                JPanel cpupin = new JPanel();
-
-                for (Policy curr : election.getPinned1()) {
-                    if (!cpuPlayed || curr == null) {
-                        ImageIcon aicard = new ImageIcon(
-                                new ImageIcon(cd).getImage()
-                                        .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                        );
-                        final JLabel label = new JLabel(aicard);
-                        cpupin.add(label);
-                    } else {
-                        ImageIcon aicard = new ImageIcon(
-                                new ImageIcon(curr.getImageURL()).getImage()
-                                        .getScaledInstance(80, 106, Image.SCALE_SMOOTH)
-                        );
-                        final JLabel label = new JLabel(aicard);
-                        cpupin.add(label);
-                    }
-                }
-
-                cpupin.setLayout(new GridLayout(2, 1));
-                this.add(cpupin);
-            }
-            repaint();
-        }
-
-        public void reset() {
-            cpuPlayed = false;
-            draw();
-            repaint();
-        }
-
-        @Override
-        public void paintComponent(Graphics g) {
-            super.paintComponent(g);
-
-        }
-
-        /**
-         * Returns the size of the game board.
-         */
-        @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
-        }
-    }
-
-    private void setLabel(JLabel j) {
-        j.setText(
-                "<html><body>" + election.p1Score() + "<br>" + election.p2Score() + "</body></html>"
-        );
-        j.repaint();
-    }
+		});
+
+		// Swaps between policies and presidents in view
+		final JButton swap = new JButton("Policies ->");
+		swap.addActionListener(new ActionListener() {
+			boolean mode = true;
+
+			public void actionPerformed(ActionEvent e) {
+				if (!mode) {
+					swap.setText("Policies ->");
+					swap.repaint();
+					frame.add(user_cards, BorderLayout.SOUTH);
+					frame.remove(userPolicies);
+					user_cards.paintCards();
+					up.paintCards();
+					mode = !mode;
+				} else {
+					swap.setText("<- Presidents");
+					swap.repaint();
+					frame.add(userPolicies, BorderLayout.SOUTH);
+					frame.remove(user_cards);
+					user_cards.paintCards();
+					up.paintCards();
+					mode = !mode;
+				}
+			}
+		});
+
+		control_panel.add(play);
+		// control_panel.add(undo);
+		control_panel.add(help);
+		control_panel.add(stats);
+		control_panel.add(reset);
+		control_panel.add(swap);
+		control_panel.setPreferredSize(new Dimension(175, 200));
+		control_panel.setLayout(new GridLayout(5, 1));
+
+		/*
+		 * frame.getContentPane().removeAll(); final CardPanel testcards = new
+		 * CardPanel(); frame.add(testcards, BorderLayout.NORTH); frame.repaint();
+		 */
+
+		// Put the frame on the screen
+		frame.pack();
+		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setVisible(true);
+		user_cards.hideCards(5);
+
+		/******************************************************
+		 ********************** START GAME**********************
+		 ******************************************************/
+
+		/**********
+		 * Login *
+		 **********/
+
+		// First get the active account. Have a check for if activeAccount ends up being
+		// null.
+		BufferedReader reader = null;
+		String activeAccount = null;
+		try {
+			reader = new BufferedReader(new FileReader("files/logininfo.txt"));
+
+			// Read the first line of the file
+			activeAccount = reader.readLine();
+		} catch (IOException e) {
+			// Handle the exception
+			e.printStackTrace();
+		} finally {
+			// Close the file
+			try {
+				if (reader != null) {
+					reader.close();
+				}
+			} catch (IOException e) {
+				// Handle the exception
+				e.printStackTrace();
+			}
+		}
+
+		// Next, get the settings for the active account. Include some sort of check for
+		// if the account isn't found.
+		BufferedReader reader2 = null;
+		String accountSettings = null;
+		try {
+			reader2 = new BufferedReader(new FileReader("files/logininfo.txt"));
+			String line;
+			while ((line = reader2.readLine()) != null) {
+				if (line.startsWith(activeAccount)) {
+					accountSettings = line;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			accountSettings = null;
+		} finally {
+			try {
+				if (reader2 != null) {
+					reader2.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		String[] accountSettingsArray = accountSettings.split(",");
+
+		// Now, open up the login menu
+		Object[] loginOptions = { "Continue as " + activeAccount, "Change Account", "Continue as Guest" };
+		int loginMode = JOptionPane.showOptionDialog(null,
+				"Welcome back to Election Game " + activeAccount + "! Login below:", "Login",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, loginOptions, loginOptions[2]);
+
+		// User continues as active account
+		if (loginMode == 0) {
+			mode = false;
+			election.namePlayer(activeAccount);
+			election.namePlayer2("CPU");
+			election.setAIDifficulty(accountSettingsArray[1]);
+			election.reset(accountSettingsArray[2], 0, true, 0, true, 0, true, 5);
+			deckSet = accountSettingsArray[2];
+			setLabel(status);
+		}
+
+		// User changes account. The following functions can be heavily refactored, and
+		// needs to have way better error handling.
+		else if (loginMode == 1) {
+			mode = false;
+			// First, get a list of the account names.
+			BufferedReader reader3 = null;
+			String[] accountList = null;
+			try {
+				reader3 = new BufferedReader(new FileReader("files/logininfo.txt"));
+				List<String> entries = new ArrayList<>();
+				String line;
+				int lineNumber = 1;
+				while ((line = reader3.readLine()) != null) {
+					if (lineNumber >= 3) {
+						String[] parts = line.split(",");
+						entries.add(parts[0]);
+					}
+					lineNumber++;
+				}
+				entries.add(0, "Edit Accounts");
+				accountList = entries.toArray(new String[0]);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					if (reader3 != null) {
+						reader3.close();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			int loginAccountOption = JOptionPane.showOptionDialog(null,
+					"Welcome back to Election Game " + activeAccount + "! Login below:", "Login",
+					JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList, accountList[0]);
+			// Continue as the selected account
+			if (loginAccountOption > 0) {
+				// First, pull the account settings.
+				activeAccount = accountList[loginAccountOption];
+				reader2 = null;
+				accountSettings = null;
+				try {
+					reader2 = new BufferedReader(new FileReader("files/logininfo.txt"));
+					String line;
+					while ((line = reader2.readLine()) != null) {
+						if (line.startsWith(activeAccount)) {
+							accountSettings = line;
+						}
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					accountSettings = null;
+				} finally {
+					try {
+						if (reader2 != null) {
+							reader2.close();
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				accountSettingsArray = accountSettings.split(",");
+				// Next, change the active account.
+				BufferedReader reader4 = null;
+				BufferedWriter writer = null;
+				try {
+					reader4 = new BufferedReader(new FileReader("files/logininfo.txt"));
+					List<String> lines = new ArrayList<>();
+					String line;
+					while ((line = reader4.readLine()) != null) {
+						lines.add(line);
+					}
+					lines.set(0, activeAccount);
+
+					writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+					for (String modifiedLine : lines) {
+						writer.write(modifiedLine);
+						writer.newLine();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						if (reader4 != null) {
+							reader4.close();
+						}
+						if (writer != null) {
+							writer.close();
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				// Finally, start the game.
+				election.namePlayer(activeAccount);
+				election.namePlayer2("CPU");
+				election.setAIDifficulty(accountSettingsArray[1]);
+				election.reset(accountSettingsArray[2], 0, true, 0, true, 0, true, 5);
+				deckSet = accountSettingsArray[2];
+				setLabel(status);
+			}
+			// Edit the accounts
+			else {
+				// First find what choice the user wants to make
+				// WIP
+				Object[] editOptions = { "Delete Account", "Edit Account", "New Account" };
+				int editAccountOption = JOptionPane.showOptionDialog(null, "How would you like to edit the accounts?",
+						"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, editOptions,
+						editOptions[2]);
+				// Delete Account
+				if (editAccountOption == 0) {
+					// First, choose which account to delete
+					int deleteOption = JOptionPane.showOptionDialog(null, "Which account would you like to delete?",
+							"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
+							accountList[0]);
+					String acctToDelete = accountList[deleteOption];
+					// Delete the account. This function doesn't work either, it deletes the first line
+					reader = null;
+					BufferedWriter writer = null;
+					try {
+						reader = new BufferedReader(new FileReader("files/logininfo.txt"));
+						List<String> lines = new ArrayList<>();
+						String line;
+						boolean deleted = false;
+						while ((line = reader.readLine()) != null) {
+							if (!line.startsWith(acctToDelete) || deleted) {
+								lines.add(line);
+							} else {
+								deleted = true;
+							}
+						}
+
+						writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+						for (String modifiedLine : lines) {
+							writer.write(modifiedLine);
+							writer.newLine();
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					} finally {
+						try {
+							if (reader != null) {
+								reader.close();
+							}
+							if (writer != null) {
+								writer.close();
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				} else if (editAccountOption == 1 || editAccountOption == 2) {
+					// Choose account to edit
+					String newAcctName = null;
+					if (editAccountOption == 1) {
+						int editOption = JOptionPane.showOptionDialog(null, "Which account would you like to edit?",
+								"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
+								accountList[0]);
+						newAcctName = accountList[editOption];
+					} else {
+						// Choose new settings
+						// Name
+						newAcctName = JOptionPane.showInputDialog(null, "What would you like the account name to be?");
+					}
+					// AI difficulty
+					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+					int diff = JOptionPane.showOptionDialog(null, "Choose the difficulty of the AI:",
+							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
+							diffs[1]);
+					String aiDifficulty = (String) diffs[diff];
+					// Deck choice
+					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational",
+							"Custom" };
+					int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
+							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
+					String deckChoice = (String) cardDecks[deck];
+					String acctLine = newAcctName + "," + aiDifficulty + "," + deckChoice;
+					// Append the account to the file or edit the account. EDITING DOESNT WORK
+					reader = null;
+					BufferedWriter writer = null;
+					try {
+						reader = new BufferedReader(new FileReader("files/logininfo.txt"));
+						List<String> lines = new ArrayList<>();
+						String line;
+						boolean replaced = false;
+						while ((line = reader.readLine()) != null) {
+							if (!line.startsWith(acctLine.split(",")[0]) || replaced) {
+								lines.add(line);
+							} else {
+								lines.add(acctLine);
+								replaced = true;
+							}
+						}
+
+						if (!replaced) {
+							lines.add(acctLine);
+						}
+
+						writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+						for (String modifiedLine : lines) {
+							writer.write(modifiedLine);
+							writer.newLine();
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					} finally {
+						try {
+							if (reader != null) {
+								reader.close();
+							}
+							if (writer != null) {
+								writer.close();
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+					// Now, begin the game.
+					JOptionPane.showMessageDialog(null,
+							"Account settings updated. You will now begin a new game with the updated account!");
+					// First, change the active account.
+					BufferedReader reader4 = null;
+					writer = null;
+					try {
+						reader4 = new BufferedReader(new FileReader("files/logininfo.txt"));
+						List<String> lines = new ArrayList<>();
+						String line;
+						while ((line = reader4.readLine()) != null) {
+							lines.add(line);
+						}
+						lines.set(0, newAcctName);
+
+						writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+						for (String modifiedLine : lines) {
+							writer.write(modifiedLine);
+							writer.newLine();
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					} finally {
+						try {
+							if (reader4 != null) {
+								reader4.close();
+							}
+							if (writer != null) {
+								writer.close();
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+					// Finally, start the game.
+					election.namePlayer(newAcctName);
+					election.namePlayer2("CPU");
+					election.setAIDifficulty(aiDifficulty);
+					election.reset(deckChoice, 0, true, 0, true, 0, true, 5);
+					deckSet = deckChoice;
+					setLabel(status);
+				}
+			}
+
+		} else {
+
+			/*********************
+			 * Normal Guest Login *
+			 **********************/
+
+			String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "Quandale", "Jack Harlow",
+					"Quandale Dingle", "Senor Dingle", "Mr. Dingle", "Daquavious Bingleton" };
+
+			Object[] options = { "1-Player", "2-Player", "Quick 1-Player" };
+			int gameMode = JOptionPane.showOptionDialog(null, "Welcome to Election Game! Please select your game mode:",
+					"Select Game Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options,
+					options[0]);
+
+			if (gameMode == -1 || gameMode == 0 || gameMode == 2) {
+				mode = false;
+			} else {
+				mode = true;
+			}
+
+			if (gameMode == 2) {
+				int ran = (int) Math.round(Math.random() * names.length);
+				CardData.flipExpanded();
+				election.namePlayer(names[ran]);
+				election.namePlayer2("CPU");
+				election.setAIDifficulty("Hard");
+				deckSet = "expanded";
+				election.reset("expanded", 0, true, 0, true, 0, true, 5);
+				setLabel(status);
+			} else {
+				// Name Player 1
+				String playername = "Player 1";
+				if (mode) {
+					playername = JOptionPane.showInputDialog(null,
+							"Hello and welcome to the Election Game! Player 1, please enter your name: ");
+				} else {
+					playername = JOptionPane.showInputDialog(null,
+							"Hello and welcome to the Election Game! Please enter your name: ");
+					election.namePlayer2("CPU");
+				}
+				election.namePlayer(playername);
+				setLabel(status);
+				status.repaint();
+
+				// Name Player 2 or set AI difficulty
+				if (mode) {
+					String player2name = JOptionPane.showInputDialog(null, "Player 2, please enter your name: ");
+					election.namePlayer2(player2name);
+					setLabel(status);
+					status.repaint();
+				} else {
+					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+					int diff = JOptionPane.showOptionDialog(null, "Choose the difficulty of the AI:",
+							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
+							diffs[1]);
+					String difficulty = "Medium";
+					switch (diff) {
+					case 0:
+						difficulty = "Easy";
+						break;
+					case 1:
+						difficulty = "Medium";
+						break;
+					case 2:
+						difficulty = "Hard";
+						break;
+					case 3:
+						difficulty = "Impossible";
+						break;
+					default:
+						break;
+					}
+					election.setAIDifficulty(difficulty);
+				}
+
+				Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom" };
+				int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
+
+				if (deck == 0) {
+					election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
+					deckSet = "presidentsonly";
+				}
+				if (deck == 1) {
+					election.reset("standard", 0, true, 0, true, 0, true, 5);
+					deckSet = "standard";
+				}
+				if (deck == 2) {
+					election.reset("expanded", 0, true, 0, true, 0, true, 5);
+					deckSet = "expanded";
+				}
+				if (deck == 3) {
+					election.reset("memes", 0, true, 0, true, 0, true, 5);
+					deckSet = "memes";
+				}
+				if (deck == 4) {
+					election.reset("generational", 0, true, 0, true, 0, true, 5);
+					deckSet = "generational";
+				}
+				if (deck == 5) {
+					// Find a way to screen this so it doesn't get broken. Also find ways to be more
+					// creative with this, maybe
+					// add generational cards, sort all presidents/nonpresidents and get the top 50
+					// from there, etc.
+					try {
+						int presCount = Integer.parseInt(JOptionPane.showInputDialog(null,
+								"How many actual presidents would you like to include?"));
+						Object[] yesno = { "Yes", "No" };
+						int presSort = JOptionPane.showOptionDialog(null,
+								"Would you like the best presidents to be in the deck first?", "Select Deck",
+								JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
+						boolean presSortBool = false;
+						if (presSort == 0) {
+							presSortBool = true;
+						}
+						int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(null,
+								"How many non-presidents would you like to include?"));
+						int nonPresSort = JOptionPane.showOptionDialog(null,
+								"Would you like the best non-presidents to be in the deck first?", "Select Deck",
+								JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
+						boolean nonPresSortBool = false;
+						if (nonPresSort == 0) {
+							nonPresSortBool = true;
+						}
+						int memeCount = Integer.parseInt(
+								JOptionPane.showInputDialog(null, "How many meme cards would you like to include?"));
+						int memeSort = JOptionPane.showOptionDialog(null,
+								"Would you like the best meme cards to be in the deck first?", "Select Deck",
+								JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
+						boolean memeSortBool = false;
+						if (memeSort == 0) {
+							memeSortBool = true;
+						}
+						election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount,
+								memeSortBool, 5);
+						deckSet = "custom";
+					} catch (Exception ex) {
+						JOptionPane.showMessageDialog(board,
+								"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
+								JOptionPane.ERROR_MESSAGE);
+						election.reset("standard", 0, true, 0, true, 0, true, 5);
+						deckSet = "standard";
+					}
+				}
+			}
+		}
+		user_cards.paintCards();
+		starting = false;
+		board.draw();
+	}
+
+	/*
+	 * This is my first inner class used to represent the deck of the user. It does
+	 * things like draw the user's cards, and lets the user click on them to place
+	 * them.
+	 */
+	@SuppressWarnings("serial")
+	public class UserDeck extends JPanel {
+
+		private List<President> hand;
+
+		public static final int BOARD_WIDTH = 600;
+		public static final int BOARD_HEIGHT = 325;
+
+		public UserDeck() {
+
+			setFocusable(true);
+
+			this.hand = election.getActivePlayer().getHand();
+			paintCards();
+
+			addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseReleased(MouseEvent e) {
+					board.draw();
+					paintCards();
+					repaint();
+				}
+			});
+		}
+
+		// This is the most important method. Loop through the hand, draw all the cards
+		public void paintCards() {
+			this.removeAll();
+			this.updateUI();
+			this.hand = election.getActivePlayer().getHand();
+
+			for (President curr : hand) {
+				ImageIcon img = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage().getScaledInstance(cardSize,
+						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				final JButton usercd = new JButton(img);
+				if (cardInfoMode) {
+					usercd.setIcon(null);
+					usercd.setText("<html>" + curr.getCardInfo() + "</html>");
+				}
+				this.add(usercd);
+				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
+
+				// This makes all of the cards buttons that play the card if clicked
+				usercd.addMouseListener(new MouseAdapter() {
+					public void mouseReleased(MouseEvent e) {
+						if (election.getActivePinCard() != null) {
+							election.getActivePlayer().add(election.getActivePinCard());
+						}
+						election.activePinCard(curr);
+						election.getActivePlayer().place(curr);
+						board.draw();
+						paintCards();
+						repaint();
+					}
+				});
+
+			}
+
+			repaint();
+		}
+
+		public void reset() {
+			this.removeAll();
+			this.updateUI();
+			hand = election.userHand();
+			paintCards();
+
+			requestFocusInWindow();
+		}
+
+		public void hideCards(int cds) {
+			this.removeAll();
+			this.updateUI();
+
+			for (int i = 0; i < cds; i++) {
+				ImageIcon img = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance(cardSize,
+						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				final JButton usercd = new JButton(img);
+				this.add(usercd);
+				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
+			}
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+		}
+
+		@Override
+		public Dimension getPreferredSize() {
+			return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
+		}
+	}
+
+	// This is very similar to the UserDeck, but with some changes geared towards
+	// policies
+	@SuppressWarnings("serial")
+	public class UserPolicies extends JPanel {
+
+		private List<Policy> hand;
+
+		public static final int BOARD_WIDTH = 3600;
+		public static final int BOARD_HEIGHT = 325;
+
+		public UserPolicies() {
+
+			setFocusable(true);
+
+			this.hand = election.getActivePlayer().getPolicies();
+			paintCards();
+
+			addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseReleased(MouseEvent e) {
+
+					board.draw();
+					paintCards();
+					repaint();
+				}
+			});
+		}
+
+		public void paintCards() {
+			this.removeAll();
+			this.updateUI();
+
+			this.hand = election.getActivePlayer().getPolicies();
+
+			for (Policy curr : hand) {
+
+				ImageIcon img = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage().getScaledInstance(cardSize,
+						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				final JButton usercd = new JButton(img);
+				this.add(usercd);
+				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
+
+				usercd.addMouseListener(new MouseAdapter() {
+					public void mouseReleased(MouseEvent e) {
+						// Maintains the invariant that you can't play the same/opposite policies
+						if ((election.getActivePinnedPolicies().get(0) != null
+								&& election.getActivePinnedPolicies().get(0).sameCategory(curr))
+								|| election.getActivePinnedPolicies().get(0) == null
+										&& election.getActivePinnedPolicies().get(1) != null
+										&& election.getActivePinnedPolicies().get(1).sameCategory(curr)) {
+							JOptionPane.showMessageDialog(board,
+									"Error: you can't play the same or opposite policy together!", "Error",
+									JOptionPane.ERROR_MESSAGE);
+						} else if (election.getActivePinnedPolicies().get(0) == null) {
+							election.pinActivePolicy(election.getActivePlayer().place(curr), 0);
+							board.draw();
+							paintCards();
+						} else if (election.getActivePinnedPolicies().get(1) == null) {
+							election.pinActivePolicy(election.getActivePlayer().place(curr), 1);
+							board.draw();
+							paintCards();
+						} else {
+							Policy pol = election.pinActivePolicy(election.getActivePlayer().place(curr));
+							if (pol != null) {
+								election.getActivePlayer().add(pol);
+							}
+							board.draw();
+							paintCards();
+						}
+					}
+				});
+
+			}
+
+			repaint();
+		}
+
+		public void hideCards() {
+			this.removeAll();
+			this.updateUI();
+
+			for (int i = 0; i < 13; i++) {
+				ImageIcon img = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance(cardSize,
+						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				final JButton usercd = new JButton(img);
+				this.add(usercd);
+				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
+			}
+		}
+
+		public void reset() {
+			this.removeAll();
+			this.updateUI();
+			hand = election.getPlayer1().getPolicies();
+			paintCards();
+
+			requestFocusInWindow();
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+		}
+
+		@Override
+		public Dimension getPreferredSize() {
+			return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
+		}
+	}
+
+	/// This class represents the game board
+	@SuppressWarnings("serial")
+	public class GameBoard extends JPanel {
+		private boolean cpuPlayed;
+		private boolean hideUsers;
+
+		// Game constants
+		public static final int BOARD_WIDTH = 600;
+		public static final int BOARD_HEIGHT = 250;
+
+		/**
+		 * Initializes the game board.
+		 */
+		public GameBoard() {
+			cpuPlayed = false;
+
+			draw();
+
+			addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseReleased(MouseEvent e) {
+
+					repaint(); // repaints the game board
+				}
+			});
+		}
+
+		// Flip CPU cards when cards are played
+		public void flipCPU() {
+			cpuPlayed = !cpuPlayed;
+		}
+
+		public void flipUser() {
+			hideUsers = !hideUsers;
+		}
+
+		// This method basically draws all the cards, the "pinned"
+		// cards that the player is about to play along with others
+		public void draw() {
+			this.removeAll();
+			this.updateUI();
+
+			// Player 1 played policies
+			JPanel userpin = new JPanel();
+
+			for (int i = 0; i < 2; i++) {
+				if (hideUsers && mode) {
+					ImageIcon usercard = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
+							.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+					final JLabel label = new JLabel(usercard);
+					userpin.add(label);
+				} else {
+					int pos = i;
+					Policy curr = election.getActivePinnedPolicies().get(i);
+					if (curr != null) {
+						ImageIcon usercard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
+								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(usercard);
+						label.addMouseListener(new MouseAdapter() {
+							public void mouseReleased(MouseEvent e) {
+								election.getActivePlayer().add(election.pinActivePolicy(null, pos));
+								draw();
+								up.paintCards();
+							}
+						});
+						userpin.add(label);
+					} else {
+						ImageIcon usercard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
+								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(usercard);
+						userpin.add(label);
+					}
+				}
+			}
+
+			userpin.setLayout(new GridLayout(2, 1));
+			this.add(userpin);
+
+			/*
+			 * Player 1 played president
+			 */
+			if (hideUsers && mode) {
+				ImageIcon aicard = new ImageIcon(
+						new ImageIcon("files/aicard.png").getImage().getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+				final JLabel label = new JLabel(aicard);
+				this.add(label);
+			} else if (election.getActivePinCard() != null) {
+				ImageIcon usercard = new ImageIcon(new ImageIcon(election.getActivePinCard().getImageURL()).getImage()
+						.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+				final JLabel butt = new JLabel(usercard);
+				this.add(butt);
+				butt.addMouseListener(new MouseAdapter() {
+
+					public void mouseReleased(MouseEvent e) {
+						election.getActivePlayer().add(election.getActivePinCard());
+						election.activePinCard(null);
+						draw();
+						user_cards.paintCards();
+					}
+				});
+			} else {
+				ImageIcon usercard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
+						.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+				final JLabel label = new JLabel(usercard);
+				this.add(label);
+			}
+
+			/*
+			 * Current Election Card
+			 */
+
+			if (starting) {
+				ImageIcon currelection = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
+						.getScaledInstance(200, 265, Image.SCALE_SMOOTH));
+				final JLabel elec = new JLabel(currelection);
+				this.add(elec);
+			} else {
+				ImageIcon currelection = new ImageIcon(new ImageIcon(election.getElection().getImageURL()).getImage()
+						.getScaledInstance(200, 265, Image.SCALE_SMOOTH));
+				final JLabel elec = new JLabel(currelection);
+				this.add(elec);
+			}
+
+			/*
+			 * CPU Pinned Cards
+			 */
+			if (starting) {
+				ImageIcon aicard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
+						.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+				final JLabel label = new JLabel(aicard);
+				this.add(label);
+
+				JPanel cpupin = new JPanel();
+				for (int i = 0; i < 2; i++) {
+					ImageIcon place = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
+							.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+					final JLabel placeLab = new JLabel(place);
+					cpupin.add(placeLab);
+				}
+				cpupin.setLayout(new GridLayout(2, 1));
+				this.add(cpupin);
+
+			} else if (!mode) {
+				/*
+				 * 1-Player Mode
+				 */
+				if (!cpuPlayed || election.getPlayer2Card() == null) {
+					ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance(150,
+							199, Image.SCALE_SMOOTH));
+					final JLabel label = new JLabel(aicard);
+					this.add(label);
+				} else {
+					ImageIcon aicard = new ImageIcon(new ImageIcon(election.getPlayer2Card().getImageURL()).getImage()
+							.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+					final JLabel label = new JLabel(aicard);
+					this.add(label);
+				}
+
+				JPanel cpupin = new JPanel();
+
+				for (Policy curr : election.getPinned2()) {
+					if (!cpuPlayed || curr == null) {
+						ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
+								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(aicard);
+						cpupin.add(label);
+					} else {
+						ImageIcon aicard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
+								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(aicard);
+						cpupin.add(label);
+					}
+				}
+
+				cpupin.setLayout(new GridLayout(2, 1));
+				this.add(cpupin);
+			} else {
+				String cd = "files/placeholder.png";
+				if (!election.getTurn()) {
+					cd = "files/aicard.png";
+				}
+				if (!cpuPlayed || election.getPlayer1Card() == null) {
+					ImageIcon aicard = new ImageIcon(
+							new ImageIcon(cd).getImage().getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+					final JLabel label = new JLabel(aicard);
+					this.add(label);
+				} else {
+					ImageIcon aicard = new ImageIcon(new ImageIcon(election.getPlayer1Card().getImageURL()).getImage()
+							.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+					final JLabel label = new JLabel(aicard);
+					this.add(label);
+				}
+
+				JPanel cpupin = new JPanel();
+
+				for (Policy curr : election.getPinned1()) {
+					if (!cpuPlayed || curr == null) {
+						ImageIcon aicard = new ImageIcon(
+								new ImageIcon(cd).getImage().getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(aicard);
+						cpupin.add(label);
+					} else {
+						ImageIcon aicard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
+								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(aicard);
+						cpupin.add(label);
+					}
+				}
+
+				cpupin.setLayout(new GridLayout(2, 1));
+				this.add(cpupin);
+			}
+			repaint();
+		}
+
+		public void reset() {
+			cpuPlayed = false;
+			draw();
+			repaint();
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+		}
+
+		/**
+		 * Returns the size of the game board.
+		 */
+		@Override
+		public Dimension getPreferredSize() {
+			return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
+		}
+	}
+
+	private void setLabel(JLabel j) {
+		j.setText("<html><body>" + election.p1Score() + "<br>" + election.p2Score() + "</body></html>");
+		j.repaint();
+	}
 }

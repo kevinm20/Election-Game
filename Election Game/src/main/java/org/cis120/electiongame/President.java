@@ -28,7 +28,11 @@ public class President extends Card {
 
     private final String ideology;
     private final String marquee;
+    
+    // This is for an extra description
+    private String cardInfo = "No card info available";
 
+    // Constructor
     public President(
             String name, String region, int exp, int infl, int pol, int nam, String id, String marq
     ) {
@@ -40,6 +44,14 @@ public class President extends Card {
         this.nameRec = nam;
         this.ideology = id;
         this.marquee = marq;
+    }
+    
+    // Add a description
+    public President(
+            String name, String region, int exp, int infl, int pol, int nam, String id, String marq, String desc
+    ) {
+        this(name, region, exp, infl, pol, nam, id, marq);
+        this.cardInfo = desc;
     }
 
     String getRegion() {
@@ -68,6 +80,10 @@ public class President extends Card {
     
     double getWeightedAve() {
     	return (double)(.15*experience)+(double)(.35*influence)+(double)(.25*policy)+(double)(.25*nameRec);
+    }
+    
+    String getCardInfo() {
+    	return cardInfo;
     }
 
     // This is used for the AI
