@@ -1436,6 +1436,24 @@ public class CardData {
     static President michaelLeib = new President(
             "Michael Leib", "Northeast", 4, 2, 1, 1, "Libertarian", "Deregulation"
     );
+    static President mehmetOz = new President(
+            "Mehmet Oz", "Northeast", 1, 1, 1, 4, "Conservative", "Tax Cuts"
+    );
+    static President thomasMassie = new President(
+            "Thomas Massie", "South", 3, 2, 4, 1, "Libertarian", "Constructionism"
+    );
+    static President katieBritt = new President(
+            "Katie Britt", "South", 2, 3, 2, 1, "Conservative", "Traditional Morality"
+    );
+    static President chuckSchumer = new President(
+            "Chuck Schumer", "Northeast", 8, 1, 4, 4, "Progressive", "Social Programs"
+    );
+    static President kathyHochul = new President(
+            "Kathy Hochul", "Northeast", 4, 1, 2, 2, "Progressive", "Social Liberalism"
+    );
+    static President alexandriaOcasioCortez = new President(
+            "Alexandria Ocasio-Cortez", "Northeast", 2, 4, 1, 5, "Progressive", "Social Programs"
+    );
     
   
 
@@ -2282,6 +2300,12 @@ public class CardData {
         nonpresidents.add(stephenRBradley);
         nonpresidents.add(johnSevier);
         nonpresidents.add(michaelLeib);
+        nonpresidents.add(mehmetOz);
+        nonpresidents.add(thomasMassie);
+        nonpresidents.add(katieBritt);
+        nonpresidents.add(chuckSchumer);
+        nonpresidents.add(kathyHochul);
+        nonpresidents.add(alexandriaOcasioCortez);
         
         
         
