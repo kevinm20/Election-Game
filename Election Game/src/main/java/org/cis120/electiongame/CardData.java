@@ -1364,6 +1364,80 @@ public class CardData {
     static President thomasRandolphJr = new President(
             "Thomas Randolph Jr.", "South", 3, 2, 2, 3, "Libertarian", "Egalitarianism"
     );
+    static President asaHutchinson = new President(
+            "Asa Hutchinson", "South", 6, 1, 1, 1, "Conservative", "Law and Order"
+    );
+    static President dougMastriano = new President(
+            "Doug Mastriano", "Northeast", 1, 1, 1, 1, "Conservative", "Traditional Morality"
+    );
+    static President paulRyan = new President(
+            "Paul Ryan", "Midwest", 4, 2, 6, 4, "Conservative", "Tax Cuts"
+    );
+    static President elizabethWarren = new President(
+            "Elizabeth Warren", "Northeast", 4, 1, 7, 3, "Progressive", "Social Programs"
+    );
+    static President catherineCortezMasto = new President(
+            "Catherine Cortez Masto", "West", 4, 2, 3, 1, "Progressive", "Open Borders"
+    );
+    static President andrewCuomo = new President(
+            "Andrew Cuomo", "Northeast", 3, 5, 1, 6, "Progressive", "Regulation"
+    );
+    static President williamCushing = new President(
+            "William Cushing", "Northeast", 3, 1, 3, 1, "Conservative", "Centralization"
+    );
+    static President johnBlairJr = new President(
+            "John Blair Jr.", "South", 2, 2, 6, 2, "Conservative", "Centralization"
+    );
+    static President paulHamilton = new President(
+            "Paul Hamilton", "South", 2, 1, 3, 1, "Libertarian", "Tough Foreign Policy"
+    );
+    static President philipReed = new President(
+            "Philip Reed", "Northeast", 4, 1, 2, 1, "Libertarian", "Egalitarianism"
+    );
+    static President johnArmstrongJr = new President(
+            "John Armstrong Jr.", "Northeast", 3, 1, 1, 1, "Libertarian", "Tough Foreign Policy"
+    );
+    static President williamLowndes = new President(
+            "William Lowndes", "South", 3, 3, 5, 2, "Libertarian", "Tariffs"
+    );
+    static President bushrodWashington = new President(
+            "Bushrod Washington", "South", 4, 1, 3, 2, "Conservative", "Implied Powers"
+    );
+    static President thomasFitzsimons = new President(
+            "Thomas Fitzsimons", "Northeast", 2, 2, 2, 1, "Conservative", "Tariffs"
+    );
+    static President jonathanTrumbullJr = new President(
+            "Jonathan Trumbull Jr.", "Northeast", 6, 3, 1, 4, "Conservative", "Centralization"
+    );
+    static President williamEustis = new President(
+            "William Eustis", "Northeast", 4, 1, 1, 2, "Libertarian", "Isolationism"
+    );
+    static President williamJones = new President(
+            "William Jones", "Northeast", 2, 1, 2, 1, "Libertarian", "Central Bank"
+    );
+    static President matthewClay = new President(
+            "Matthew Clay", "South", 5, 2, 1, 1, "Libertarian", "Constructionism"
+    );
+    static President thomasJohnson = new President(
+            "Thomas Johnson", "Northeast", 2, 1, 4, 2, "Conservative", "Implied Powers"
+    );
+    static President alfredMoore = new President(
+            "Alfred Moore", "South", 2, 1, 2, 1, "Conservative", "Implied Powers"
+    );
+    static President isaacShelby = new President(
+            "Isaac Shelby", "South", 3, 5, 1, 2, "Libertarian", "Tough Foreign Policy"
+    );
+    static President stephenRBradley = new President(
+            "Stephen R. Bradley", "Northeast", 5, 2, 3, 2, "Libertarian", "Isolationism"
+    );
+    static President johnSevier = new President(
+            "John Sevier", "South", 5, 2, 3, 1, "Libertarian", "Tough Foreign Policy"
+    );
+    static President michaelLeib = new President(
+            "Michael Leib", "Northeast", 4, 2, 1, 1, "Libertarian", "Deregulation"
+    );
+    
+  
 
     
     
@@ -2184,6 +2258,30 @@ public class CardData {
         nonpresidents.add(williamDuane);
         nonpresidents.add(williamPinkney);
         nonpresidents.add(thomasRandolphJr);
+        nonpresidents.add(asaHutchinson);
+        nonpresidents.add(dougMastriano);
+        nonpresidents.add(paulRyan);
+        nonpresidents.add(elizabethWarren);
+        nonpresidents.add(catherineCortezMasto);
+        nonpresidents.add(andrewCuomo);
+        nonpresidents.add(williamCushing);
+        nonpresidents.add(johnBlairJr);
+        nonpresidents.add(paulHamilton);
+        nonpresidents.add(philipReed);
+        nonpresidents.add(johnArmstrongJr);
+        nonpresidents.add(williamLowndes);
+        nonpresidents.add(bushrodWashington);
+        nonpresidents.add(thomasFitzsimons);
+        nonpresidents.add(jonathanTrumbullJr);
+        nonpresidents.add(williamEustis);
+        nonpresidents.add(williamJones);
+        nonpresidents.add(matthewClay);
+        nonpresidents.add(thomasJohnson);
+        nonpresidents.add(alfredMoore);
+        nonpresidents.add(isaacShelby);
+        nonpresidents.add(stephenRBradley);
+        nonpresidents.add(johnSevier);
+        nonpresidents.add(michaelLeib);
         
         
         
