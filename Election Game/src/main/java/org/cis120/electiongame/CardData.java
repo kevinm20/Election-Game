@@ -1454,6 +1454,42 @@ public class CardData {
     static President alexandriaOcasioCortez = new President(
             "Alexandria Ocasio-Cortez", "Northeast", 2, 4, 1, 5, "Progressive", "Social Programs"
     );
+    static President tuckerCarlson = new President(
+            "Tucker Carlson", "Northeast", 1, 6, 1, 6, "Populist", "Anti-Establishment"
+    );
+    static President marjorieTaylorGreene = new President(
+            "Marjorie Taylor Greene", "South", 2, 2, 1, 4, "Conservative", "Anti-Establishment"
+    );
+    static President timScott = new President(
+            "Tim Scott", "South", 4, 4, 3, 3, "Conservative", "Personal Freedom"
+    );
+    static President peteButtigieg = new President(
+            "Pete Buttigieg", "Midwest", 2, 3, 5, 3, "Progressive", "Internal Improvements"
+    );
+    static President tulsiGabbard = new President(
+            "Tulsi Gabbard", "West", 3, 3, 2, 3, "Populist", "Isolationism"
+    );
+    static President joeManchin = new President(
+            "Joe Manchin", "Midwest", 7, 2, 1, 3, "Populist", "Deregulation"
+    );
+    static President brianKemp = new President(
+            "Brian Kemp", "South", 4, 2, 4, 3, "Conservative", "Establishment"
+    );
+    static President brettFavre = new President(
+            "Brett Favre", "South", 1, 1, 1, 5, "Conservative", "Tax Cuts"
+    );
+    static President elonMusk = new President(
+            "Elon Musk", "South", 1, 3, 3, 9, "Conservative", "Personal Freedom"
+    );
+    static President gavinNewsome = new President(
+            "Gavin Newsome", "West", 3, 6, 3, 4, "Progressive", "Social Liberalism"
+    );
+    static President leBronJames = new President(
+            "LeBron James", "Midwest", 1, 2, 1, 9, "Progressive", "Personal Freedom"
+    );
+    static President raphaelWarnock = new President(
+            "Raphael Warnock", "South", 2, 6, 2, 3, "Progressive", "Egalitarianism"
+    );
     
   
 
@@ -2306,6 +2342,18 @@ public class CardData {
         nonpresidents.add(chuckSchumer);
         nonpresidents.add(kathyHochul);
         nonpresidents.add(alexandriaOcasioCortez);
+        nonpresidents.add(tuckerCarlson);
+        nonpresidents.add(marjorieTaylorGreene);
+        nonpresidents.add(timScott);
+        nonpresidents.add(peteButtigieg);
+        nonpresidents.add(tulsiGabbard);
+        nonpresidents.add(joeManchin);
+        nonpresidents.add(brianKemp);
+        nonpresidents.add(brettFavre);
+        nonpresidents.add(elonMusk);
+        nonpresidents.add(gavinNewsome);
+        nonpresidents.add(leBronJames);
+        nonpresidents.add(raphaelWarnock);
         
         
         
