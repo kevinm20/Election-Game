@@ -1016,7 +1016,7 @@ public class CardData {
             "Josh Hawley", "South", 3, 4, 4, 3, "Populist", "Regulation"
     );
     static President maryPeltola = new President(
-            "Mary Peltola", "West", 1, 2, 2, 1, "Progressive", "Personal Freedom"
+            "Mary Peltola", "West", 2, 2, 2, 1, "Progressive", "Personal Freedom"
     );
     static President leeZeldin = new President(
             "Lee Zeldin", "Northeast", 3, 5, 6, 3, "Conservative", "Law and Order"
@@ -1491,6 +1491,33 @@ public class CardData {
             "Raphael Warnock", "South", 2, 6, 2, 3, "Progressive", "Egalitarianism"
     );
     
+    static President seanPatrickMaloney = new President(
+            "Sean Patrick Maloney", "Northeast", 3, 1, 1, 1, "Progressive", "Social Liberalism"
+    );
+    
+    static President johnFetterman = new President(
+            "John Fetterman", "Midwest", 2, 3, 1, 2, "Progressive", "Social Programs"
+    );
+    
+    static President joshShapiro = new President(
+            "Josh Shapiro", "Midwest", 2, 4, 3, 2, "Progressive", "Social Liberalism"
+    );
+    
+    static President mikeLawler = new President(
+            "Mike Lawler", "Northeast", 2, 3, 2, 1, "Conservative", "Tax Cuts"
+    );
+    
+    static President georgeSantos = new President(
+            "George Santos", "Northeast", 2, 1, 1, 3, "Conservative", "Anti-Establishment"
+    );
+    
+    static President susanCollins = new President(
+            "Susan Collins", "Northeast", 7, 2, 2, 2, "Conservative", "Social Liberalism"
+    );
+    
+    static President cherylJohnson = new President(
+            "Cheryl Johnson", "Northeast", 10, 10, 1, 1, "Progressive", "Law and Order"
+    );
   
 
     
@@ -2354,7 +2381,20 @@ public class CardData {
         nonpresidents.add(gavinNewsome);
         nonpresidents.add(leBronJames);
         nonpresidents.add(raphaelWarnock);
+        nonpresidents.add(seanPatrickMaloney); 
+        nonpresidents.add(johnFetterman);
+        nonpresidents.add(joshShapiro);
+        nonpresidents.add(mikeLawler);
+        nonpresidents.add(georgeSantos);
+        nonpresidents.add(susanCollins);
+
+
         
+
+      
+
+        
+
         
         
         meme.add(millFill);
@@ -2391,6 +2431,10 @@ public class CardData {
         meme.add(charliecristdemrep);
         meme.add(charliecristfed);
         **/
+        meme.add(cherylJohnson);
+
+
+        
         
         
         
