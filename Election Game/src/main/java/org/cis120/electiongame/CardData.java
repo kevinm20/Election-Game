@@ -1446,7 +1446,7 @@ public class CardData {
             "Katie Britt", "South", 2, 3, 2, 1, "Conservative", "Traditional Morality"
     );
     static President chuckSchumer = new President(
-            "Chuck Schumer", "Northeast", 8, 1, 4, 4, "Progressive", "Social Programs"
+            "Chuck Schumer", "Northeast", 8, 1, 5, 4, "Progressive", "Social Programs"
     );
     static President kathyHochul = new President(
             "Kathy Hochul", "Northeast", 4, 1, 2, 2, "Progressive", "Social Liberalism"
@@ -1479,18 +1479,17 @@ public class CardData {
             "Brett Favre", "South", 1, 1, 1, 5, "Conservative", "Tax Cuts"
     );
     static President elonMusk = new President(
-            "Elon Musk", "South", 1, 3, 3, 9, "Conservative", "Personal Freedom"
+            "Elon Musk", "South", 1, 3, 3, 9, "Libertarian", "Personal Freedom"
     );
-    static President gavinNewsome = new President(
-            "Gavin Newsome", "West", 3, 6, 3, 4, "Progressive", "Social Liberalism"
+    static President gavinNewsom = new President(
+            "Gavin Newsom", "West", 3, 6, 3, 4, "Progressive", "Social Liberalism"
     );
     static President leBronJames = new President(
             "LeBron James", "Midwest", 1, 2, 1, 9, "Progressive", "Personal Freedom"
     );
     static President raphaelWarnock = new President(
             "Raphael Warnock", "South", 2, 6, 2, 3, "Progressive", "Egalitarianism"
-    );
-    
+    );   
     static President seanPatrickMaloney = new President(
             "Sean Patrick Maloney", "Northeast", 3, 1, 1, 1, "Progressive", "Social Liberalism"
     );
@@ -1517,6 +1516,24 @@ public class CardData {
     
     static President cherylJohnson = new President(
             "Cheryl Johnson", "Northeast", 10, 10, 1, 1, "Progressive", "Law and Order"
+    );
+    static President mikeLee = new President(
+            "Mike Lee", "West", 4, 1, 5, 2, "Libertarian", "Limited Government"
+    );
+    static President jdVance = new President(
+            "J.D. Vance", "West", 4, 1, 5, 2, "Populist", "Anti-Establishment"
+    );
+    static President kevinMcCarthy = new President(
+            "Kevin McCarthy", "West", 8, 1, 4, 4, "Conservative", "Establishment"
+    );
+    static President nancyPelosi = new President(
+            "Nancy Pelosi", "West", 9, 1, 4, 5, "Progressive", "Social Programs"
+    );
+    static President philMurphy = new President(
+            "Phil Murphy", "Northeast", 3, 1, 3, 2, "Progressive", "Regulation"
+    );
+    static President dickDurbin = new President(
+            "Dick Durbin", "Midwest", 8, 1, 3, 2, "Progressive", "Open Borders"
     );
   
 
@@ -2378,7 +2395,7 @@ public class CardData {
         nonpresidents.add(brianKemp);
         nonpresidents.add(brettFavre);
         nonpresidents.add(elonMusk);
-        nonpresidents.add(gavinNewsome);
+        nonpresidents.add(gavinNewsom);
         nonpresidents.add(leBronJames);
         nonpresidents.add(raphaelWarnock);
         nonpresidents.add(seanPatrickMaloney); 
@@ -2387,8 +2404,12 @@ public class CardData {
         nonpresidents.add(mikeLawler);
         nonpresidents.add(georgeSantos);
         nonpresidents.add(susanCollins);
-
-
+        nonpresidents.add(mikeLee);
+        nonpresidents.add(jdVance);
+        nonpresidents.add(kevinMcCarthy);
+        nonpresidents.add(nancyPelosi);
+        nonpresidents.add(philMurphy);
+        nonpresidents.add(dickDurbin);
         
 
       
