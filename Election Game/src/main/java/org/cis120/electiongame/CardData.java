@@ -1529,6 +1529,24 @@ public class CardData {
     static President dickDurbin = new President(
             "Dick Durbin", "Midwest", 8, 1, 3, 2, "Progressive", "Open Borders"
     );
+    static President alexanderConteeHanson = new President(
+            "Alexander Contee Hanson", "Northeast", 2, 2, 1, 1, "Conservative", "Tariffs"
+    );
+    static President charlesFMercer = new President(
+            "Charles F. Mercer", "South", 6, 3, 2, 2, "Conservative", "Subsidies"
+    );
+    static President johnScott = new President(
+            "John Scott", "South", 3, 1, 1, 1, "Conservative", "Subsidies"
+    );
+    static President jesseBThomas = new President(
+            "Jesse B. Thomas", "Midwest", 3, 1, 5, 3, "Conservative", "Centralization"
+    );
+    static President alexanderJDallas = new President(
+            "Alexander J. Dallas", "Northeast", 2, 1, 6, 3, "Conservative", "Tariffs"
+    );
+    static President williamWirt = new President(
+            "William Wirt", "South", 4, 5, 2, 2, "Conservative", "Constructionism"
+    );
   
 
     
@@ -2404,11 +2422,12 @@ public class CardData {
         nonpresidents.add(nancyPelosi);
         nonpresidents.add(philMurphy);
         nonpresidents.add(dickDurbin);
-        
-
-      
-
-        
+        nonpresidents.add(alexanderConteeHanson);
+        nonpresidents.add(charlesFMercer);
+        nonpresidents.add(johnScott);
+        nonpresidents.add(jesseBThomas);
+        nonpresidents.add(alexanderJDallas);
+        nonpresidents.add(williamWirt);
 
         
         
