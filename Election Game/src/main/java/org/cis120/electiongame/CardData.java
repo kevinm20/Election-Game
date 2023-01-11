@@ -1493,27 +1493,21 @@ public class CardData {
     static President seanPatrickMaloney = new President(
             "Sean Patrick Maloney", "Northeast", 3, 1, 1, 1, "Progressive", "Social Liberalism"
     );
-    
     static President johnFetterman = new President(
             "John Fetterman", "Midwest", 2, 3, 1, 2, "Progressive", "Social Programs"
     );
-    
     static President joshShapiro = new President(
             "Josh Shapiro", "Midwest", 2, 4, 3, 2, "Progressive", "Social Liberalism"
     );
-    
     static President mikeLawler = new President(
             "Mike Lawler", "Northeast", 2, 3, 2, 1, "Conservative", "Tax Cuts"
     );
-    
     static President georgeSantos = new President(
             "George Santos", "Northeast", 2, 1, 1, 3, "Conservative", "Anti-Establishment"
     );
-    
     static President susanCollins = new President(
             "Susan Collins", "Northeast", 7, 2, 2, 2, "Conservative", "Social Liberalism"
     );
-    
     static President cherylJohnson = new President(
             "Cheryl Johnson", "Northeast", 10, 10, 1, 1, "Progressive", "Law and Order"
     );
