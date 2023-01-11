@@ -405,10 +405,10 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Change Name
 				if (settingToChange == 0) {
-					String playername = election.getPlayer1().getName();
+					String playername = election.getActivePlayer().getName();
 
 					playername = JOptionPane.showInputDialog(null, "What would you like to change your name to?");
-					election.namePlayer(playername);
+					election.nameActivePlayer(playername);
 					setLabel(status);
 					status.repaint();
 				}

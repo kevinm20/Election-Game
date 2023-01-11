@@ -240,6 +240,10 @@ public class ElectionGame {
     public void namePlayer2(String s) {
         player2.setName(s);
     }
+    
+    public void nameActivePlayer(String s) {
+    	activePlayer.setName(s);
+    }
 
     public void setAIDifficulty(String s) {
         if (s==null) {
