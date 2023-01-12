@@ -38,6 +38,7 @@ public class RunElectionGameCombined implements Runnable {
 	private int cumulativeWins = 0;
 	private int cumulativeGames = 0;
 	private boolean cardInfoMode = false;
+	private boolean askToResign = true;
 
 	// Change this if the screen is wacky
 	int cardSize = 225;
@@ -219,7 +220,7 @@ public class RunElectionGameCombined implements Runnable {
 							}
 							cumulativeWins++;
 							cumulativeGames++;
-							election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+							election.reset(deckSet, null, 0.0, 5);
 							user_cards.reset();
 							up.reset();
 							board.reset();
@@ -232,7 +233,7 @@ public class RunElectionGameCombined implements Runnable {
 								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
 							}
 							cumulativeGames++;
-							election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+							election.reset(deckSet, null, 0.0, 5);
 							user_cards.reset();
 							up.reset();
 							board.reset();
@@ -295,14 +296,34 @@ public class RunElectionGameCombined implements Runnable {
 		final JButton reset = new JButton("Resign");
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(!askToResign) {
+					JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
+					cumulativeGames++;
+					election.reset(deckSet, null, 0.0, 5);
+					setLabel(status);
+					status.repaint();
+					user_cards.reset();
+					up.reset();
+					board.reset();
+				} else {
+				Object[] resignOptions = { "Yes and don't ask again", "Yes", "No"};
+				int resignChoice = JOptionPane.showOptionDialog(null, "Are you sure you would like to resign?", "Resign",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, resignOptions, 2);
+				
+				if(resignChoice==0||!askToResign||resignChoice==1) {
 				JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
+				if(resignChoice==0) {
+					askToResign=!askToResign;
+				}
 				cumulativeGames++;
-				election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+				election.reset(deckSet, null, 0.0, 5);
 				setLabel(status);
 				status.repaint();
 				user_cards.reset();
 				up.reset();
 				board.reset();
+				}
+				}
 			}
 		});
 
@@ -442,30 +463,28 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Change Deck
 				if (settingToChange == 2) {
-					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational",
-							"Custom" };
-					int deck = JOptionPane.showOptionDialog(null, "What would you like to change the deck to?",
-							"Select Deck", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks,
-							election.deckPreset);
+					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom" };
+					int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
+							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
 					if (deck == 0) {
-						election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
+						election.reset("presidentsonly", null, 0.0, 5);
 						deckSet = "presidentsonly";
 					}
 					if (deck == 1) {
-						election.reset("standard", 0, true, 0, true, 0, true, 5);
+						election.reset("standard", null, 0.0, 5);
 						deckSet = "standard";
 					}
 					if (deck == 2) {
-						election.reset("expanded", 0, true, 0, true, 0, true, 5);
+						election.reset("expanded", null, 0.0, 5);
 						deckSet = "expanded";
 					}
 					if (deck == 3) {
-						election.reset("memes", 0, true, 0, true, 0, true, 5);
+						election.reset("memes", null, 0.0, 5);
 						deckSet = "memes";
 					}
 					if (deck == 4) {
-						election.reset("generational", 0, true, 0, true, 0, true, 5);
+						election.reset("generational", null, 0.0, 5);
 						deckSet = "generational";
 					}
 					if (deck == 5) {
@@ -474,50 +493,66 @@ public class RunElectionGameCombined implements Runnable {
 						// add generational cards, sort all presidents/nonpresidents and get the top 50
 						// from there, etc.
 						try {
-							int presCount = Integer.parseInt(JOptionPane.showInputDialog(null,
-									"How many actual presidents would you like to include?"));
-							Object[] yesno = { "Yes", "No" };
-							int presSort = JOptionPane.showOptionDialog(null,
-									"Would you like the best presidents to be in the deck first?", "Select Deck",
-									JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
-							boolean presSortBool = false;
-							if (presSort == 0) {
-								presSortBool = true;
+							CardData.clearRemembered();
+							
+							String[] customTags = {"President", "Generational", "Meme", "Founding Era", "Jacksonian Era",
+									"Civil War Era", "Reconstruction Era", "Progressive Era", "New Deal Era",
+									"Civil Rights Era", "Reagan Era", "Modern Era", "Present Era"};
+							
+							JPanel panel = new JPanel();
+							panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+							JLabel message = new JLabel("Select the all tags you would like to include in the deck:");
+							panel.add(message);
+							
+							for (String tag : customTags) {
+							    JCheckBox checkBox = new JCheckBox(tag);
+							    panel.add(checkBox);
 							}
-							int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(null,
-									"How many non-presidents would you like to include?"));
-							int nonPresSort = JOptionPane.showOptionDialog(null,
-									"Would you like the best non-presidents to be in the deck first?", "Select Deck",
-									JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
-							boolean nonPresSortBool = false;
-							if (nonPresSort == 0) {
-								nonPresSortBool = true;
+							
+							int result = JOptionPane.showConfirmDialog(null, panel, "Select tags", JOptionPane.OK_CANCEL_OPTION);
+							
+							if (result == JOptionPane.OK_OPTION) {
+								ArrayList<String> tempSelectedTags = new ArrayList<String>();
+								for (Component component : panel.getComponents()) {
+								        if (component instanceof JCheckBox) {
+								            JCheckBox checkBox = (JCheckBox) component;
+								            if (checkBox.isSelected()) {
+								                tempSelectedTags.add(checkBox.getText());
+								            }
+								        }
+								}						
+								String[] selectedTagsArray = new String[tempSelectedTags.size()];
+								selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
+								
+								// This might crash stuff
+								double minRating = Double.parseDouble(JOptionPane.showInputDialog(null,
+										"What would you like the minimum weighted average rating of a card to be?"));
+								
+								deckSet = "custom";
+							    election.reset("custom", selectedTagsArray, minRating, 5);
+							} else {
+								JOptionPane.showMessageDialog(board,
+										"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
+										JOptionPane.ERROR_MESSAGE);
+								election.reset("standard", null, 0.0, 5);
+								deckSet = "standard";
 							}
-							int memeCount = Integer.parseInt(JOptionPane.showInputDialog(null,
-									"How many meme cards would you like to include?"));
-							int memeSort = JOptionPane.showOptionDialog(null,
-									"Would you like the best meme cards to be in the deck first?", "Select Deck",
-									JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
-							boolean memeSortBool = false;
-							if (memeSort == 0) {
-								memeSortBool = true;
-							}
-							election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount,
-									memeSortBool, 5);
-							deckSet = "custom";
 						} catch (Exception ex) {
 							JOptionPane.showMessageDialog(board,
 									"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
 									JOptionPane.ERROR_MESSAGE);
-							election.reset("standard", 0, true, 0, true, 0, true, 5);
+							election.reset("standard", null, 0.0, 5);
 							deckSet = "standard";
 						}
 					}
 				}
 
 				if (settingToChange >= 2) {
-					cumulativeGames++;
-					election.reset(deckSet, 0, true, 0, true, 0, true, 5);
+					// This is not WAI
+					if (election.p2w>0) {
+						cumulativeGames++;
+					}
+					election.reset(deckSet, null, 0.0, 5);
 					setLabel(status);
 					status.repaint();
 					user_cards.reset();
@@ -645,7 +680,7 @@ public class RunElectionGameCombined implements Runnable {
 			election.namePlayer(activeAccount);
 			election.namePlayer2("CPU");
 			election.setAIDifficulty(accountSettingsArray[1]);
-			election.reset(accountSettingsArray[2], 0, true, 0, true, 0, true, 5);
+			election.reset(accountSettingsArray[2], null, 0.0, 5);
 			deckSet = accountSettingsArray[2];
 			setLabel(status);
 		}
@@ -747,7 +782,7 @@ public class RunElectionGameCombined implements Runnable {
 				election.namePlayer(activeAccount);
 				election.namePlayer2("CPU");
 				election.setAIDifficulty(accountSettingsArray[1]);
-				election.reset(accountSettingsArray[2], 0, true, 0, true, 0, true, 5);
+				election.reset(accountSettingsArray[2], null, 0.0, 5);
 				deckSet = accountSettingsArray[2];
 				setLabel(status);
 			}
@@ -905,7 +940,7 @@ public class RunElectionGameCombined implements Runnable {
 					election.namePlayer(newAcctName);
 					election.namePlayer2("CPU");
 					election.setAIDifficulty(aiDifficulty);
-					election.reset(deckChoice, 0, true, 0, true, 0, true, 5);
+					election.reset(deckChoice, null, 0.0, 5);
 					deckSet = deckChoice;
 					setLabel(status);
 				}
@@ -938,7 +973,7 @@ public class RunElectionGameCombined implements Runnable {
 				election.namePlayer2("CPU");
 				election.setAIDifficulty("Hard");
 				deckSet = "expanded";
-				election.reset("expanded", 0, true, 0, true, 0, true, 5);
+				election.reset("expanded", null, 0.0, 5);
 				setLabel(status);
 			} else {
 				// Name Player 1
@@ -991,23 +1026,23 @@ public class RunElectionGameCombined implements Runnable {
 						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
 				if (deck == 0) {
-					election.reset("presidentsonly", 0, true, 0, true, 0, true, 5);
+					election.reset("presidentsonly", null, 0.0, 5);
 					deckSet = "presidentsonly";
 				}
 				if (deck == 1) {
-					election.reset("standard", 0, true, 0, true, 0, true, 5);
+					election.reset("standard", null, 0.0, 5);
 					deckSet = "standard";
 				}
 				if (deck == 2) {
-					election.reset("expanded", 0, true, 0, true, 0, true, 5);
+					election.reset("expanded", null, 0.0, 5);
 					deckSet = "expanded";
 				}
 				if (deck == 3) {
-					election.reset("memes", 0, true, 0, true, 0, true, 5);
+					election.reset("memes", null, 0.0, 5);
 					deckSet = "memes";
 				}
 				if (deck == 4) {
-					election.reset("generational", 0, true, 0, true, 0, true, 5);
+					election.reset("generational", null, 0.0, 5);
 					deckSet = "generational";
 				}
 				if (deck == 5) {
@@ -1016,42 +1051,53 @@ public class RunElectionGameCombined implements Runnable {
 					// add generational cards, sort all presidents/nonpresidents and get the top 50
 					// from there, etc.
 					try {
-						int presCount = Integer.parseInt(JOptionPane.showInputDialog(null,
-								"How many actual presidents would you like to include?"));
-						Object[] yesno = { "Yes", "No" };
-						int presSort = JOptionPane.showOptionDialog(null,
-								"Would you like the best presidents to be in the deck first?", "Select Deck",
-								JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
-						boolean presSortBool = false;
-						if (presSort == 0) {
-							presSortBool = true;
+						String[] customTags = {"President", "Generational", "Meme", "Founding Era", "Jacksonian Era",
+								"Civil War Era", "Reconstruction Era", "Progressive Era", "New Deal Era",
+								"Civil Rights Era", "Reagan Era", "Modern Era", "Present Era"};
+						
+						JPanel panel = new JPanel();
+						panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+						JLabel message = new JLabel("Select the all tags you would like to include in the deck:");
+						panel.add(message);
+						
+						for (String tag : customTags) {
+						    JCheckBox checkBox = new JCheckBox(tag);
+						    panel.add(checkBox);
 						}
-						int nonPresCount = Integer.parseInt(JOptionPane.showInputDialog(null,
-								"How many non-presidents would you like to include?"));
-						int nonPresSort = JOptionPane.showOptionDialog(null,
-								"Would you like the best non-presidents to be in the deck first?", "Select Deck",
-								JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
-						boolean nonPresSortBool = false;
-						if (nonPresSort == 0) {
-							nonPresSortBool = true;
+						
+						int result = JOptionPane.showConfirmDialog(null, panel, "Select tags", JOptionPane.OK_CANCEL_OPTION);
+						
+						if (result == JOptionPane.OK_OPTION) {
+							ArrayList<String> tempSelectedTags = new ArrayList<String>();
+							for (Component component : panel.getComponents()) {
+							        if (component instanceof JCheckBox) {
+							            JCheckBox checkBox = (JCheckBox) component;
+							            if (checkBox.isSelected()) {
+							                tempSelectedTags.add(checkBox.getText());
+							            }
+							        }
+							}						
+							String[] selectedTagsArray = new String[tempSelectedTags.size()];
+							selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
+							
+							// This might crash stuff
+							double minRating = Double.parseDouble(JOptionPane.showInputDialog(null,
+									"What would you like the minimum weighted average rating of a card to be?"));
+							
+							deckSet = "custom";
+						    election.reset("custom", selectedTagsArray, minRating, 5);
+						} else {
+							JOptionPane.showMessageDialog(board,
+									"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
+									JOptionPane.ERROR_MESSAGE);
+							election.reset("standard", null, 0.0, 5);
+							deckSet = "standard";
 						}
-						int memeCount = Integer.parseInt(
-								JOptionPane.showInputDialog(null, "How many meme cards would you like to include?"));
-						int memeSort = JOptionPane.showOptionDialog(null,
-								"Would you like the best meme cards to be in the deck first?", "Select Deck",
-								JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, yesno, 0);
-						boolean memeSortBool = false;
-						if (memeSort == 0) {
-							memeSortBool = true;
-						}
-						election.reset("custom", presCount, presSortBool, nonPresCount, nonPresSortBool, memeCount,
-								memeSortBool, 5);
-						deckSet = "custom";
 					} catch (Exception ex) {
 						JOptionPane.showMessageDialog(board,
 								"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
 								JOptionPane.ERROR_MESSAGE);
-						election.reset("standard", 0, true, 0, true, 0, true, 5);
+						election.reset("standard", null, 0.0, 5);
 						deckSet = "standard";
 					}
 				}

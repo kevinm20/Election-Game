@@ -149,8 +149,11 @@ public class ElectionGame {
         turn = true;
     }
     
-    public void reset(String preset, int pres, boolean presSort, int nonpres, 
-            boolean nonPresSort, int memeCards, boolean memesSort, int presCount) {
+    
+    /**
+     * This is the correct method to use
+     */
+    public void reset(String preset, String[] tags, double minRate, int presCount) {
         player1play = null;
         player2play = null;
 
@@ -168,7 +171,7 @@ public class ElectionGame {
 
         presidentDeck.fillPres(
                 CardData.getPresidents(
-                        preset, pres, presSort, nonpres, nonPresSort, memeCards, memesSort
+                        preset, tags, minRate
                 )
         );
         if(statTesting) {
@@ -301,7 +304,7 @@ public class ElectionGame {
      * Constructor sets up game state.
      */
     public ElectionGame() {
-        reset(deckPreset, 0, true, 0, true, 0, true, 5);
+        reset(deckPreset, null, 0.0, 5);
     }
 
     // These 4 methods are about the card that the player/AI is "about" to play

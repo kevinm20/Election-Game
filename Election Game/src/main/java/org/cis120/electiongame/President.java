@@ -31,6 +31,9 @@ public class President extends Card {
     
     // This is for an extra description
     private String cardInfo = "No card info available";
+    
+    // This is for tags
+    private String[] tags;
 
     // Constructor
     public President(
@@ -46,12 +49,21 @@ public class President extends Card {
         this.marquee = marq;
     }
     
-    // Add a description
+    // Constructor with description
     public President(
-            String name, String region, int exp, int infl, int pol, int nam, String id, String marq, String desc
+            String name, String region, int exp, int infl, int pol, int nam, String id, String marq, String[] tags, String desc
     ) {
         this(name, region, exp, infl, pol, nam, id, marq);
         this.cardInfo = desc;
+        this.tags = tags;
+    }
+    
+    // Constructor with tags
+    public President(
+            String name, String region, int exp, int infl, int pol, int nam, String id, String marq, String[] tags
+    ) {
+        this(name, region, exp, infl, pol, nam, id, marq);
+        this.tags = tags;
     }
 
     String getRegion() {
@@ -60,6 +72,10 @@ public class President extends Card {
     
     String getIdeology() {
         return ideology;
+    }
+    
+    String[] getTags() {
+    	return tags;
     }
 
     int getExp() {
