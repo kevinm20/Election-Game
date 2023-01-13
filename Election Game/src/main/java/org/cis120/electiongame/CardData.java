@@ -1978,7 +1978,7 @@ public class CardData {
     );
     static President cherylJohnson = new President(
             "Cheryl Johnson", "Northeast", 10, 10, 1, 1, "Progressive", "Law and Order",
-            new String[]{"Present Era"}
+            new String[]{"Meme Card"}
     );
     static President mikeLee = new President(
             "Mike Lee", "West", 4, 1, 5, 2, "Libertarian", "Limited Government",

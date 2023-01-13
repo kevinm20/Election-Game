@@ -670,6 +670,7 @@ public class ElectionGame {
 
     public static void main(String[] args) {
 
+    	/*
     	Pack pack1 = new Pack(3, 50, CardData.calvinCoolidge,CardData.abrahamLincoln,
     			CardData.georgeWashington,CardData.georgeHWBush, CardData.alGore);
     	
@@ -687,6 +688,7 @@ public class ElectionGame {
     	System.out.println("Final Balance: " + kevin.getMoney());
     	System.out.println("LAST PACK");
     	kevin.buyPack(pack1);
+    	*/
     	
     	/*
         // This simulates a CPU vs. CPU game
