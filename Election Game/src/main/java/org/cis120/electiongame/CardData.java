@@ -2152,6 +2152,26 @@ public class CardData {
             "Kyrsten Sinema", "West", 4, 1, 2, 3, "Progressive", "Anti-Establishment",
             new String[]{"Present Era"}
     );
+    
+    static President chuckGrassley = new President(
+            "Chuck Grassley", "Midwest", 9, 2, 2, 2, "Conservative", "Subsidies",
+            new String[]{"Present Era"}
+    );
+    
+    static President eliseStefanik = new President(
+            "Elise Stefanik", "Northeast", 3, 2, 3, 2, "Conservative", "Establishment",
+            new String[]{"Present Era"}
+    );
+    
+    static President jaredGolden = new President(
+            "Jared Golden", "Northeast", 2, 2, 3, 1, "Populist", "Personal Freedom",
+            new String[]{"Present Era"}
+    );
+    
+    static President anthonyDevolder = new President(
+            "Anthony Devolder", "Northeast", 10, 10, 10, 10, "Conservative", "Nationalism",
+            new String[]{"Meme Card"}
+    );
   
 
     
@@ -3065,7 +3085,11 @@ public class CardData {
         nonpresidents.add(littletonWTazewell);
         nonpresidents.add(johnCatron);
         nonpresidents.add(kyrstenSinema);
-    
+        nonpresidents.add(chuckGrassley);
+        nonpresidents.add(eliseStefanik);
+        nonpresidents.add(jaredGolden);
+        
+        
 
         
 
@@ -3106,7 +3130,8 @@ public class CardData {
         meme.add(charliecristfed);
         **/
         meme.add(cherylJohnson);
-
+        meme.add(anthonyDevolder);
+       
 
         
         
