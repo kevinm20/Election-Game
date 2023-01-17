@@ -78,7 +78,7 @@ public class RunElectionGameCombined implements Runnable {
 		board.setLayout(new GridLayout(1, 7));
 
 		// AI Card Deck, just for visuals
-		final JPanel ai_cards = new JPanel();
+		JPanel ai_cards = new JPanel();
 		frame.add(ai_cards, BorderLayout.NORTH);
 
 		for (int i = 0; i < 5; i++) {
@@ -103,8 +103,8 @@ public class RunElectionGameCombined implements Runnable {
 			// InputStream inputStream = this.getClass().getResourceAsStream("/aicard.png");
 			// ImageIcon iid = new ImageIcon(ImageIO.read(inputStream));
 
-			ImageIcon img = new ImageIcon(
-					new ImageIcon("files/aicard.png").getImage().getScaledInstance(60, 79, Image.SCALE_SMOOTH));
+			ImageIcon img = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
+					.getScaledInstance((int) (0.266666667 * cardSize), (int)(0.351111111*cardSize), Image.SCALE_SMOOTH));
 			final JLabel aicardlabel = new JLabel(img);
 			ai_cards.add(aicardlabel);
 		}
@@ -415,7 +415,7 @@ public class RunElectionGameCombined implements Runnable {
 					winPct = (int) (Math.round(((float) (cumulativeWins) * 100.0) / cumulativeGames));
 				}
 
-				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice" };
+				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice", "Change Card Size" };
 				int settingToChange = JOptionPane.showOptionDialog(null,
 						"Stats for " + election.getPlayer1().getName() + " this session: \n" + "Total play time: "
 								+ totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" + "Total wins: "
@@ -546,8 +546,27 @@ public class RunElectionGameCombined implements Runnable {
 						}
 					}
 				}
+				// Change card size
+				if (settingToChange == 3) {
+					try {
+					int newCardSize = Integer.parseInt(JOptionPane.showInputDialog(null,
+							"What would you like the new card size to be (current is " + cardSize+ ")?"));
+					if(newCardSize<10) {
+						newCardSize=10;
+					}
+					cardSize = newCardSize;
+					user_cards.paintCards();
+					ai_cards.revalidate();
+					ai_cards.repaint();
+					board.draw();
+					} catch (Exception ex) {
+						JOptionPane.showMessageDialog(board,
+								"Error: Your input was invalid.", "Error",
+								JOptionPane.ERROR_MESSAGE);
+					}
+				}
 
-				if (settingToChange >= 2) {
+				if (settingToChange == 2) {
 					// This is not WAI
 					if (election.p2w>0) {
 						cumulativeGames++;
@@ -1363,11 +1382,15 @@ public class RunElectionGameCombined implements Runnable {
 
 			// Player 1 played policies
 			JPanel userpin = new JPanel();
+			
+			if(cardSize==0) {
+				cardSize=225;
+			}
 
 			for (int i = 0; i < 2; i++) {
 				if (hideUsers && mode) {
 					ImageIcon usercard = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
-							.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+							.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(usercard);
 					userpin.add(label);
 				} else {
@@ -1375,7 +1398,7 @@ public class RunElectionGameCombined implements Runnable {
 					Policy curr = election.getActivePinnedPolicies().get(i);
 					if (curr != null) {
 						ImageIcon usercard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
-								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(usercard);
 						label.addMouseListener(new MouseAdapter() {
 							public void mouseReleased(MouseEvent e) {
@@ -1387,7 +1410,7 @@ public class RunElectionGameCombined implements Runnable {
 						userpin.add(label);
 					} else {
 						ImageIcon usercard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(usercard);
 						userpin.add(label);
 					}
@@ -1402,12 +1425,12 @@ public class RunElectionGameCombined implements Runnable {
 			 */
 			if (hideUsers && mode) {
 				ImageIcon aicard = new ImageIcon(
-						new ImageIcon("files/aicard.png").getImage().getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+						new ImageIcon("files/aicard.png").getImage().getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(aicard);
 				this.add(label);
 			} else if (election.getActivePinCard() != null) {
 				ImageIcon usercard = new ImageIcon(new ImageIcon(election.getActivePinCard().getImageURL()).getImage()
-						.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+						.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 				final JLabel butt = new JLabel(usercard);
 				this.add(butt);
 				butt.addMouseListener(new MouseAdapter() {
@@ -1421,7 +1444,7 @@ public class RunElectionGameCombined implements Runnable {
 				});
 			} else {
 				ImageIcon usercard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-						.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+						.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(usercard);
 				this.add(label);
 			}
@@ -1432,12 +1455,12 @@ public class RunElectionGameCombined implements Runnable {
 
 			if (starting) {
 				ImageIcon currelection = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-						.getScaledInstance(200, 265, Image.SCALE_SMOOTH));
+						.getScaledInstance((int) (0.888888889*cardSize), (int) (1.17777778*cardSize), Image.SCALE_SMOOTH));
 				final JLabel elec = new JLabel(currelection);
 				this.add(elec);
 			} else {
 				ImageIcon currelection = new ImageIcon(new ImageIcon(election.getElection().getImageURL()).getImage()
-						.getScaledInstance(200, 265, Image.SCALE_SMOOTH));
+						.getScaledInstance((int) (0.888888889*cardSize), (int) (1.17777778*cardSize), Image.SCALE_SMOOTH));
 				final JLabel elec = new JLabel(currelection);
 				this.add(elec);
 			}
@@ -1447,14 +1470,14 @@ public class RunElectionGameCombined implements Runnable {
 			 */
 			if (starting) {
 				ImageIcon aicard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-						.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+						.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(aicard);
 				this.add(label);
 
 				JPanel cpupin = new JPanel();
 				for (int i = 0; i < 2; i++) {
 					ImageIcon place = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-							.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+							.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 					final JLabel placeLab = new JLabel(place);
 					cpupin.add(placeLab);
 				}
@@ -1466,13 +1489,12 @@ public class RunElectionGameCombined implements Runnable {
 				 * 1-Player Mode
 				 */
 				if (!cpuPlayed || election.getPlayer2Card() == null) {
-					ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance(150,
-							199, Image.SCALE_SMOOTH));
+					ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				} else {
 					ImageIcon aicard = new ImageIcon(new ImageIcon(election.getPlayer2Card().getImageURL()).getImage()
-							.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+							.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				}
@@ -1482,12 +1504,12 @@ public class RunElectionGameCombined implements Runnable {
 				for (Policy curr : election.getPinned2()) {
 					if (!cpuPlayed || curr == null) {
 						ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
-								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					} else {
 						ImageIcon aicard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
-								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					}
@@ -1502,12 +1524,12 @@ public class RunElectionGameCombined implements Runnable {
 				}
 				if (!cpuPlayed || election.getPlayer1Card() == null) {
 					ImageIcon aicard = new ImageIcon(
-							new ImageIcon(cd).getImage().getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+							new ImageIcon(cd).getImage().getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				} else {
 					ImageIcon aicard = new ImageIcon(new ImageIcon(election.getPlayer1Card().getImageURL()).getImage()
-							.getScaledInstance(150, 199, Image.SCALE_SMOOTH));
+							.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				}
@@ -1517,12 +1539,12 @@ public class RunElectionGameCombined implements Runnable {
 				for (Policy curr : election.getPinned1()) {
 					if (!cpuPlayed || curr == null) {
 						ImageIcon aicard = new ImageIcon(
-								new ImageIcon(cd).getImage().getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+								new ImageIcon(cd).getImage().getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					} else {
 						ImageIcon aicard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
-								.getScaledInstance(80, 106, Image.SCALE_SMOOTH));
+								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					}
