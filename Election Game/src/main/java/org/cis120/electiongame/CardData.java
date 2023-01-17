@@ -2148,6 +2148,10 @@ public class CardData {
             "John Catron", "South", 4, 1, 4, 2, "Populist", "Anti-Central Bank",
             new String[]{"Civil War Era"}
     );
+    static President kyrstenSinema = new President(
+            "Kyrsten Sinema", "West", 4, 1, 2, 3, "Progressive", "Anti-Establishment",
+            new String[]{"Present Era"}
+    );
   
 
     
@@ -3060,6 +3064,9 @@ public class CardData {
         nonpresidents.add(georgeMcDuffie);
         nonpresidents.add(littletonWTazewell);
         nonpresidents.add(johnCatron);
+        nonpresidents.add(kyrstenSinema);
+    
+
         
 
         
