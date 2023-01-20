@@ -2168,10 +2168,33 @@ public class CardData {
             "Anthony Devolder", "Northeast", 10, 10, 10, 10, "Conservative", "Nationalism",
             new String[]{"Meme Card"}
     );
-    
     static President scottWalker = new President(
             "Scott Walker", "Midwest", 4, 2, 5, 2, "Conservative", "Deregulation",
             new String[]{"Modern Era"}
+    );
+    static President johnPKennedy = new President(
+            "John P. Kennedy", "Northeast", 2, 4, 1, 2, "Conservative", "Civil Rights",
+            new String[]{"Civil War Era"}
+    );
+    static President charlesFrancisAdamsSr = new President(
+            "Charles Francis Adams Sr.", "Northeast", 2, 1, 4, 3, "Conservative", "Isolationism",
+            new String[]{"Civil War Era"}
+    );
+    static President benjaminRobbinsCurtis = new President(
+            "Benjamin Robbins Curtis", "Northeast", 2, 1, 3, 2, "Conservative", "Constructionism",
+            new String[]{"Civil War Era"}
+    );
+    static President robertYHayne = new President(
+            "Robert Y. Hayne", "South", 4, 2, 5, 2, "Populist", "Free Trade",
+            new String[]{"Jacksonian Era"}
+    );
+    static President amosTazewell = new President(
+            "Amos Tazewell", "South", 1, 4, 4, 4, "Populist", "Anti-Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President rogerBTaney = new President(
+            "Roger B. Taney", "Northeast", 5, 1, 5, 5, "Populist", "Racism",
+            new String[]{"Civil War Era"}
     );
   
 
@@ -3090,6 +3113,12 @@ public class CardData {
         nonpresidents.add(eliseStefanik);
         nonpresidents.add(jaredGolden);
         nonpresidents.add(scottWalker);
+        nonpresidents.add(johnPKennedy);
+        nonpresidents.add(charlesFrancisAdamsSr);
+        nonpresidents.add(benjaminRobbinsCurtis);
+        nonpresidents.add(robertYHayne);
+        nonpresidents.add(amosTazewell);
+        nonpresidents.add(rogerBTaney);
         
    
         
