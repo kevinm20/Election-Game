@@ -2168,6 +2168,11 @@ public class CardData {
             "Anthony Devolder", "Northeast", 10, 10, 10, 10, "Conservative", "Nationalism",
             new String[]{"Meme Card"}
     );
+    
+    static President scottWalker = new President(
+            "Scott Walker", "Midwest", 4, 2, 5, 2, "Conservative", "Deregulation",
+            new String[]{"Modern Era"}
+    );
   
 
     
@@ -3084,7 +3089,9 @@ public class CardData {
         nonpresidents.add(chuckGrassley);
         nonpresidents.add(eliseStefanik);
         nonpresidents.add(jaredGolden);
+        nonpresidents.add(scottWalker);
         
+   
         
 
         
