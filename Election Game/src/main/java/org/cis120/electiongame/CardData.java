@@ -1889,7 +1889,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President katieBritt = new President(
-            "Katie Britt", "South", 2, 3, 2, 1, "Conservative", "Traditional Morality",
+            "Katie Britt", "South", 2, 4, 2, 1, "Conservative", "Traditional Morality",
             new String[]{"Present Era"}
     );
     static President chuckSchumer = new President(
@@ -1913,7 +1913,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President timScott = new President(
-            "Tim Scott", "South", 4, 4, 3, 3, "Conservative", "Personal Freedom",
+            "Tim Scott", "South", 4, 4, 4, 3, "Conservative", "Personal Freedom",
             new String[]{"Present Era"}
     );
     static President peteButtigieg = new President(
@@ -1929,7 +1929,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President brianKemp = new President(
-            "Brian Kemp", "South", 4, 2, 4, 3, "Conservative", "Establishment",
+            "Brian Kemp", "South", 4, 4, 3, 4, "Conservative", "Establishment",
             new String[]{"Present Era"}
     );
     static President brettFavre = new President(
@@ -2195,6 +2195,30 @@ public class CardData {
     static President rogerBTaney = new President(
             "Roger B. Taney", "Northeast", 5, 1, 5, 5, "Populist", "Racism",
             new String[]{"Civil War Era"}
+    );
+    static President mikePompeo = new President(
+            "Mike Pompeo", "West", 3, 2, 5, 2, "Conservative", "Tough Foreign Policy",
+            new String[]{"Present Era"}
+    );
+    static President jaredKushner = new President(
+            "Jared Kushner", "Northeast", 1, 1, 5, 4, "Conservative", "Personal Freedom",
+            new String[]{"Present Era"}
+    );
+    static President mattGaetz = new President(
+            "Matt Gaetz", "South", 2, 2, 1, 3, "Libertarian", "Anti-Establishment",
+            new String[]{"Present Era"}
+    );
+    static President amyKlobuchar = new President(
+            "Amy Klobuchar", "Midwest", 6, 2, 4, 2, "Progressive", "Regulation",
+            new String[]{"Present Era"}
+    );
+    static President ilhanOmar = new President(
+            "Ilhan Omar", "Northeast", 2, 2, 1, 3, "Progressive", "Isolationism",
+            new String[]{"Present Era"}
+    );
+    static President janetYellen = new President(
+            "Janet Yellen", "Northeast", 2, 1, 3, 2, "Progressive", "Inflation",
+            new String[]{"Present Era"}
     );
   
 
@@ -3119,6 +3143,12 @@ public class CardData {
         nonpresidents.add(robertYHayne);
         nonpresidents.add(amosTazewell);
         nonpresidents.add(rogerBTaney);
+        nonpresidents.add(mikePompeo);
+        nonpresidents.add(jaredKushner);
+        nonpresidents.add(mattGaetz);
+        nonpresidents.add(amyKlobuchar);
+        nonpresidents.add(ilhanOmar);
+        nonpresidents.add(janetYellen);
         
    
         
