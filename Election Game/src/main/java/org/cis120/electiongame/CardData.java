@@ -2220,9 +2220,60 @@ public class CardData {
             "Janet Yellen", "Northeast", 2, 1, 3, 2, "Progressive", "Inflation",
             new String[]{"Present Era"}
     );
+    static President theodoreFreling = new President(
+            "Theodore Frelinghuysen", "Northeast", 3, 4, 3, 2, "Conservative", "Traditional Morality",
+            new String[]{"Jacksonian Era"}
+    );
+    static President johnDavis = new President(
+            "John Davis", "Northeast", 6, 4, 1, 1, "Conservative", "Tariffs",
+            new String[]{"Jacksonian Era"}
+    );
+    static President johnMClayton = new President(
+            "John M. Clayton", "Northeast", 4, 2, 3, 1, "Conservative", "Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President georgeMDallas = new President(
+            "George M. Dallas", "Northeast", 4, 3, 3, 4, "Populist", "Free Trade",
+            new String[]{"Jacksonian Era"}
+    );
+    static President silasWright = new President(
+            "Silas Wright", "South", 5, 5, 3, 2, "Populist", "Anti-Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President johnFairfield = new President(
+            "John Fairfield", "Northeast", 5, 1, 2, 3, "Populist", "Anti-Establishment",
+            new String[]{"Jacksonian Era"}
+    );
+    static President georgeEvans = new President(
+            "George Evans", "Northeast", 4, 1, 3, 1, "Conservative", "Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President williamCPreston = new President(
+            "William C. Preston", "South", 3, 1, 2, 1, "Populist", "Racism",
+            new String[]{"Jacksonian Era"}
+    );
+    static President stephenDMiller = new President(
+            "Stephen D. Miller", "South", 2, 2, 1, 1, "Populist", "Free Trade",
+            new String[]{"Jacksonian Era"}
+    );
+    static President gulianGVerplanck = new President(
+            "Gulian G. Verplanck", "Northeast", 2, 1, 3, 1, "Conservative", "Free Trade",
+            new String[]{"Jacksonian Era"}
+    );
+    static President louisMcLane = new President(
+            "Louis McLane", "Northeast", 5, 4, 5, 1, "Conservative", "Anti-Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President georgePoindexter = new President(
+            "George Poindexter", "South", 4, 1, 3, 2, "Populist", "Social Programs",
+            new String[]{"Jacksonian Era"}
+    );
+    
   
 
-    
+    /************************************************************************************************************************
+     *********************** END OF PRESIDENTS ******************************************************************************
+     ************************************************************************************************************************/
     
     
     // ELECTIONS
@@ -2691,6 +2742,10 @@ public class CardData {
     	return presidents;
     }
     
+    /************************************************************************************************************************
+     *********************** ADD PRESIDENTS FUNCTION ************************************************************************
+     ************************************************************************************************************************/
+    
     /***
      * Use this for getting/adding presidents to the game
      */
@@ -3149,6 +3204,18 @@ public class CardData {
         nonpresidents.add(amyKlobuchar);
         nonpresidents.add(ilhanOmar);
         nonpresidents.add(janetYellen);
+        nonpresidents.add(theodoreFreling);
+        nonpresidents.add(johnDavis);
+        nonpresidents.add(johnMClayton);
+        nonpresidents.add(georgeMDallas);
+        nonpresidents.add(silasWright);
+        nonpresidents.add(johnFairfield);
+        nonpresidents.add(georgeEvans);
+        nonpresidents.add(williamCPreston);
+        nonpresidents.add(stephenDMiller);
+        nonpresidents.add(gulianGVerplanck);
+        nonpresidents.add(louisMcLane);
+        nonpresidents.add(georgePoindexter);
         
    
         
