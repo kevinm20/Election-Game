@@ -102,7 +102,7 @@ public class CardData {
             new String[]{"President", "Progressive Era"}
     );
     static President millardFillmore = new President(
-            "Millard Fillmore", "Northeast", 4, 1, 5, 2, "Conservative", "Traditional Morality",
+            "Millard Fillmore", "Northeast", 4, 2, 6, 4, "Conservative", "Closed Borders",
             new String[]{"President", "Civil War Era"}
     );
     static President robertATaft = new President(
@@ -198,7 +198,7 @@ public class CardData {
             new String[]{"President", "Civil Rights Era"}
     );
     static President johnTyler = new President(
-            "John Tyler", "South", 6, 2, 4, 4, "Libertarian", "Constructionism",
+            "John Tyler", "South", 7, 2, 4, 4, "Libertarian", "Constructionism",
             new String[]{"President", "Jacksonian Era"}
     );
     static President jamesKPolk = new President(
@@ -206,7 +206,7 @@ public class CardData {
             new String[]{"President", "Jacksonian Era"}
     );
     static President zacharyTaylor = new President(
-            "Zachary Taylor", "Northeast", 1, 3, 1, 6, "Conservative", "Nationalism",
+            "Zachary Taylor", "Northeast", 1, 5, 1, 7, "Conservative", "Nationalism",
             new String[]{"President", "Jacksonian Era"}
     );
     static President georgeWBush = new President(
@@ -2188,8 +2188,8 @@ public class CardData {
             "Robert Y. Hayne", "South", 4, 2, 5, 2, "Populist", "Free Trade",
             new String[]{"Jacksonian Era"}
     );
-    static President amosTazewell = new President(
-            "Amos Tazewell", "South", 1, 4, 4, 4, "Populist", "Anti-Central Bank",
+    static President amosKendall = new President(
+            "Amos Kendall", "South", 1, 4, 4, 4, "Populist", "Anti-Central Bank",
             new String[]{"Jacksonian Era"}
     );
     static President rogerBTaney = new President(
@@ -3196,7 +3196,7 @@ public class CardData {
         nonpresidents.add(charlesFrancisAdamsSr);
         nonpresidents.add(benjaminRobbinsCurtis);
         nonpresidents.add(robertYHayne);
-        nonpresidents.add(amosTazewell);
+        nonpresidents.add(amosKendall);
         nonpresidents.add(rogerBTaney);
         nonpresidents.add(mikePompeo);
         nonpresidents.add(jaredKushner);
