@@ -2268,6 +2268,30 @@ public class CardData {
             "George Poindexter", "South", 4, 1, 3, 2, "Populist", "Social Programs",
             new String[]{"Jacksonian Era"}
     );
+    static President thomasEwing = new President(
+            "Thomas Ewing", "Midwest", 3, 1, 2, 1, "Conservative", "Establishment",
+            new String[]{"Jacksonian Era"}
+    );
+    static President williamWEllsworth = new President(
+            "William W. Ellsworth", "Northeast", 3, 2, 2, 3, "Conservative", "Centralization",
+            new String[]{"Jacksonian Era"}
+    );
+    static President benjaminWLeigh = new President(
+            "Benjamin W. Leigh", "South", 2, 1, 1, 1, "Conservative", "Racism",
+            new String[]{"Jacksonian Era"}
+    );
+    static President lewisCass = new President(
+            "Lewis Cass", "Midwest", 6, 2, 6, 3, "Populist", "States' Rights",
+            new String[]{"Jacksonian Era"}
+    );
+    static President leviWoodbury = new President(
+            "Levi Woodbury", "Northeast", 6, 2, 5, 3, "Libertarian", "Constructionism",
+            new String[]{"Jacksonian Era"}
+    );
+    static President williamOButler = new President(
+            "William O. Butler", "South", 2, 3, 2, 3, "Populist", "Tough Foreign Policy",
+            new String[]{"Jacksonian Era"}
+    );
     
   
 
@@ -3216,6 +3240,12 @@ public class CardData {
         nonpresidents.add(gulianGVerplanck);
         nonpresidents.add(louisMcLane);
         nonpresidents.add(georgePoindexter);
+        nonpresidents.add(thomasEwing);
+        nonpresidents.add(williamWEllsworth);
+        nonpresidents.add(benjaminWLeigh);
+        nonpresidents.add(lewisCass);
+        nonpresidents.add(leviWoodbury);
+        nonpresidents.add(williamOButler);
         
    
         
