@@ -2293,6 +2293,16 @@ public class CardData {
             new String[]{"Jacksonian Era"}
     );
     
+    static President ninaTurner = new President(
+            "Nina Turner", "Midwest", 1, 1, 1, 1, "Progressive", "Social Programs",
+            new String[]{"Present Era"}
+    );
+    
+    static President jaredPolis = new President(
+            "Jared Polis", "West", 4, 5, 3, 2, "Libertarian", "Personal Freedom",
+            new String[]{"Present Era"}
+    );
+    
   
 
     /************************************************************************************************************************
@@ -3246,7 +3256,8 @@ public class CardData {
         nonpresidents.add(lewisCass);
         nonpresidents.add(leviWoodbury);
         nonpresidents.add(williamOButler);
-        
+        nonpresidents.add(ninaTurner);
+        nonpresidents.add(jaredPolis);
    
         
 
