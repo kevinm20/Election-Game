@@ -2292,14 +2292,36 @@ public class CardData {
             "William O. Butler", "South", 2, 3, 2, 3, "Populist", "Tough Foreign Policy",
             new String[]{"Jacksonian Era"}
     );
-    
     static President ninaTurner = new President(
             "Nina Turner", "Midwest", 1, 1, 1, 1, "Progressive", "Social Programs",
             new String[]{"Present Era"}
     );
-    
     static President jaredPolis = new President(
             "Jared Polis", "West", 4, 5, 3, 2, "Libertarian", "Personal Freedom",
+            new String[]{"Present Era"}
+    );
+    static President chrisSununu = new President(
+            "Chris Sununu", "Northeast", 4, 4, 4, 2, "Libertarian", "Tax Cuts",
+            new String[]{"Present Era"}
+    );
+    static President philScott = new President(
+            "Phil Scott", "Northeast", 4, 3, 3, 2, "Progressive", "Tax Cuts",
+            new String[]{"Present Era"}
+    );
+    static President charlieBaker = new President(
+            "Charlie Baker", "Northeast", 4, 2, 4, 2, "Progressive", "Tax Cuts",
+            new String[]{"Present Era"}
+    );
+    static President andyBeshear = new President(
+            "Andy Beshear", "South", 3, 3, 2, 2, "Progressive", "Personal Freedom",
+            new String[]{"Present Era"}
+    );
+    static President johnBelEdwards = new President(
+            "John Bel Edwards", "South", 5, 2, 3, 2, "Populist", "Social Liberalism",
+            new String[]{"Present Era"}
+    );
+    static President lauraKelly = new President(
+            "Laura Kelly", "West", 3, 2, 4, 1, "Progressive", "Social Programs",
             new String[]{"Present Era"}
     );
     
@@ -3258,6 +3280,12 @@ public class CardData {
         nonpresidents.add(williamOButler);
         nonpresidents.add(ninaTurner);
         nonpresidents.add(jaredPolis);
+        nonpresidents.add(chrisSununu);
+        nonpresidents.add(philScott);
+        nonpresidents.add(charlieBaker);
+        nonpresidents.add(andyBeshear);
+        nonpresidents.add(johnBelEdwards);
+        nonpresidents.add(lauraKelly);
    
         
 
