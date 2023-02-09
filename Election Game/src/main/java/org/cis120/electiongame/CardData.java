@@ -1345,7 +1345,7 @@ public class CardData {
     );
     
     static President kamalaHarris = new President(
-            "Kamala Harris", "West", 7, 1, 4, 6, "Progressive", "Social Liberalism",
+            "Kamala Harris", "West", 7, 2, 3, 6, "Progressive", "Social Liberalism",
             new String[]{"Present Era"}
     );
     
