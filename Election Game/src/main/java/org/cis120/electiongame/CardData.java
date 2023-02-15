@@ -361,7 +361,7 @@ public class CardData {
             new String[]{"Civil Rights Era"}
     );
     static President ronDeSantis = new President(
-            "Ron DeSantis", "South", 4, 6, 8, 5, "Conservative", "Deregulation",
+            "Ron DeSantis", "South", 4, 4, 8, 5, "Conservative", "Traditional Morality",
             new String[]{"Present Era"}
     );
     static President hillaryClinton = new President(
@@ -373,7 +373,7 @@ public class CardData {
             new String[]{"Modern Era"}
     );
     static President garyJohnson = new President(
-            "Gary Johnson", "West", 3, 1, 2, 1, "Libertarian", "Tax Cuts",
+            "Gary Johnson", "West", 3, 1, 2, 1, "Libertarian", "Personal Freedom",
             new String[]{"Modern Era"}
     );
     static President rossPerot = new President(
@@ -385,7 +385,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President charlesLindbergh = new President(
-            "Charles Lindbergh", "Midwest", 1, 5, 2, 9, "Populist", "Isolationism",
+            "Charles Lindbergh", "Midwest", 1, 5, 2, 8, "Populist", "Isolationism",
             new String[]{"New Deal Era"}
     );
     static President williamHSeward = new President(
@@ -964,7 +964,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President adlaiStevensonII = new President(
-            "Adlai Stevenson II", "South", 2, 5, 2, 2, "Progressive", "Law and Order",
+            "Adlai Stevenson II", "Midwest", 2, 5, 2, 2, "Progressive", "Law and Order",
             new String[]{"New Deal Era"}
     );
     static President henryWilson = new President(
