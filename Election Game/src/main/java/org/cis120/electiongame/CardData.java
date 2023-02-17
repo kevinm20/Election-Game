@@ -2324,6 +2324,30 @@ public class CardData {
             "Laura Kelly", "West", 3, 2, 4, 1, "Progressive", "Social Programs",
             new String[]{"Present Era"}
     );
+    static President nikkiHaley = new President(
+            "Nikki Haley", "South", 3, 5, 4, 2, "Conservative", "Nationalism",
+            new String[]{"Present Era"}
+    );
+    static President coreyStapleton = new President(
+            "Corey Stapleton", "West", 1, 1, 1, 1, "Conservative", "Tax Cuts",
+            new String[]{"Present Era"}
+    );
+    static President kariLake = new President(
+            "Kari Lake", "West", 1, 3, 1, 3, "Conservative", "Anti-Establishment",
+            new String[]{"Present Era"}
+    );
+    static President markKelly = new President(
+            "Mark Kelly", "West", 2, 4, 1, 3, "Progressive", "Implied Powers",
+            new String[]{"Present Era"}
+    );
+    static President katieHobbs = new President(
+            "Katie Hobbs", "West", 3, 1, 4, 2, "Progressive", "Establishment",
+            new String[]{"Present Era"}
+    );
+    static President michelleObama = new President(
+            "Michelle Obama", "Midwest", 1, 6, 1, 7, "Progressive", "Social Liberalism",
+            new String[]{"Present Era"}
+    );
     
   
 
@@ -3286,6 +3310,12 @@ public class CardData {
         nonpresidents.add(andyBeshear);
         nonpresidents.add(johnBelEdwards);
         nonpresidents.add(lauraKelly);
+        nonpresidents.add(nikkiHaley);
+        nonpresidents.add(coreyStapleton);
+        nonpresidents.add(kariLake);
+        nonpresidents.add(markKelly);
+        nonpresidents.add(katieHobbs);
+        nonpresidents.add(michelleObama);
    
         
 
