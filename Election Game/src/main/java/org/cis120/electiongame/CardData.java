@@ -1280,7 +1280,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President josephBradleyVarnum = new President(
-            "Joseph Bradley Varnum", "Northeast", 7, 1, 3, 2, "Libertarian", "Civil Rights",
+            "Joseph Bradley Varnum", "Northeast", 7, 1, 4, 3, "Libertarian", "Civil Rights",
             new String[]{"Founding Era"}
     );
     static President peterPorter = new President(
@@ -1489,7 +1489,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President williamMaclay = new President(
-            "William Maclay", "Northeast", 2, 1, 2, 2, "Libertarian", "Anti-Central Bank",
+            "William Maclay", "Northeast", 2, 1, 2, 2, "Libertarian", "Anti-Establishment",
             new String[]{"Founding Era"}
     );
     static President jonathanJennings = new President(
@@ -1673,7 +1673,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President johnFenno = new President(
-            "johnFenno", "Northeast", 1, 3, 1, 3, "Conservative", "Social Hierarchy",
+            "John Fenno", "Northeast", 1, 3, 1, 3, "Conservative", "Social Hierarchy",
             new String[]{"Founding Era"}
     );
     static President georgeClintonJr = new President(
