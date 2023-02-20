@@ -605,7 +605,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President johnBrown = new President(
-            "John Brown", "Northeast", 1, 5, 1, 9, "Progressive", "Civil Rights",
+            "John Brown", "Northeast", 1, 3, 1, 8, "Progressive", "Civil Rights",
             new String[]{"Civil War Era"}
     );
     static President andrewJackson24 = new President(
@@ -920,7 +920,7 @@ public class CardData {
             new String[]{"New Deal Era"}
     );
     static President williamFBuckley = new President(
-            "William F. Buckley", "Northeast", 1, 2, 9, 4, "Conservative", "Traditional Morality",
+            "William F. Buckley", "Northeast", 1, 2, 7, 5, "Conservative", "Traditional Morality",
             new String[]{"Civil Rights Era"}
     );
     static President williamLloydGarrison = new President(
@@ -996,7 +996,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President georgeCabot = new President(
-            "George Cabot", "Northeast", 3, 1, 2, 3, "Conservative", "Isolationism",
+            "George Cabot", "Northeast", 3, 3, 5, 3, "Conservative", "Tough Foreign Policy",
             new String[]{"Founding Era"}
     );
     static President timothyPickering = new President(
@@ -1064,7 +1064,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesWilson = new President(
-            "James Wilson", "Northeast", 2, 2, 5, 1, "Conservative", "Active Executive",
+            "James Wilson", "Northeast", 2, 3, 6, 2, "Conservative", "Active Executive",
             new String[]{"Founding Era"}
     );
     static President oliverEllsworth = new President(
@@ -1072,7 +1072,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesMcHenry = new President(
-            "James McHenry", "Northeast", 2, 2, 2, 1, "Conservative", "Tough Foreign Policy",
+            "James McHenry", "Northeast", 2, 3, 3, 2, "Conservative", "Tough Foreign Policy",
             new String[]{"Founding Era"}
     );
     static President johnBrooks = new President(
@@ -1088,7 +1088,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President williamPaterson = new President(
-            "William Paterson", "Northeast", 3, 1, 4, 1, "Conservative", "States' Rights",
+            "William Paterson", "Northeast", 3, 2, 6, 3, "Conservative", "States' Rights",
             new String[]{"Founding Era"}
     );
     static President kimkardashian = new President(
@@ -1180,7 +1180,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President melanctonSmith = new President(
-            "Melancton Smith", "Northeast", 1, 2, 8, 1, "Libertarian", "States' Rights",
+            "Melancton Smith", "Northeast", 1, 4, 5, 1, "Libertarian", "Egalitarianism",
             new String[]{"Founding Era"}
     );
     static President davidRittenhouse = new President(
@@ -1208,7 +1208,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President georgeMason = new President(
-            "George Mason", "South", 2, 4, 7, 1, "Libertarian", "States' Rights",
+            "George Mason", "South", 2, 4, 7, 1, "Libertarian", "Egalitarianism",
             new String[]{"Founding Era"}
     );
     static President williamCrawford = new President(
@@ -1288,11 +1288,11 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesJackson = new President(
-            "James Jackson", "South", 5, 1, 4, 1, "Libertarian", "Tax Cuts",
+            "James Jackson", "South", 5, 1, 4, 1, "Libertarian", "Anti-Central Bank",
             new String[]{"Founding Era"}
     );
     static President johnLansingJr = new President(
-            "John Lansing Jr.", "Northeast", 2, 1, 2, 3, "Libertarian", "States' Rights",
+            "John Lansing Jr.", "Northeast", 3, 2, 3, 4, "Libertarian", "States' Rights",
             new String[]{"Founding Era"}
     );
     static President philipBBarbour = new President(
