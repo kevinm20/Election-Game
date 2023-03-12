@@ -461,7 +461,7 @@ public class CardData {
             new String[]{"Reconstruction Era"}
     );
     static President tedCruz = new President(
-            "Ted Cruz", "South", 4, 3, 6, 3, "Conservative", "Tax Cuts",
+            "Ted Cruz", "South", 4, 2, 6, 4, "Conservative", "Tax Cuts",
             new String[]{"Present Era"}
     );
     static President georgeMcClellan = new President(
