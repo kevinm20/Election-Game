@@ -790,7 +790,7 @@ public class CardData {
     );
     
     static President randPaul = new President(
-    		"Rand Paul", "South", 5, 2, 5, 2, "Libertarian", "Tax Cuts",
+    		"Rand Paul", "South", 4, 2, 6, 2, "Libertarian", "Tax Cuts",
             new String[]{"Present Era"}
     );
     
