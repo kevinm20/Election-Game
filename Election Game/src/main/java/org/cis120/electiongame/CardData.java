@@ -2407,6 +2407,11 @@ public class CardData {
             new String[]{"Civil Rights Era"}
     );
     
+    static President johnRBrinkley = new President(
+            "John R. Brinkley", "West", 1, 3, 1, 1, "Populist", "Internal Improvements",
+            new String[]{"New Deal Era"}
+    );
+    
     
   
 
@@ -3389,7 +3394,10 @@ public class CardData {
         nonpresidents.add(robertSmith);
         nonpresidents.add(vivekRamaswamy);
         nonpresidents.add(jamesBuckley);
+        nonpresidents.add(johnRBrinkley);
+  
 
+        
 
         
    
