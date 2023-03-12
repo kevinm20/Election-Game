@@ -1336,7 +1336,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President glennYoungkin = new President(
-            "Glenn Youngkin", "South", 2, 5, 7, 4, "Conservative", "Traditional Morality",
+            "Glenn Youngkin", "South", 2, 6, 6, 3, "Conservative", "Traditional Morality",
             new String[]{"Present Era"}
     );
     static President gretchenWhitmer = new President(
