@@ -529,7 +529,7 @@ public class CardData {
             new String[]{"Modern Era"}
     );
     static President jackKemp = new President(
-            "Jack Kemp", "Northeast", 5, 1, 5, 1, "Conservative", "Tax Cuts",
+            "Jack Kemp", "Northeast", 5, 1, 5, 1, "Libertarian", "Tax Cuts",
             new String[]{"Reagan Era"}
     );
     static President howardDean = new President(
@@ -746,7 +746,7 @@ public class CardData {
     );
     
     static President eugeneDebs = new President(
-    		"Eugene Debs", "Midwest", 1, 3, 3, 3, "Progressive", "Social Programs",
+    		"Eugene Debs", "Midwest", 1, 3, 3, 3, "Progressive", "Class Unity",
             new String[]{"Progressive Era"}
     );
     
@@ -2396,22 +2396,39 @@ public class CardData {
             "Robert Smith", "Northeast", 2, 2, 1, 2, "Libertarian", "Establishment",
             new String[]{"Founding Era"}
     );
-    
     static President vivekRamaswamy = new President(
             "Vivek Ramaswamy", "Midwest", 1, 1, 2, 1, "Conservative", "Traditional Morality",
             new String[]{"Present Era"}
     );
-    
     static President jamesBuckley = new President(
             "James Buckley", "Northeast", 3, 2, 5, 3, "Conservative", "Traditional Morality",
             new String[]{"Civil Rights Era"}
     );
-    
     static President johnRBrinkley = new President(
             "John R. Brinkley", "West", 1, 3, 1, 1, "Populist", "Internal Improvements",
             new String[]{"New Deal Era"}
     );
+    static President marianneWilliamson = new President(
+            "Marianne Williamson", "West", 1, 3, 1, 2, "Progressive", "Social Programs",
+            new String[]{"Present Era"}
+    );
+    static President rufus = new President(
+            "Rufus", "South", 1, 1, 10, 1, "Conservative", "Racism",
+            new String[]{"Meme Card"}
+    );
+    static President phyllisSchlafy = new President(
+            "Phyllis Schlafy", "South", 1, 4, 4, 4, "Conservative", "Traditional Morality",
+            new String[]{"Civil Rights Era"}
+    );
+    static President larryHogan = new President(
+            "Larry Hogan", "Northeast", 4, 4, 3, 1, "Conservative", "Establishment",
+            new String[]{"Present Era"}
+    );
     
+    static President blancheLincoln = new President(
+            "Blanche Lincoln", "South", 4, 2, 2, 1, "Populist", "Subsidies",
+            new String[]{"Modern Era"}
+    );
     
   
 
@@ -3395,6 +3412,16 @@ public class CardData {
         nonpresidents.add(vivekRamaswamy);
         nonpresidents.add(jamesBuckley);
         nonpresidents.add(johnRBrinkley);
+        nonpresidents.add(marianneWilliamson);
+        nonpresidents.add(phyllisSchlafy);
+        nonpresidents.add(larryHogan); 
+        nonpresidents.add(blancheLincoln);
+  
+
+
+        
+
+        
   
 
         
@@ -3443,7 +3470,9 @@ public class CardData {
         **/
         meme.add(cherylJohnson);
         meme.add(anthonyDevolder);
+        meme.add(rufus); 
        
+
 
         
         
