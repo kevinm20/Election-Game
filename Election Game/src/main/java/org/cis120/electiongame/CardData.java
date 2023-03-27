@@ -2430,50 +2430,55 @@ public class CardData {
     );
     static President kristiNoem = new President(
             "Kristi Noem", "West", 5, 4, 2, 2, "Conservative", "Deregulation",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President lizCheney = new President(
             "Liz Cheney", "West", 2, 2, 2, 3, "Conservative", "Establishment",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President kimReynolds = new President(
             "Kim Reynolds", "Midwest", 4, 4, 4, 1, "Conservative", "Tough Foreign Policy",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President andrewYang = new President(
             "Andrew Yang", "Northeast", 1, 2, 5, 2, "Populist", "Social Programs",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President betoORourke = new President(
             "Beto O'Rourke", "South", 2, 5, 2, 3, "Progressive", "Implied Powers",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President bennieThompson = new President(
             "Bennie Thompson", "South", 7, 1, 2, 2, "Progressive", "Establishment",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President gregAbbott = new President(
             "Greg Abbott", "West", 5, 3, 4, 3, "Conservative", "Closed Borders",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President blakeMasters = new President(
             "Blake Masters", "West", 1, 1, 4, 1, "Libertarian", "Closed Borders",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President tomCotton = new President(
             "Tom Cotton", "Midwest", 5, 3, 4, 2, "Conservative", "Tough Foreign Policy",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President wesMoore = new President(
             "Wes Moore", "Northeast", 2, 2, 3, 1, "Progressive", "Regulation",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President jonOssoff = new President(
             "Jon Ossoff", "South", 2, 5, 4, 2, "Progressive", "Personal Freedom",
-            new String[]{"Modern Era"}
+            new String[]{"Present Era"}
     );
     static President kirstenGillibrand = new President(
             "Kirsten Gillibrand", "Northeast", 5, 2, 2, 1, "Progressive", "Social Liberalism",
+            new String[]{"Present Era"}
+    );
+    
+    static President kellyAyotte = new President(
+            "Kelly Ayotte", "Northeast", 3, 3, 3, 1, "Conservative", "Tough Foreign Policy",
             new String[]{"Modern Era"}
     );
     
@@ -3475,7 +3480,7 @@ public class CardData {
         nonpresidents.add(wesMoore);
         nonpresidents.add(jonOssoff);
         nonpresidents.add(kirstenGillibrand);
-
+        nonpresidents.add(kellyAyotte);
         
   
 
