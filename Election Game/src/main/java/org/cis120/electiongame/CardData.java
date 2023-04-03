@@ -2453,7 +2453,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President gregAbbott = new President(
-            "Greg Abbott", "West", 5, 3, 4, 3, "Conservative", "Closed Borders",
+            "Greg Abbott", "South", 5, 3, 4, 3, "Conservative", "Closed Borders",
             new String[]{"Present Era"}
     );
     static President blakeMasters = new President(
@@ -2476,10 +2476,33 @@ public class CardData {
             "Kirsten Gillibrand", "Northeast", 5, 2, 2, 1, "Progressive", "Social Liberalism",
             new String[]{"Present Era"}
     );
-    
     static President kellyAyotte = new President(
             "Kelly Ayotte", "Northeast", 3, 3, 3, 1, "Conservative", "Tough Foreign Policy",
             new String[]{"Modern Era"}
+    );
+    static President nathanielPTallmadge = new President(
+            "Nathaniel P. Tallmadge", "Midwest", 4, 3, 1, 2, "Conservative", "Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President nicholasBiddle = new President(
+            "Nicholas Biddle", "Northeast", 2, 1, 5, 5, "Conservative", "Central Bank",
+            new String[]{"Jacksonian Era"}
+    );
+    static President johnGPalfrey = new President(
+            "John G. Palfrey", "Northeast", 2, 3, 1, 1, "Conservative", "Civil Rights",
+            new String[]{"Civil War Era"}
+    );
+    static President johnBranch = new President(
+            "John Branch", "South", 2, 1, 2, 1, "Populist", "Tough Foreign Policy",
+            new String[]{"Jacksonian Era"}
+    );
+    static President jamesHHammond = new President(
+            "James H. Hammond", "South", 3, 2, 2, 3, "Populist", "Racism",
+            new String[]{"Civil War Era"}
+    );
+    static President williamLMarcy = new President(
+            "William L. Marcy", "Northeast", 7, 2, 3, 3, "Populist", "Tough Foreign Policy",
+            new String[]{"Civil War Era"}
     );
     
   
@@ -3481,8 +3504,12 @@ public class CardData {
         nonpresidents.add(jonOssoff);
         nonpresidents.add(kirstenGillibrand);
         nonpresidents.add(kellyAyotte);
-        
-  
+        nonpresidents.add(nathanielPTallmadge);
+        nonpresidents.add(nicholasBiddle);
+        nonpresidents.add(johnGPalfrey);
+        nonpresidents.add(johnBranch);
+        nonpresidents.add(jamesHHammond);
+        nonpresidents.add(williamLMarcy);
 
         
 
