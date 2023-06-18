@@ -2600,6 +2600,54 @@ public class CardData {
             "Tip O'Neill", "Northeast", 7, 4, 2, 5, "Progressive", "Social Programs",
             new String[]{"Reagan Era"}
     );
+    static President marshaBlackburn = new President(
+            "Marsha Blackburn", "South", 6, 3, 2, 2, "Conservative", "Traditional Morality",
+            new String[]{"Present Era"}
+    );
+    static President larryElder = new President(
+            "Larry Elder", "West", 1, 4, 2, 2, "Conservative", "Tax Cuts",
+            new String[]{"Present Era"}
+    );
+    static President dougBurgum = new President(
+            "Doug Burgum", "West", 3, 1, 2, 1, "Conservative", "Regulation",
+            new String[]{"Present Era"}
+    );
+    static President garyPeters = new President(
+            "Gary Peters", "Midwest", 6, 1, 2, 1, "Progressive", "Establishment",
+            new String[]{"Present Era"}
+    );
+    static President royCooper = new President(
+            "Roy Cooper", "South", 5, 4, 4, 2, "Progressive", "Social Liberalism",
+            new String[]{"Present Era"}
+    );
+    static President maggieHassan = new President(
+            "Maggie Hassan", "Northeast", 5, 2, 3, 1, "Progressive", "Social Liberalism",
+            new String[]{"Present Era"}
+    );
+    static President johnKennedy = new President(
+            "John Kennedy", "South", 3, 5, 2, 2, "Conservative", "Law and Order",
+            new String[]{"Present Era"}
+    );
+    static President lindseyGraham = new President(
+            "Lindsey Graham", "South", 6, 1, 3, 3, "Conservative", "Law and Order",
+            new String[]{"Present Era"}
+    );
+    static President donBolduc = new President(
+            "Don Bolduc", "Northeast", 1, 2, 1, 1, "Conservative", "Anti-Establishment",
+            new String[]{"Present Era"}
+    );
+    static President robertFKennedyJr = new President(
+            "Robert F. Kennedy Jr.", "Northeast", 1, 3, 2, 4, "Populist", "Anti-Establishment",
+            new String[]{"Present Era"}
+    );
+    static President jayInslee = new President(
+            "Jay Inslee", "West", 7, 2, 1, 2, "Progressive", "Personal Freedom",
+            new String[]{"Present Era"}
+    );
+    static President maxwellFrost = new President(
+            "Maxwell Frost", "South", 2, 2, 1, 1, "Progressive", "Class Unity",
+            new String[]{"Present Era"}
+    );
     
     
   
@@ -3633,6 +3681,18 @@ public class CardData {
         nonpresidents.add(robertByrd);
         nonpresidents.add(johnCStennis);
         nonpresidents.add(tipONeill);
+        nonpresidents.add(marshaBlackburn);
+        nonpresidents.add(larryElder);
+        nonpresidents.add(dougBurgum);
+        nonpresidents.add(garyPeters);
+        nonpresidents.add(royCooper);
+        nonpresidents.add(maggieHassan);
+        nonpresidents.add(johnKennedy);
+        nonpresidents.add(lindseyGraham);
+        nonpresidents.add(donBolduc);
+        nonpresidents.add(robertFKennedyJr);
+        nonpresidents.add(jayInslee);
+        nonpresidents.add(maxwellFrost);
 
         
    
