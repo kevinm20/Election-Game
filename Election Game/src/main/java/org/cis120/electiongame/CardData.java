@@ -91,63 +91,199 @@ public class CardData {
     );
     static President donaldTrump = new President(
             "Donald Trump", "Northeast", 1, 6, 1, 7, "Conservative", "Nationalism",
-            new String[]{"President", "Modern Era"}
+            new String[]{"President", "Modern Era"},
+            "<center><b>Donald Trump</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 2017-2021<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "2016 (won), 2020 (lost)"
     );
     static President ulyssesSGrant = new President(
             "Ulysses S. Grant", "Midwest", 1, 8, 4, 9, "Conservative", "Civil Rights",
-            new String[]{"President", "Civil War Era"}
+            new String[]{"President", "Civil War Era"},
+            "<center><b>Ulysses S. Grant</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1869-1877<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1868 (won), 1872 (won)"
     );
     static President woodrowWilson = new President(
             "Woodrow Wilson", "Northeast", 2, 4, 8, 5, "Progressive", "Centralization",
-            new String[]{"President", "Progressive Era"}
+            new String[]{"President", "Progressive Era"},
+            "<center><b>Woodrow Wilson</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1913-1921<br><br>"
+	                + "Governor: 1911-1913<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1912 (won), 1916 (won)"
     );
     static President millardFillmore = new President(
             "Millard Fillmore", "Northeast", 4, 2, 6, 4, "Conservative", "Closed Borders",
-            new String[]{"President", "Civil War Era"}
+            new String[]{"President", "Civil War Era"},
+            "<center><b>Millard Fillmore</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1850-1853<br><br>"
+	                + "Vice President: 1849-1850<br><br>"
+	                + "NY Comptroller: 1848-1849<br><br>"
+	                + "House: 1833-1835, 1837-1843<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1848 (won VP), 1852 (lost primary), 1856 (lost)"
     );
     static President robertATaft = new President(
             "Robert A. Taft", "Midwest", 7, 3, 6, 3, "Libertarian", "Isolationism",
-            new String[]{"New Deal Era"}
+            new String[]{"New Deal Era"},
+            "<center><b>Robert A. Taft</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "Senator: 1939-1953<br><br>"
+	                + "OH Leg.: 1921-1933<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1940 (lost), 1948 (lost), 1952 (lost)"
     );
     static President billClinton = new President(
             "Bill Clinton", "South", 6, 7, 6, 5, "Progressive", "Free Trade",
-            new String[]{"President", "Reagan Era"}
+            new String[]{"President", "Reagan Era"},
+            "<center><b>Bill Clinton</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1993-2001<br><br>"
+	                + "Governor: 1979-1981, 1983-1992<br><br>"
+	                + "AR AG: 1977-1979<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1992 (won), 1996 (won)"
+            
     );
     static President georgeWashington = new President(
             "George Washington", "South", 3, 10, 6, 10, "Conservative", "Nationalism",
-            new String[]{"President", "Founding Era"}
+            new String[]{"President", "Founding Era"},
+            "<center><b>George Washington</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1789-1797<br><br>"
+	                + "Cont. Cong.: 1774-1775<br><br>"
+	                + "VA Leg.: 1758-1775<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1788 (won), 1792 (won)"
     );
     static President jamesAGarfield = new President(
             "James A. Garfield", "Midwest", 5, 5, 4, 3, "Conservative", "Limited Government",
-            new String[]{"President", "Reconstruction Era"}
+            new String[]{"President", "Reconstruction Era"},
+            "<center><b>James A. Garfield</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1881<br><br>"
+	                + "House: 1863-1880<br><br>"
+	                + "OH Leg.: 1860-1861<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1880 (won)"
     );
     static President jamesMonroe = new President(
             "James Monroe", "South", 8, 8, 6, 6, "Libertarian", "Nationalism",
-            new String[]{"President", "Founding Era"}
+            new String[]{"President", "Founding Era"},
+            "<center><b>James Monroe</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1817-1825<br><br>"
+	                + "Sec. of State: 1811-1817<br><br>"
+	                + "Governor: 1779-1802, 1811<br><br>"
+	                + "Senator: 1790-1794<br><br>"
+	                + "Diplomat: 1794-1796, 1803-1807<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1808 (lost primary), 1812 (won), 1816 (won)"
     );
     static President williamMcKinley = new President(
             "William McKinley", "Midwest", 7, 5, 7, 6, "Conservative", "Tariffs",
-            new String[]{"President", "Reconstruction Era"}
+            new String[]{"President", "Reconstruction Era"},
+            "<center><b>William McKinley</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1897-1901<br><br>"
+	                + "Governor: 1892-1896<br><br>"
+	                + "House: 1877-1884, 1885-1891<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1896 (won), 1900 (won)"
     );
     static President andrewJackson = new President(
             "Andrew Jackson", "South", 2, 10, 3, 9, "Populist", "Anti-Central Bank",
-            new String[]{"President", "Jacksonian Era"}
+            new String[]{"President", "Jacksonian Era"},
+            "<center><b>Andrew Jackson</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1829-1837<br><br>"
+	                + "Senator: 1797-1798, 1823-1825<br><br>"
+	                + "Other: 1798-1804, 1821<br><br>"
+	                + "House: 1796-1797<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1824 (lost), 1828 (won), 1832 (won)"
     );
     static President williamJenningsBryan = new President(
             "William Jennings Bryan", "West", 2, 9, 6, 2, "Populist", "Inflation",
-            new String[]{"Reconstruction Era"}
+            new String[]{"Reconstruction Era"},
+            "<center><b>William Jennings Bryan</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "Sec. of State: 1913-1915<br><br>"
+	                + "House: 1891-1895<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1896 (lost), 1900 (lost), 1908 (lost)"
     );
     static President ronaldReagan = new President(
             "Ronald Reagan", "West", 4, 10, 5, 8, "Conservative", "Tax Cuts",
-            new String[]{"President", "Reagan Era"}
+            new String[]{"President", "Reagan Era"},
+            "<center><b>Ronald Reagan</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1981-1989<br><br>"
+	                + "Governor: 1967-1975<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1976 (lost primary), 1980 (won), 1984 (won)"
     );
     static President groverCleveland = new President(
             "Grover Cleveland", "Northeast", 3, 4, 7, 3, "Libertarian", "Free Trade",
-            new String[]{"President", "Reconstruction Era"}
+            new String[]{"President", "Reconstruction Era"},
+            "<center><b>Grover Cleveland</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1885-1889, 1893-1897<br><br>"
+	                + "Governor: 1883-1885<br><br>"
+	                + "Mayor: 1882<br><br>"
+	                + "Sheriff: 1871-1873<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1884 (won), 1888 (lost), 1892 (won)"
     );
     static President richardNixon = new President(
             "Richard Nixon", "West", 8, 7, 5, 8, "Conservative", "Law and Order",
-            new String[]{"President", "Civil Rights Era"}
+            new String[]{"President", "Civil Rights Era"},
+            "<center><b>Richard Nixon</b></center><br><br>"
+	                + "<b>Political Experience:</b><br><br>"
+	                + "President: 1969-1974<br><br>"
+	                + "Vice President: 1953-1961<br><br>"
+	                + "Senator: 1950-1953<br><br>"
+	                + "House: 1947-1950<br><br>"
+	                + "<br><br>"
+	                + "<b>Presidential Runs:</b><br><br>"
+	                + "1952 (won VP), 1956 (won VP), 1960 (lost), 1968 (won), 1972 (won)"
     );
     static President warrenGHarding = new President(
             "Warren G. Harding", "Midwest", 3, 6, 6, 1, "Conservative", "Limited Government",
@@ -381,7 +517,7 @@ public class CardData {
             new String[]{"Reagan Era"}
     );
     static President robertLaFollette = new President(
-            "Robert La Follette", "Midwest", 9, 3, 5, 3, "Progressive", "Regulation",
+            "Robert La Follette", "Midwest", 6, 3, 5, 5, "Progressive", "Regulation",
             new String[]{"Progressive Era"}
     );
     static President charlesLindbergh = new President(
@@ -429,7 +565,7 @@ public class CardData {
             new String[]{"Modern Era"}
     );
     static President alSmith = new President(
-            "Al Smith", "Northeast", 4, 2, 3, 3, "Progressive", "Personal Freedom",
+            "Al Smith", "Northeast", 4, 2, 5, 3, "Progressive", "Personal Freedom",
             new String[]{"Progressive Era"}
     );
     static President patrickHenry = new President(
@@ -1100,15 +1236,15 @@ public class CardData {
             new String[]{"Meme Card"}
     );
     static President charlesWFairbanks = new President(
-            "Charles W. Fairbanks", "Midwest", 6, 2, 3, 3, "Conservative", "Deregulation",
+            "Charles W. Fairbanks", "Midwest", 5, 4, 3, 3, "Conservative", "Deregulation",
             new String[]{"Progressive Era"}
     );
     static President altonBParker = new President(
-            "Alton B. Parker", "Northeast", 2, 1, 3, 1, "Populist", "Isolationism",
+            "Alton B. Parker", "Northeast", 2, 4, 4, 2, "Libertarian", "Isolationism",
             new String[]{"Progressive Era"}
     );
     static President jamesSSherman = new President(
-            "James S. Sherman", "Northeast", 5, 5, 1, 1, "Conservative", "Gold Standard",
+            "James S. Sherman", "Northeast", 5, 5, 2, 1, "Conservative", "Gold Standard",
             new String[]{"Progressive Era"}
     );
     static President adlaiStevensonI = new President(
@@ -1116,7 +1252,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President henryGDavis = new President(
-            "Henry G. Davis", "Midwest", 3, 1, 1, 2, "Conservative", "Subsidies",
+            "Henry G. Davis", "Midwest", 3, 3, 1, 2, "Conservative", "Subsidies",
             new String[]{"Progressive Era"}
     );
     static President johnWKern = new President(
@@ -2648,14 +2784,96 @@ public class CardData {
             "Maxwell Frost", "South", 2, 2, 1, 1, "Progressive", "Class Unity",
             new String[]{"Present Era"}
     );
+    static President markHanna = new President(
+            "Mark Hanna", "Midwest", 4, 5, 2, 4, "Conservative", "Gold Standard",
+            new String[]{"Progressive Era"}
+    );
+    static President harrySNew = new President(
+            "Harry S. New", "Midwest", 4, 2, 1, 1, "Progressive", "Personal Freedom",
+            new String[]{"Progressive Era"}
+    );
+    static President philanderCKnox = new President(
+            "Philander C. Knox", "Northeast", 5, 1, 3, 1, "Conservative", "Isolationism",
+            new String[]{"Progressive Era"}
+    );
+    static President williamRandolphHearst = new President(
+            "William Randolph Hearst", "Northeast", 2, 4, 1, 4, "Progressive", "Class Unity",
+            new String[]{"Progressive Era"}
+    );
+    static President francisCockrell = new President(
+            "Francis Cockrell", "South", 6, 1, 1, 1, "Populist", "Inflation",
+            new String[]{"Progressive Era"}
+    );
+    static President georgebMcClellanJr = new President(
+            "George B. McClellan Jr.", "Northeast", 3, 1, 1, 2, "Progressive", "Gold Standard",
+            new String[]{"Progressive Era"}
+    );
+    static President charlesEvansHughes = new President(
+            "Charles Evans Hughes", "Northeast", 6, 4, 5, 4, "Progressive", "Tax Cuts",
+            new String[]{"Progressive Era"}
+    );
+    static President hiramJohnson = new President(
+            "Hiram Johnson", "West", 6, 4, 4, 5, "Progressive", "Isolationism",
+            new String[]{"Progressive Era"}
+    );
+    static President nelsonwAldrich = new President(
+            "Nelson W. Aldrich", "Northeast", 8, 1, 5, 5, "Conservative", "Tariffs",
+            new String[]{"Progressive Era"}
+    );
+    static President edithWilson = new President(
+            "Edith Wilson", "Northeast", 1, 4, 6, 3, "Progressive", "Active Executive",
+            new String[]{"Progressive Era"}
+    );
+    static President thomasRMarshall = new President(
+            "Thomas R. Marshall", "Midwest", 7, 6, 1, 2, "Progressive", "Tough Foreign Policy",
+            new String[]{"Progressive Era"}
+    );
+    static President champClark = new President(
+            "Champ Clark", "South", 7, 3, 4, 3, "Progressive", "Anti-Central Bank",
+            new String[]{"Progressive Era"}
+    );
+    static President elihuRoot = new President(
+            "Elihu Root", "Northeast", 5, 1, 6, 2, "Conservative", "Tough Foreign Policy",
+            new String[]{"Progressive Era"}
+    );
+    static President nicholasMButler = new President(
+            "Nicholas M. Butler", "Northeast", 1, 3, 1, 3, "Conservative", "Racism",
+            new String[]{"Progressive Era"}
+    );
+    static President albertBCummins = new President(
+            "Albert B. Cummins", "Northeast", 5, 3, 2, 2, "Progressive", "Regulation",
+            new String[]{"Progressive Era"}
+    );
+    static President judsonHarmon = new President(
+            "Judson Harmon", "Midwest", 3, 2, 2, 1, "Libertarian", "Social Hierarchy",
+            new String[]{"Progressive Era"}
+    );
+    static President oscarUnderwood = new President(
+            "Oscar Underwood", "South", 7, 3, 5, 3, "Progressive", "Free Trade",
+            new String[]{"Progressive Era"}
+    );
+    static President johnAlbertJohnson = new President(
+            "John Albert Johnson", "Midwest", 2, 4, 1, 1, "Progressive", "Internal Improvements",
+            new String[]{"Progressive Era"}
+    );
     
     
   
 
     /************************************************************************************************************************
      ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
      *********************** END OF PRESIDENTS ******************************************************************************
-     *************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
+     ************************************************************************************************************************
      ************************************************************************************************************************/
     
     
@@ -3693,6 +3911,25 @@ public class CardData {
         nonpresidents.add(robertFKennedyJr);
         nonpresidents.add(jayInslee);
         nonpresidents.add(maxwellFrost);
+        nonpresidents.add(markHanna);
+        nonpresidents.add(harrySNew);
+        nonpresidents.add(philanderCKnox);
+        nonpresidents.add(williamRandolphHearst);
+        nonpresidents.add(francisCockrell);
+        nonpresidents.add(georgebMcClellanJr);
+        nonpresidents.add(charlesEvansHughes);
+        nonpresidents.add(hiramJohnson);
+        nonpresidents.add(nelsonwAldrich);
+        nonpresidents.add(edithWilson);
+        nonpresidents.add(thomasRMarshall);
+        nonpresidents.add(champClark);
+        nonpresidents.add(elihuRoot);
+        nonpresidents.add(nicholasMButler);
+        nonpresidents.add(albertBCummins);
+        nonpresidents.add(judsonHarmon);
+        nonpresidents.add(oscarUnderwood);
+        nonpresidents.add(johnAlbertJohnson);
+        
 
         
    
