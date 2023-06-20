@@ -2321,7 +2321,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President robertYHayne = new President(
-            "Robert Y. Hayne", "South", 4, 2, 5, 2, "Populist", "Free Trade",
+            "Robert Y. Hayne", "South", 3, 4, 5, 4, "Populist", "Free Trade",
             new String[]{"Jacksonian Era"}
     );
     static President amosKendall = new President(
@@ -2854,6 +2854,30 @@ public class CardData {
     );
     static President johnAlbertJohnson = new President(
             "John Albert Johnson", "Midwest", 2, 4, 1, 1, "Progressive", "Internal Improvements",
+            new String[]{"Progressive Era"}
+    );
+    static President henryCabotLodge = new President(
+            "Henry Cabot Lodge", "Northeast", 7, 2, 6, 5, "Conservative", "Tough Foreign Policy",
+            new String[]{"Progressive Era"}
+    );
+    static President josephGurneyCannon = new President(
+            "Joseph Gurney Cannon", "Midwest", 9, 1, 4, 4, "Conservative", "Limited Government",
+            new String[]{"Progressive Era"}
+    );
+    static President curtisGuildJr = new President(
+            "Curtis Guild Jr.", "Northeast", 2, 2, 2, 2, "Progressive", "Regulation",
+            new String[]{"Progressive Era"}
+    );
+    static President charlesWBryan = new President(
+            "Charles W. Bryan", "West", 3, 2, 1, 4, "Populist", "Inflation",
+            new String[]{"Progressive Era"}
+    );
+    static President edwardCWall = new President(
+            "Edward C. Wall", "Midwest", 1, 2, 1, 1, "Libertarian", "Gold Standard",
+            new String[]{"Progressive Era"}
+    );
+    static President robertLansing = new President(
+            "Robert Lansing", "Northeast", 2, 2, 4, 1, "Libertarian", "Tough Foreign Policy",
             new String[]{"Progressive Era"}
     );
     
@@ -3929,6 +3953,12 @@ public class CardData {
         nonpresidents.add(judsonHarmon);
         nonpresidents.add(oscarUnderwood);
         nonpresidents.add(johnAlbertJohnson);
+        nonpresidents.add(henryCabotLodge);
+        nonpresidents.add(josephGurneyCannon);
+        nonpresidents.add(curtisGuildJr);
+        nonpresidents.add(charlesWBryan);
+        nonpresidents.add(edwardCWall);
+        nonpresidents.add(robertLansing);
         
 
         
