@@ -286,7 +286,7 @@ public class CardData {
 	                + "1952 (won VP), 1956 (won VP), 1960 (lost), 1968 (won), 1972 (won)"
     );
     static President warrenGHarding = new President(
-            "Warren G. Harding", "Midwest", 3, 6, 6, 1, "Conservative", "Limited Government",
+            "Warren G. Harding", "Midwest", 3, 8, 5, 2, "Conservative", "Limited Government",
             new String[]{"President", "Progressive Era"}
     );
     static President theodoreRoosevelt = new President(
@@ -366,7 +366,7 @@ public class CardData {
             new String[]{"President", "Civil Rights Era"}
     );
     static President williamHowardTaft = new President(
-            "William Howard Taft", "Midwest", 2, 4, 5, 5, "Conservative", "Free Trade",
+            "William Howard Taft", "Midwest", 2, 4, 7, 4, "Conservative", "Free Trade",
             new String[]{"President", "Progressive Era"}
     );
     static President herbertHoover = new President(
@@ -2809,11 +2809,11 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President charlesEvansHughes = new President(
-            "Charles Evans Hughes", "Northeast", 6, 4, 5, 4, "Progressive", "Tax Cuts",
+            "Charles Evans Hughes", "Northeast", 7, 4, 5, 5, "Progressive", "Tax Cuts",
             new String[]{"Progressive Era"}
     );
     static President hiramJohnson = new President(
-            "Hiram Johnson", "West", 6, 4, 4, 5, "Progressive", "Isolationism",
+            "Hiram Johnson", "West", 6, 4, 3, 5, "Progressive", "Isolationism",
             new String[]{"Progressive Era"}
     );
     static President nelsonwAldrich = new President(
@@ -2878,6 +2878,10 @@ public class CardData {
     );
     static President robertLansing = new President(
             "Robert Lansing", "Northeast", 2, 2, 4, 1, "Libertarian", "Tough Foreign Policy",
+            new String[]{"Progressive Era"}
+    );
+    static President andrewMellon = new President(
+            "Andrew Mellon", "Northeast", 3, 1, 8, 6, "Libertarian", "Tough Foreign Policy",
             new String[]{"Progressive Era"}
     );
     
@@ -3959,6 +3963,7 @@ public class CardData {
         nonpresidents.add(charlesWBryan);
         nonpresidents.add(edwardCWall);
         nonpresidents.add(robertLansing);
+        nonpresidents.add(andrewMellon);
         
 
         
