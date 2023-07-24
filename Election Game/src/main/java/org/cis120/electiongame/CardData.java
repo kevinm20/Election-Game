@@ -686,7 +686,7 @@ public class CardData {
     );
     static President hueyLong = new President(
             "Huey Long", "South", 4, 7, 6, 3, "Populist", "Social Programs",
-            new String[]{"Progressive Era"}
+            new String[]{"New Deal Era"}
     );
     static President colinPowell = new President(
             "Colin Powell", "South", 5, 4, 3, 4, "Conservative", "Tough Foreign Policy",
@@ -1376,7 +1376,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President nathanielMacon = new President(
-            "Nathaniel Macon", "South", 7, 1, 5, 1, "Libertarian", "Constructionism",
+            "Nathaniel Macon", "South", 8, 3, 5, 3, "Libertarian", "Constructionism",
             new String[]{"Founding Era"}
     );
     static President johnBreckinridge = new President(

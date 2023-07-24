@@ -59,7 +59,7 @@ public class RunElectionGameCombined implements Runnable {
 		final JFrame frame = new JFrame("Election Game");
 		frame.setLocation(0, 0);
 
-		// User Policy Deck, I added a scrollbar since you get 15 policies
+		// User Policy Deck, I added a scrollbar since you get 18 policies
 		up = new UserPolicies();
 		JScrollPane userPolicies = new JScrollPane(up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);

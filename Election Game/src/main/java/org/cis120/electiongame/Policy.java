@@ -78,7 +78,7 @@ public class Policy extends Card {
             case ("Subsidies"):
                 return "Laissez-Faire vs. Subsidies/Int. Impr.";
             case ("Internal Improvements"):
-                return "Laissez-Faire vs. Subsidies/Int. Imrp.";
+                return "Laissez-Faire vs. Subsidies/Int. Impr.";
             case ("Closed Borders"):
                 return "Closed Borders vs. Open Borders";
             case ("Open Borders"):
