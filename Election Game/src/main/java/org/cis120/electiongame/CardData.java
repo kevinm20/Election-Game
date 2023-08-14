@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 /*
  * This brutal class creates all the presidents, policies, and elections.
  */
+//meggy
 public class CardData {
     private static boolean memes = false;
     private static boolean expanded = false;
