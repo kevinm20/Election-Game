@@ -3073,6 +3073,54 @@ public class CardData {
             "Zebulon Vance", "South", 6, 4, 2, 4, "Populist", "Internal Improvements",
             new String[]{"Reconstruction Era"}
     );
+    static President johnfhartranft = new President(
+            "John F. Hartranft", "Northeast", 3, 3, 2, 2, "Progressive", "Regulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President oliverpmorton = new President(
+            "Oliver P. Morton", "Midwest", 5, 1, 7, 4, "Progressive", "Active Executive",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlesjguiteau = new President(
+            "Charles J. Guiteau", "Midwest", 1, 1, 1, 4, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President davidmkey = new President(
+            "David M. Key", "South", 3, 1, 2, 1, "Populist", "States' Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President luciusrobinson = new President(
+            "Lucius Robinson", "Northeast", 2, 2, 2, 2, "Libertarian", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jamesaenglish = new President(
+            "James A. English", "Northeast", 3, 1, 3, 2, "Libertarian", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomaswferry = new President(
+            "Thomas W. Ferry", "Midwest", 4, 2, 4, 2, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President henrybanthony = new President(
+            "Henry B. Anthony", "Northeast", 6, 3, 2, 2, "Conservative", "Social Hierarchy",
+            new String[]{"Reconstruction Era"}
+    );
+    static President josephrhawley = new President(
+            "Joseph R. Hawley", "Northeast", 5, 2, 2, 2, "Conservative", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamawallace = new President(
+            "William A. Wallace", "Midwest", 3, 1, 2, 1, "Populist", "Isolationism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President hiesterclymber = new President(
+            "Hiester Clymber", "Northeast", 2, 1, 2, 1, "Populist", "Racism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jcsblackburn = new President(
+            "J. C. S. Blackburn", "South", 6, 4, 1, 2, "Populist", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
     
     
     
@@ -4200,6 +4248,21 @@ public class CardData {
         nonpresidents.add(johnmstone);
         nonpresidents.add(georgeshouston);
         nonpresidents.add(zebulonvance);
+        nonpresidents.add(johnfhartranft);
+        nonpresidents.add(oliverpmorton);
+        nonpresidents.add(charlesjguiteau);
+        nonpresidents.add(davidmkey);
+        nonpresidents.add(luciusrobinson);
+        nonpresidents.add(jamesaenglish);
+        nonpresidents.add(thomaswferry);
+        nonpresidents.add(henrybanthony);
+        nonpresidents.add(josephrhawley);
+        nonpresidents.add(williamawallace);
+        nonpresidents.add(hiesterclymber);
+        nonpresidents.add(jcsblackburn);
+        
+        
+        
         
         
         
