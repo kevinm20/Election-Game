@@ -40,6 +40,11 @@ public class RunElectionGameCombined implements Runnable {
 	private boolean cardInfoMode = false;
 	private boolean askToResign = true;
 
+	// Turn this to TRUE if trying to export to JAR file, FALSE otherwise. Make prefix "resources/" if exporting to JAR.
+
+	private boolean jarmode = false;
+	static String prefix = "";
+
 	// Change this if the screen is wacky
 	int cardSize = 225;
 
@@ -54,6 +59,8 @@ public class RunElectionGameCombined implements Runnable {
 	public void run() {
 		// Used to track stats
 		long startTime = System.nanoTime();
+
+		
 
 		// Top-level frame in which game components live
 		final JFrame frame = new JFrame("Election Game");
@@ -81,32 +88,19 @@ public class RunElectionGameCombined implements Runnable {
 		JPanel ai_cards = new JPanel();
 		frame.add(ai_cards, BorderLayout.NORTH);
 
+		/*
+		 * for (int i = 0; i < 5; i++) { ImageIcon img = new ImageIcon(new
+		 * ImageIcon("files/aicard.png").getImage() .getScaledInstance((int)
+		 * (0.266666667 * cardSize), (int)(0.351111111*cardSize), Image.SCALE_SMOOTH));
+		 * final JLabel aicardlabel = new JLabel(img); ai_cards.add(aicardlabel); }
+		 */
 		for (int i = 0; i < 5; i++) {
-			/*
-			 * try { ImageIcon iid = new
-			 * ImageIcon(this.getClass().getResource("/aicard.png")); } catch
-			 * (NullPointerException e) {
-			 * 
-			 * StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw);
-			 * e.printStackTrace(pw);
-			 * 
-			 * JOptionPane.showMessageDialog( null, sw.toString(), "Error",
-			 * JOptionPane.ERROR_MESSAGE ); }
-			 */
-
-			/*
-			 * Image iid; try { iid = ImageIO.read(loadImage("/aicard.png")); } catch
-			 * (IOException e1) { // TODO Auto-generated catch block iid = null;
-			 * e1.printStackTrace(); } ImageIcon imic = new ImageIcon(iid);
-			 */
-
-			// InputStream inputStream = this.getClass().getResourceAsStream("/aicard.png");
-			// ImageIcon iid = new ImageIcon(ImageIO.read(inputStream));
-
-			ImageIcon img = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
-					.getScaledInstance((int) (0.266666667 * cardSize), (int)(0.351111111*cardSize), Image.SCALE_SMOOTH));
-			final JLabel aicardlabel = new JLabel(img);
+			URL imgURL = getClass().getClassLoader().getResource(prefix + "files/aicard.PNG");
+			ImageIcon icon = new ImageIcon(new ImageIcon(imgURL).getImage().getScaledInstance(
+					(int) (0.266666667 * cardSize), (int) (0.351111111 * cardSize), Image.SCALE_SMOOTH));
+			JLabel aicardlabel = new JLabel(icon);
 			ai_cards.add(aicardlabel);
+
 		}
 
 		// Deck Area and status, for visuals
@@ -118,16 +112,19 @@ public class RunElectionGameCombined implements Runnable {
 		setLabel(status);
 		decks.add(status);
 
-		final JLabel elecdeck = new JLabel(new ImageIcon(
-				new ImageIcon("files/electionsdeck.png").getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+		final JLabel elecdeck = new JLabel(
+				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/electionsdeck.PNG"))
+						.getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
 		decks.add(elecdeck);
 
-		final JLabel prezdeck = new JLabel(new ImageIcon(
-				new ImageIcon("files/presidentdeck.png").getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+		final JLabel prezdeck = new JLabel(
+				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentdeck.PNG"))
+						.getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
 		decks.add(prezdeck);
 
-		final JLabel poldeck = new JLabel(new ImageIcon(
-				new ImageIcon("files/policydeck.png").getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+		final JLabel poldeck = new JLabel(
+				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policydeck.PNG"))
+						.getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
 		decks.add(poldeck);
 
 		decks.setLayout(new GridLayout(4, 1));
@@ -296,7 +293,7 @@ public class RunElectionGameCombined implements Runnable {
 		final JButton reset = new JButton("Resign");
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(!askToResign) {
+				if (!askToResign) {
 					JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
 					cumulativeGames++;
 					election.reset(deckSet, null, 0.0, 5);
@@ -306,23 +303,23 @@ public class RunElectionGameCombined implements Runnable {
 					up.reset();
 					board.reset();
 				} else {
-				Object[] resignOptions = { "Yes and don't ask again", "Yes", "No"};
-				int resignChoice = JOptionPane.showOptionDialog(null, "Are you sure you would like to resign?", "Resign",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, resignOptions, 2);
-				
-				if(resignChoice==0||!askToResign||resignChoice==1) {
-				JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
-				if(resignChoice==0) {
-					askToResign=!askToResign;
-				}
-				cumulativeGames++;
-				election.reset(deckSet, null, 0.0, 5);
-				setLabel(status);
-				status.repaint();
-				user_cards.reset();
-				up.reset();
-				board.reset();
-				}
+					Object[] resignOptions = { "Yes and don't ask again", "Yes", "No" };
+					int resignChoice = JOptionPane.showOptionDialog(null, "Are you sure you would like to resign?",
+							"Resign", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, resignOptions, 2);
+
+					if (resignChoice == 0 || !askToResign || resignChoice == 1) {
+						JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
+						if (resignChoice == 0) {
+							askToResign = !askToResign;
+						}
+						cumulativeGames++;
+						election.reset(deckSet, null, 0.0, 5);
+						setLabel(status);
+						status.repaint();
+						user_cards.reset();
+						up.reset();
+						board.reset();
+					}
 				}
 			}
 		});
@@ -415,7 +412,8 @@ public class RunElectionGameCombined implements Runnable {
 					winPct = (int) (Math.round(((float) (cumulativeWins) * 100.0) / cumulativeGames));
 				}
 
-				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice", "Change Card Size" };
+				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice",
+						"Change Card Size" };
 				int settingToChange = JOptionPane.showOptionDialog(null,
 						"Stats for " + election.getPlayer1().getName() + " this session: \n" + "Total play time: "
 								+ totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" + "Total wins: "
@@ -463,7 +461,9 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Change Deck
 				if (settingToChange == 2) {
-					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom" };
+					// Add back memes?
+					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Generational",
+							"Custom" };
 					int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
 							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
@@ -480,56 +480,54 @@ public class RunElectionGameCombined implements Runnable {
 						deckSet = "expanded";
 					}
 					if (deck == 3) {
-						election.reset("memes", null, 0.0, 5);
-						deckSet = "memes";
-					}
-					if (deck == 4) {
 						election.reset("generational", null, 0.0, 5);
 						deckSet = "generational";
 					}
-					if (deck == 5) {
+					if (deck == 4) {
 						// Find a way to screen this so it doesn't get broken. Also find ways to be more
 						// creative with this, maybe
 						// add generational cards, sort all presidents/nonpresidents and get the top 50
 						// from there, etc.
 						try {
 							CardData.clearRemembered();
-							
-							String[] customTags = {"President", "Generational", "Meme", "Founding Era", "Jacksonian Era",
-									"Civil War Era", "Reconstruction Era", "Progressive Era", "New Deal Era",
-									"Civil Rights Era", "Reagan Era", "Modern Era", "Present Era"};
-							
+
+							// Add back meme?
+							String[] customTags = { "President", "Generational", "Founding Era",
+									"Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
+									"New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+
 							JPanel panel = new JPanel();
 							panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 							JLabel message = new JLabel("Select the all tags you would like to include in the deck:");
 							panel.add(message);
-							
+
 							for (String tag : customTags) {
-							    JCheckBox checkBox = new JCheckBox(tag);
-							    panel.add(checkBox);
+								JCheckBox checkBox = new JCheckBox(tag);
+								panel.add(checkBox);
 							}
-							
-							int result = JOptionPane.showConfirmDialog(null, panel, "Select tags", JOptionPane.OK_CANCEL_OPTION);
-							
+
+							int result = JOptionPane.showConfirmDialog(null, panel, "Select tags",
+									JOptionPane.OK_CANCEL_OPTION);
+
 							if (result == JOptionPane.OK_OPTION) {
 								ArrayList<String> tempSelectedTags = new ArrayList<String>();
 								for (Component component : panel.getComponents()) {
-								        if (component instanceof JCheckBox) {
-								            JCheckBox checkBox = (JCheckBox) component;
-								            if (checkBox.isSelected()) {
-								                tempSelectedTags.add(checkBox.getText());
-								            }
-								        }
-								}						
+									if (component instanceof JCheckBox) {
+										JCheckBox checkBox = (JCheckBox) component;
+										if (checkBox.isSelected()) {
+											tempSelectedTags.add(checkBox.getText());
+										}
+									}
+								}
 								String[] selectedTagsArray = new String[tempSelectedTags.size()];
 								selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
-								
+
 								// This might crash stuff
 								double minRating = Double.parseDouble(JOptionPane.showInputDialog(null,
 										"What would you like the minimum weighted average rating of a card to be?"));
-								
+
 								deckSet = "custom";
-							    election.reset("custom", selectedTagsArray, minRating, 5);
+								election.reset("custom", selectedTagsArray, minRating, 5);
 							} else {
 								JOptionPane.showMessageDialog(board,
 										"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
@@ -549,26 +547,25 @@ public class RunElectionGameCombined implements Runnable {
 				// Change card size
 				if (settingToChange == 3) {
 					try {
-					int newCardSize = Integer.parseInt(JOptionPane.showInputDialog(null,
-							"What would you like the new card size to be (current is " + cardSize+ ")?"));
-					if(newCardSize<10) {
-						newCardSize=10;
-					}
-					cardSize = newCardSize;
-					user_cards.paintCards();
-					ai_cards.revalidate();
-					ai_cards.repaint();
-					board.draw();
+						int newCardSize = Integer.parseInt(JOptionPane.showInputDialog(null,
+								"What would you like the new card size to be (current is " + cardSize + ")?"));
+						if (newCardSize < 10) {
+							newCardSize = 10;
+						}
+						cardSize = newCardSize;
+						user_cards.paintCards();
+						ai_cards.revalidate();
+						ai_cards.repaint();
+						board.draw();
 					} catch (Exception ex) {
-						JOptionPane.showMessageDialog(board,
-								"Error: Your input was invalid.", "Error",
+						JOptionPane.showMessageDialog(board, "Error: Your input was invalid.", "Error",
 								JOptionPane.ERROR_MESSAGE);
 					}
 				}
 
 				if (settingToChange == 2) {
 					// This is not WAI
-					if (election.p2w>0) {
+					if (election.p2w > 0) {
 						cumulativeGames++;
 					}
 					election.reset(deckSet, null, 0.0, 5);
@@ -633,9 +630,12 @@ public class RunElectionGameCombined implements Runnable {
 		 ********************** START GAME**********************
 		 ******************************************************/
 
+		
 		/**********
 		 * Login *
 		 **********/
+		
+		
 
 		// First get the active account. Have a check for if activeAccount ends up being
 		// null.
@@ -820,7 +820,8 @@ public class RunElectionGameCombined implements Runnable {
 							"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
 							accountList[0]);
 					String acctToDelete = accountList[deleteOption];
-					// Delete the account. This function doesn't work either, it deletes the first line
+					// Delete the account. This function doesn't work either, it deletes the first
+					// line
 					reader = null;
 					BufferedWriter writer = null;
 					try {
@@ -964,17 +965,18 @@ public class RunElectionGameCombined implements Runnable {
 					setLabel(status);
 				}
 			}
-
+			
+		
+		
+			
+		
 		} else {
 
 			/*********************
 			 * Normal Guest Login *
 			 **********************/
 
-			String[] names = { "dababy", "amogus", "thurday", "sus", "bartholomew", "Kevin", "Quandale", "Jack Harlow",
-					"Quandale Dingle", "Senor Dingle", "Mr. Dingle", "Daquavious Bingleton" };
-
-			Object[] options = { "1-Player", "2-Player", "Quick 1-Player" };
+			Object[] options = { "1-Player", "2-Player"};
 			int gameMode = JOptionPane.showOptionDialog(null, "Welcome to Election Game! Please select your game mode:",
 					"Select Game Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options,
 					options[0]);
@@ -985,16 +987,6 @@ public class RunElectionGameCombined implements Runnable {
 				mode = true;
 			}
 
-			if (gameMode == 2) {
-				int ran = (int) Math.round(Math.random() * names.length);
-				CardData.flipExpanded();
-				election.namePlayer(names[ran]);
-				election.namePlayer2("CPU");
-				election.setAIDifficulty("Hard");
-				deckSet = "expanded";
-				election.reset("expanded", null, 0.0, 5);
-				setLabel(status);
-			} else {
 				// Name Player 1
 				String playername = "Player 1";
 				if (mode) {
@@ -1040,7 +1032,8 @@ public class RunElectionGameCombined implements Runnable {
 					election.setAIDifficulty(difficulty);
 				}
 
-				Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational", "Custom" };
+				// Add back "memes"?
+				Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Generational", "Custom" };
 				int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
 						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
@@ -1057,54 +1050,52 @@ public class RunElectionGameCombined implements Runnable {
 					deckSet = "expanded";
 				}
 				if (deck == 3) {
-					election.reset("memes", null, 0.0, 5);
-					deckSet = "memes";
-				}
-				if (deck == 4) {
 					election.reset("generational", null, 0.0, 5);
 					deckSet = "generational";
 				}
-				if (deck == 5) {
+				if (deck == 4) {
 					// Find a way to screen this so it doesn't get broken. Also find ways to be more
 					// creative with this, maybe
 					// add generational cards, sort all presidents/nonpresidents and get the top 50
 					// from there, etc.
 					try {
-						String[] customTags = {"President", "Generational", "Meme", "Founding Era", "Jacksonian Era",
+						// Add back Meme for non-JAR?
+						String[] customTags = { "President", "Generational", "Founding Era", "Jacksonian Era",
 								"Civil War Era", "Reconstruction Era", "Progressive Era", "New Deal Era",
-								"Civil Rights Era", "Reagan Era", "Modern Era", "Present Era"};
-						
+								"Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+
 						JPanel panel = new JPanel();
 						panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 						JLabel message = new JLabel("Select the all tags you would like to include in the deck:");
 						panel.add(message);
-						
+
 						for (String tag : customTags) {
-						    JCheckBox checkBox = new JCheckBox(tag);
-						    panel.add(checkBox);
+							JCheckBox checkBox = new JCheckBox(tag);
+							panel.add(checkBox);
 						}
-						
-						int result = JOptionPane.showConfirmDialog(null, panel, "Select tags", JOptionPane.OK_CANCEL_OPTION);
-						
+
+						int result = JOptionPane.showConfirmDialog(null, panel, "Select tags",
+								JOptionPane.OK_CANCEL_OPTION);
+
 						if (result == JOptionPane.OK_OPTION) {
 							ArrayList<String> tempSelectedTags = new ArrayList<String>();
 							for (Component component : panel.getComponents()) {
-							        if (component instanceof JCheckBox) {
-							            JCheckBox checkBox = (JCheckBox) component;
-							            if (checkBox.isSelected()) {
-							                tempSelectedTags.add(checkBox.getText());
-							            }
-							        }
-							}						
+								if (component instanceof JCheckBox) {
+									JCheckBox checkBox = (JCheckBox) component;
+									if (checkBox.isSelected()) {
+										tempSelectedTags.add(checkBox.getText());
+									}
+								}
+							}
 							String[] selectedTagsArray = new String[tempSelectedTags.size()];
 							selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
-							
+
 							// This might crash stuff
 							double minRating = Double.parseDouble(JOptionPane.showInputDialog(null,
 									"What would you like the minimum weighted average rating of a card to be?"));
-							
+
 							deckSet = "custom";
-						    election.reset("custom", selectedTagsArray, minRating, 5);
+							election.reset("custom", selectedTagsArray, minRating, 5);
 						} else {
 							JOptionPane.showMessageDialog(board,
 									"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
@@ -1119,7 +1110,6 @@ public class RunElectionGameCombined implements Runnable {
 						election.reset("standard", null, 0.0, 5);
 						deckSet = "standard";
 					}
-				}
 			}
 		}
 		user_cards.paintCards();
@@ -1164,8 +1154,8 @@ public class RunElectionGameCombined implements Runnable {
 			this.hand = election.getActivePlayer().getHand();
 
 			for (President curr : hand) {
-				ImageIcon img = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage().getScaledInstance(cardSize,
-						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+						.getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
 				final JButton usercd = new JButton(img);
 				if (cardInfoMode) {
 					usercd.setIcon(null);
@@ -1207,8 +1197,8 @@ public class RunElectionGameCombined implements Runnable {
 			this.updateUI();
 
 			for (int i = 0; i < cds; i++) {
-				ImageIcon img = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance(cardSize,
-						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+						.getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
 				final JButton usercd = new JButton(img);
 				this.add(usercd);
 				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
@@ -1262,9 +1252,8 @@ public class RunElectionGameCombined implements Runnable {
 			this.hand = election.getActivePlayer().getPolicies();
 
 			for (Policy curr : hand) {
-
-				ImageIcon img = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage().getScaledInstance(cardSize,
-						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+						.getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
 				final JButton usercd = new JButton(img);
 				this.add(usercd);
 				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
@@ -1307,10 +1296,10 @@ public class RunElectionGameCombined implements Runnable {
 		public void hideCards() {
 			this.removeAll();
 			this.updateUI();
-
+			
 			for (int i = 0; i < 13; i++) {
-				ImageIcon img = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance(cardSize,
-						(int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+				ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+						.getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
 				final JButton usercd = new JButton(img);
 				this.add(usercd);
 				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
@@ -1382,23 +1371,23 @@ public class RunElectionGameCombined implements Runnable {
 
 			// Player 1 played policies
 			JPanel userpin = new JPanel();
-			
-			if(cardSize==0) {
-				cardSize=225;
+
+			if (cardSize == 0) {
+				cardSize = 225;
 			}
 
 			for (int i = 0; i < 2; i++) {
 				if (hideUsers && mode) {
-					ImageIcon usercard = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
-							.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+							.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(usercard);
 					userpin.add(label);
 				} else {
 					int pos = i;
 					Policy curr = election.getActivePinnedPolicies().get(i);
 					if (curr != null) {
-						ImageIcon usercard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
-								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+						ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(usercard);
 						label.addMouseListener(new MouseAdapter() {
 							public void mouseReleased(MouseEvent e) {
@@ -1409,8 +1398,8 @@ public class RunElectionGameCombined implements Runnable {
 						});
 						userpin.add(label);
 					} else {
-						ImageIcon usercard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+						ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(usercard);
 						userpin.add(label);
 					}
@@ -1424,13 +1413,13 @@ public class RunElectionGameCombined implements Runnable {
 			 * Player 1 played president
 			 */
 			if (hideUsers && mode) {
-				ImageIcon aicard = new ImageIcon(
-						new ImageIcon("files/aicard.png").getImage().getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+				ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(aicard);
 				this.add(label);
 			} else if (election.getActivePinCard() != null) {
-				ImageIcon usercard = new ImageIcon(new ImageIcon(election.getActivePinCard().getImageURL()).getImage()
-						.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+				ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getActivePinCard().getImageURL()))
+						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel butt = new JLabel(usercard);
 				this.add(butt);
 				butt.addMouseListener(new MouseAdapter() {
@@ -1443,8 +1432,8 @@ public class RunElectionGameCombined implements Runnable {
 					}
 				});
 			} else {
-				ImageIcon usercard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-						.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+				ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(usercard);
 				this.add(label);
 			}
@@ -1454,13 +1443,13 @@ public class RunElectionGameCombined implements Runnable {
 			 */
 
 			if (starting) {
-				ImageIcon currelection = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-						.getScaledInstance((int) (0.888888889*cardSize), (int) (1.17777778*cardSize), Image.SCALE_SMOOTH));
+				ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+						.getImage().getScaledInstance((int) (0.888888889 * cardSize), (int) (1.17777778 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel elec = new JLabel(currelection);
 				this.add(elec);
 			} else {
-				ImageIcon currelection = new ImageIcon(new ImageIcon(election.getElection().getImageURL()).getImage()
-						.getScaledInstance((int) (0.888888889*cardSize), (int) (1.17777778*cardSize), Image.SCALE_SMOOTH));
+				ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getElection().getImageURL()))
+						.getImage().getScaledInstance((int) (0.888888889 * cardSize), (int) (1.17777778 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel elec = new JLabel(currelection);
 				this.add(elec);
 			}
@@ -1469,15 +1458,15 @@ public class RunElectionGameCombined implements Runnable {
 			 * CPU Pinned Cards
 			 */
 			if (starting) {
-				ImageIcon aicard = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-						.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+				ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(aicard);
 				this.add(label);
 
 				JPanel cpupin = new JPanel();
 				for (int i = 0; i < 2; i++) {
-					ImageIcon place = new ImageIcon(new ImageIcon("files/placeholder.png").getImage()
-							.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+					ImageIcon place = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+							.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel placeLab = new JLabel(place);
 					cpupin.add(placeLab);
 				}
@@ -1489,12 +1478,13 @@ public class RunElectionGameCombined implements Runnable {
 				 * 1-Player Mode
 				 */
 				if (!cpuPlayed || election.getPlayer2Card() == null) {
-					ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage().getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				} else {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(election.getPlayer2Card().getImageURL()).getImage()
-							.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer2Card().getImageURL()))
+							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				}
@@ -1503,13 +1493,13 @@ public class RunElectionGameCombined implements Runnable {
 
 				for (Policy curr : election.getPinned2()) {
 					if (!cpuPlayed || curr == null) {
-						ImageIcon aicard = new ImageIcon(new ImageIcon("files/aicard.png").getImage()
-								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					} else {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
-								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					}
@@ -1518,18 +1508,18 @@ public class RunElectionGameCombined implements Runnable {
 				cpupin.setLayout(new GridLayout(2, 1));
 				this.add(cpupin);
 			} else {
-				String cd = "files/placeholder.png";
+				String cd = prefix + "files/placeholder.PNG";
 				if (!election.getTurn()) {
-					cd = "files/aicard.png";
+					cd = prefix + "files/aicard.PNG";
 				}
 				if (!cpuPlayed || election.getPlayer1Card() == null) {
-					ImageIcon aicard = new ImageIcon(
-							new ImageIcon(cd).getImage().getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
+							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				} else {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(election.getPlayer1Card().getImageURL()).getImage()
-							.getScaledInstance((int) (0.666666667*cardSize), (int) (0.884444444*cardSize), Image.SCALE_SMOOTH));
+					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer1Card().getImageURL()))
+							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				}
@@ -1538,13 +1528,13 @@ public class RunElectionGameCombined implements Runnable {
 
 				for (Policy curr : election.getPinned1()) {
 					if (!cpuPlayed || curr == null) {
-						ImageIcon aicard = new ImageIcon(
-								new ImageIcon(cd).getImage().getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					} else {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(curr.getImageURL()).getImage()
-								.getScaledInstance((int) (0.355555556*cardSize), (int) (0.469026549*cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
 						cpupin.add(label);
 					}

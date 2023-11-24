@@ -74,11 +74,9 @@ public class Policy extends Card {
             case ("Egalitarianism"):
                 return "Social Hierarchy vs. Egalitarianism";
             case ("Laissez-Faire"):
-                return "Laissez-Faire vs. Subsidies/Int. Impr.";
-            case ("Subsidies"):
-                return "Laissez-Faire vs. Subsidies/Int. Impr.";
-            case ("Internal Improvements"):
-                return "Laissez-Faire vs. Subsidies/Int. Impr.";
+                return "Laissez-Faire vs. Strategic Investments";
+            case ("Strategic Investments"):
+                return "Laissez-Faire vs. Strategic Investments";
             case ("Closed Borders"):
                 return "Closed Borders vs. Open Borders";
             case ("Open Borders"):
@@ -128,7 +126,7 @@ public class Policy extends Card {
     public String getImageURL() {
         String target = super.getName().replaceAll("\\s", "").replace(".", "");
         target = target.toLowerCase();
-        return "files/" + target + ".png";
+        return "files/" + target + ".PNG";
     }
 
     @Override

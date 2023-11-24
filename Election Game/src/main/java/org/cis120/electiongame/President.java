@@ -207,7 +207,7 @@ public class President extends Card {
     public String getImageURL() {
         String target = super.getName().replaceAll("\\s", "").replace(".", "").replace("'", "");
         target = target.toLowerCase();
-        return "files/" + target + ".png";
+        return "files/" + target + ".PNG";
     }
 
     @Override

@@ -138,7 +138,7 @@ public class Election extends Card {
     }
 
     public String getImageURL() {
-        return "files/" + String.valueOf(year) + ".png";
+        return "files/" + String.valueOf(year) + ".PNG";
     }
 
     @Override

@@ -53,7 +53,7 @@ public class CardData {
 		            + "1796 (lost), 1800 (won), 1804 (won)"
     );
     static President henryClay = new President(
-            "Henry Clay", "South", 8, 2, 7, 7, "Conservative", "Internal Improvements",
+            "Henry Clay", "South", 8, 2, 7, 7, "Conservative", "Strategic Investments",
             new String[]{"Jacksonian Era"},
             "<center><b>Henry Clay</b></center><br><br>"
 		            + "<b>Political Experience:</b><br><br>"
@@ -379,7 +379,7 @@ public class CardData {
             new String[]{"President", "New Deal Era"}
     );
     static President dwightEisenhower = new President(
-            "Dwight Eisenhower", "West", 1, 8, 5, 10, "Conservative", "Internal Improvements"
+            "Dwight Eisenhower", "West", 1, 8, 5, 10, "Conservative", "Strategic Investments"
             ,
             new String[]{"President", "New Deal Era"}
     );
@@ -626,7 +626,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President nelsonRockefeller = new President(
-            "Nelson Rockefeller", "Northeast", 4, 3, 4, 3, "Progressive", "Internal Improvements",
+            "Nelson Rockefeller", "Northeast", 4, 3, 4, 3, "Progressive", "Strategic Investments",
             new String[]{"Civil Rights Era"}
     );
     static President thomasDewey = new President(
@@ -722,7 +722,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President danielWebster = new President(
-            "Daniel Webster", "Northeast", 8, 6, 3, 6, "Conservative", "Centralization",
+            "Daniel Webster", "Northeast", 8, 6, 3, 6, "Conservative", "Nationalism",
             new String[]{"Jacksonian Era"}
     );
     static President winfieldScott = new President(
@@ -942,7 +942,7 @@ public class CardData {
     );
     
     static President dwightEisenhower60 = new President(
-    		"Dwight Eisenhower '60", "West", 7, 9, 5, 10, "Conservative", "Internal Improvements",
+    		"Dwight Eisenhower '60", "West", 7, 9, 5, 10, "Conservative", "Strategic Investments",
             new String[]{"Generational"}
     );
     
@@ -992,7 +992,7 @@ public class CardData {
             new String[]{"Generational"}
     );
     static President jamesMadison16 = new President(
-            "James Madison '16", "South", 10, 5, 10, 10, "Conservative", "Internal Improvements",
+            "James Madison '16", "South", 10, 5, 10, 10, "Conservative", "Strategic Investments",
             new String[]{"Generational"}
     );
     static President johnAdams76 = new President(
@@ -1217,7 +1217,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President christopherGore = new President(
-            "Christopher Gore", "Northeast", 4, 1, 2, 1, "Conservative", "Internal Improvements",
+            "Christopher Gore", "Northeast", 4, 1, 2, 1, "Conservative", "Strategic Investments",
             new String[]{"Founding Era"}
     );
     static President thomasWilling = new President(
@@ -1253,7 +1253,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President henryGDavis = new President(
-            "Henry G. Davis", "Midwest", 3, 3, 1, 2, "Conservative", "Subsidies",
+            "Henry G. Davis", "Midwest", 3, 3, 1, 2, "Conservative", "Strategic Investments",
             new String[]{"Progressive Era"}
     );
     static President johnWKern = new President(
@@ -1301,7 +1301,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President williamCarroll = new President(
-            "William Carroll", "South", 5, 4, 3, 2, "Conservative", "Internal Improvements",
+            "William Carroll", "South", 5, 4, 3, 2, "Conservative", "Strategic Investments",
             new String[]{"Founding Era"}
     );
     static President aaronBurr = new President(
@@ -1503,7 +1503,7 @@ public class CardData {
             "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Anti-Establishment"
     );
     static President charliecristwhig = new President(
-            "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Subsidies"
+            "Charlie Crist", "South", 4, 2, 2, 4, "Conservative", "Strategic Investments"
     );
     static President charliecristdemrep = new President(
             "Charlie Crist", "South", 4, 2, 2, 4, "Libertarian", "Constructionism"
@@ -1646,7 +1646,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President samuelLMitchill = new President(
-            "Samuel L. Mitchill", "Northeast", 4, 1, 5, 1, "Libertarian", "Internal Improvements",
+            "Samuel L. Mitchill", "Northeast", 4, 1, 5, 1, "Libertarian", "Strategic Investments",
             new String[]{"Founding Era"}
     );
     static President henryDearborn = new President(
@@ -2054,7 +2054,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President peteButtigieg = new President(
-            "Pete Buttigieg", "Midwest", 2, 3, 5, 3, "Progressive", "Internal Improvements",
+            "Pete Buttigieg", "Midwest", 2, 3, 5, 3, "Progressive", "Strategic Investments",
             new String[]{"Present Era"}
     );
     static President tulsiGabbard = new President(
@@ -2146,11 +2146,11 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President charlesFMercer = new President(
-            "Charles F. Mercer", "South", 6, 3, 2, 2, "Conservative", "Subsidies",
+            "Charles F. Mercer", "South", 6, 3, 2, 2, "Conservative", "Strategic Investments",
             new String[]{"Founding Era"}
     );
     static President johnScott = new President(
-            "John Scott", "South", 3, 1, 1, 1, "Conservative", "Subsidies",
+            "John Scott", "South", 3, 1, 1, 1, "Conservative", "Strategic Investments",
             new String[]{"Founding Era"}
     );
     static President jesseBThomas = new President(
@@ -2170,11 +2170,11 @@ public class CardData {
             new String[]{"Jacksonian Era"}
     );
     static President johnAndrewShulze = new President(
-            "John Andrew Shulze", "Northeast", 3, 1, 4, 2, "Conservative", "Internal Improvements",
+            "John Andrew Shulze", "Northeast", 3, 1, 4, 2, "Conservative", "Strategic Investments",
             new String[]{"Jacksonian Era"}
     );
     static President nathanSanford = new President(
-            "Nathan Sanford", "Northeast", 4, 3, 3, 2, "Conservative", "Internal Improvements",
+            "Nathan Sanford", "Northeast", 4, 3, 3, 2, "Conservative", "Strategic Investments",
             new String[]{"Jacksonian Era"}
     );
     static President francisPrestonBlair = new President(
@@ -2266,7 +2266,7 @@ public class CardData {
             new String[]{"Jacksonian Era"}
     );
     static President abbotLawrence = new President(
-            "Abbot Lawrence", "Northeast", 2, 5, 1, 3, "Conservative", "Subsidies",
+            "Abbot Lawrence", "Northeast", 2, 5, 1, 3, "Conservative", "Strategic Investments",
             new String[]{"Jacksonian Era"}
     );
     static President johnJCrittenden = new President(
@@ -2290,7 +2290,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President chuckGrassley = new President(
-            "Chuck Grassley", "Midwest", 9, 2, 2, 2, "Conservative", "Subsidies",
+            "Chuck Grassley", "Midwest", 9, 2, 2, 2, "Conservative", "Strategic Investments",
             new String[]{"Present Era"}
     );
     static President eliseStefanik = new President(
@@ -2542,7 +2542,7 @@ public class CardData {
             new String[]{"Civil Rights Era"}
     );
     static President johnRBrinkley = new President(
-            "John R. Brinkley", "West", 1, 3, 1, 1, "Populist", "Internal Improvements",
+            "John R. Brinkley", "West", 1, 3, 1, 1, "Populist", "Strategic Investments",
             new String[]{"New Deal Era"}
     );
     static President marianneWilliamson = new President(
@@ -2562,7 +2562,7 @@ public class CardData {
             new String[]{"Present Era"}
     ); 
     static President blancheLincoln = new President(
-            "Blanche Lincoln", "South", 4, 2, 2, 1, "Populist", "Subsidies",
+            "Blanche Lincoln", "South", 4, 2, 2, 1, "Populist", "Strategic Investments",
             new String[]{"Modern Era"}
     );
     static President kristiNoem = new President(
@@ -2670,7 +2670,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President simonCameron = new President(
-            "Simon Cameron", "Northeast", 5, 2, 6, 2, "Libertarian", "Subsidies",
+            "Simon Cameron", "Northeast", 5, 2, 6, 2, "Libertarian", "Strategic Investments",
             new String[]{"Civil War Era"}
     );
     static President williamTSherman = new President(
@@ -2706,7 +2706,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President jamesGuthrie = new President(
-            "James Guthrie", "South", 2, 2, 7, 1, "Conservative", "Internal Improvements",
+            "James Guthrie", "South", 2, 2, 7, 1, "Conservative", "Strategic Investments",
             new String[]{"Civil War Era"}
     );
     static President robertMTHunter = new President(
@@ -2714,7 +2714,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President alDAmato = new President(
-            "Al D'Amato", "Northeast", 5, 2, 4, 1, "Conservative", "Subsidies",
+            "Al D'Amato", "Northeast", 5, 2, 4, 1, "Conservative", "Strategic Investments",
             new String[]{"Reagan Era"}
     );
     static President jesseHelms = new President(
@@ -2726,7 +2726,7 @@ public class CardData {
             new String[]{"Reagan Era"}
     );
     static President robertByrd = new President(
-            "Robert Byrd", "Midwest", 9, 2, 5, 5, "Populist", "Subsidies",
+            "Robert Byrd", "Midwest", 9, 2, 5, 5, "Populist", "Strategic Investments",
             new String[]{"Reagan Era"}
     );
     static President johnCStennis = new President(
@@ -2854,7 +2854,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President johnAlbertJohnson = new President(
-            "John Albert Johnson", "Midwest", 2, 4, 1, 1, "Progressive", "Internal Improvements",
+            "John Albert Johnson", "Midwest", 2, 4, 1, 1, "Progressive", "Strategic Investments",
             new String[]{"Progressive Era"}
     );
     static President henryCabotLodge = new President(
@@ -3002,7 +3002,7 @@ public class CardData {
             new String[]{"Reconstruction Era"}
     );
     static President alonzobcornell = new President(
-            "Alonzo B. Cornell", "Northeast", 2, 1, 2, 3, "Progressive", "Internal Improvements",
+            "Alonzo B. Cornell", "Northeast", 2, 1, 2, 3, "Progressive", "Strategic Investments",
             new String[]{"Reconstruction Era"}
     );
     static President henrywblair = new President(
@@ -3070,7 +3070,7 @@ public class CardData {
             new String[]{"Reconstruction Era"}
     );
     static President zebulonvance = new President(
-            "Zebulon Vance", "South", 6, 4, 2, 4, "Populist", "Internal Improvements",
+            "Zebulon Vance", "South", 6, 4, 2, 4, "Populist", "Strategic Investments",
             new String[]{"Reconstruction Era"}
     );
     static President johnfhartranft = new President(
@@ -3241,8 +3241,174 @@ public class CardData {
             "Thomas F. Grady", "Northeast", 1, 5, 1, 1, "Northeast", "Establishment",
             new String[]{"Reconstruction Era"}
     );
-    
-    
+    static President jdonaldcameron = new President(
+            "J. Donald Cameron", "Northeast", 6, 1, 2, 3, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President benjaminfmarsh = new President(
+            "Benjamin F. Marsh", "Midwest", 4, 1, 1, 1, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamoconnellbradley = new President(
+            "William O'Connell Bradley", "South", 3, 6, 1, 2, "Conservative", "Gold Standard",
+            new String[]{"Reconstruction Era"}
+    );
+    static President allengthurman = new President(
+            "Allen G. Thurman", "Midwest", 5, 3, 3, 5, "Populist", "Racism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President henrywslocum = new President(
+            "Henry W. Slocum", "Northeast", 2, 2, 1, 1, "Conservative", "Strategic Investments",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johntmorgan = new President(
+            "John T. Morgan", "South", 5, 3, 2, 3, "Populist", "Tough Foreign Policy",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnrthomas = new President(
+            "John R. Thomas", "Midwest", 3, 1, 2, 1, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President warnermiller = new President(
+            "Warner Miller", "Northeast", 3, 1, 3, 1, "Conservative", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamwhunt = new President(
+            "William W. Hunt", "South", 2, 1, 1, 1, "Conservative", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President clarksonnottpotter = new President(
+            "Clarkson Nott Potter", "Northeast", 3, 2, 1, 1, "Populist", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlesehooker = new President(
+            "Charles E. Hooker", "South", 3, 1, 3, 1, "Libertarian", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jproctorknott = new President(
+            "J. Proctor Knott", "South", 4, 4, 1, 3, "Libertarian", "Laissez-Faire",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomasjbrady = new President(
+            "Thomas J. Brady", "Midwest", 1, 1, 1, 2, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President stephenwdorsey = new President(
+            "Stephen W. Dorsey", "South", 3, 1, 1, 2, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President timothyohowe = new President(
+            "Timothy O'Howe", "Midwest", 5, 1, 3, 2, "Progressive", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jameshslater = new President(
+            "James H. Slater", "West", 3, 1, 1, 1, "Libertarian", "Laissez-Faire",
+            new String[]{"Reconstruction Era"}
+    );
+    static President samuelbmaxey = new President(
+            "Samuel B. Maxey", "South", 4, 2, 1, 1, "Libertarian", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charleswjones = new President(
+            "Charles W. Jones", "South", 4, 1, 1, 2, "Populist", "States' Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jamesfwilson = new President(
+            "James F. Wilson", "Midwest", 5, 1, 4, 2, "Conservative", "Traditional Morality",
+            new String[]{"Reconstruction Era"}
+    );
+    static President nathanielphill = new President(
+            "Nathaniel P. Hill", "West", 3, 2, 1, 1, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomaswpalmer = new President(
+            "Thomas W. Palmer", "Midwest", 3, 2, 2, 2, "Progressive", "Social Liberalism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President randalllgibson = new President(
+            "Randall L. Gibson", "South", 4, 2, 1, 1, "Populist", "Strategic Investments",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jamestfarley = new President(
+            "James T. Farley", "West", 3, 2, 1, 2, "Populist", "Closed Borders",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jamesbbeck = new President(
+            "James B. Beck", "South", 6, 3, 2, 2, "Libertarian", "States' Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President dwightmsabin = new President(
+            "Dwight M. Sabin", "Midwest", 3, 1, 4, 1, "Populist", "Law and Order",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williampfrye = new President(
+            "William P. Frye", "Northeast", 7, 2, 4, 3, "Conservative", "Strategic Investments",
+            new String[]{"Reconstruction Era"}
+    );
+    static President prestonbplumb = new President(
+            "Preston B. Plumb", "Midwest", 4, 2, 2, 1, "Progressive", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President wilkinsoncall = new President(
+            "Wilkinson Call", "South", 5, 3, 1, 2, "Populist", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President josephebrown = new President(
+            "Joseph E. Brown", "South", 6, 1, 4, 2, "Libertarian", "Tariffs",
+            new String[]{"Reconstruction Era"}
+    );
+    static President alfredhcolquitt = new President(
+            "Alfred H. Colquitt", "South", 5, 3, 1, 2, "Populist", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnalogan = new President(
+            "John A. Logan", "Midwest", 3, 4, 1, 2, "Conservative", "Nationalism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President powellclayton = new President(
+            "Powell Clayton", "South", 4, 2, 4, 1, "Conservative", "Centralization",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnrlynch = new President(
+            "John R. Lynch", "South", 2, 3, 3, 2, "Progressive", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President arthurpgorman = new President(
+            "Arthur P. Gorman", "Northeast", 6, 2, 5, 3, "Libertarian", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President richardbhubbard = new President(
+            "Richard B. Hubbard", "South", 2, 3, 1, 1, "Populist", "Limited Government",
+            new String[]{"Reconstruction Era"}
+    );
+    static President danielllockwood = new President(
+            "Daniel L. Lockwood", "Northeast", 2, 2, 2, 1, "Libertarian", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnbhenderson = new President(
+            "John B. Henderson", "South", 3, 2, 3, 2, "Conservative", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlesfoster = new President(
+            "Charles Foster", "Midwest", 4, 2, 4, 1, "Conservative", "Laissez-Faire",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomasnast = new President(
+            "Thomas Nast", "Northeast", 1, 5, 1, 4, "Progressive", "Closed Borders",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlessfairchild = new President(
+            "Charles S. Fairchild", "Northeast", 2, 1, 4, 1, "Libertarian", "Traditional Morality",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamcendicott = new President(
+            "William C. Endicott", "South", 2, 2, 2, 1, "Libertarian", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President augustushgarland = new President(
+            "Augustus H. Garland", "South", 4, 1, 5, 1, "Populist", "Constructionism",
+            new String[]{"Reconstruction Era"}
+    );
     
   
 
@@ -3278,7 +3444,7 @@ public class CardData {
     );
     static Election e2008 = new Election(
             2008, "infl", "pol", "South", "Regulation vs. Deregulation",
-            "Tough Foreign Policy vs. Isolationism", "Tax Cuts vs. Social Programs"
+            "Tough Foreign Policy vs. Isolationism", "Establishment vs. Anti-Establishment"
     );
     static Election e2004 = new Election(
             2004, "pol", "exp", "Midwest", "Tough Foreign Policy vs. Isolationism",
@@ -3294,14 +3460,13 @@ public class CardData {
     );
     static Election e1992 = new Election(
             1992, "exp", "pol", "South", "Tax Cuts vs. Social Programs",
-            "Tough Foreign Policy vs. Isolationism", "Traditional Morality vs. Social Liberalism"
+            "Establishment vs. Anti-Establishment", "Traditional Morality vs. Social Liberalism"
     );
     static Election e1988 = new Election(
             1988, "exp", "infl", "West", "Law and Order vs. Personal Freedom",
             "Traditional Morality vs. Social Liberalism",
             "Tax Cuts vs. Social Programs"
     );
-
     static Election e1984 = new Election(
             1984, "infl", "pol", "Midwest", "Tax Cuts vs. Social Programs",
             "Tough Foreign Policy vs. Isolationism",
@@ -3312,20 +3477,20 @@ public class CardData {
             "Tough Foreign Policy vs. Isolationism", "Nationalism vs. Class Unity"
     );
     static Election e1976 = new Election(
-            1976, "infl", "pol", "West", "Regulation vs. Deregulation",
-            "Establishment vs. Anti-Establishment", "Law and Order vs. Personal Freedom"
+            1976, "infl", "pol", "West", "Establishment vs. Anti-Establishment", "Regulation vs. Deregulation",
+            "Central Bank vs. Anti-Central Bank"
     );
     static Election e1972 = new Election(
             1972, "infl", "nam", "Midwest", "Tough Foreign Policy vs. Isolationism",
             "Law and Order vs. Personal Freedom", "Traditional Morality vs. Social Liberalism"
     );
     static Election e1968 = new Election(
-            1968, "nam", "exp", "Midwest", "Traditional Morality vs. Social Liberalism",
-            "Law and Order vs. Personal Freedom", "Tough Foreign Policy vs. Isolationism"
+            1968, "nam", "exp", "Midwest", "Law and Order vs. Personal Freedom",
+            "Establishment vs. Anti-Establishment", "Tough Foreign Policy vs. Isolationism"
     );
     static Election e1964 = new Election(
             1964, "exp", "pol", "West", "Civil Rights vs. Racism", "Tax Cuts vs. Social Programs",
-            "Tough Foreign Policy vs. Isolationism"
+            "Closed Borders vs. Open Borders"
     );
     static Election e1960 = new Election(
             1960, "infl", "pol", "Midwest", "Tough Foreign Policy vs. Isolationism",
@@ -3333,11 +3498,11 @@ public class CardData {
     );
     static Election e1956 = new Election(
             1956, "nam", "infl", "South", "Civil Rights vs. Racism",
-            "Tough Foreign Policy vs. Isolationism", "Laissez-Faire vs. Subsidies/Int. Imrp."
+            "Tough Foreign Policy vs. Isolationism", "Laissez-Faire vs. Strategic Investments"
     );
     static Election e1952 = new Election(
             1952, "infl", "nam", "South", "Tough Foreign Policy vs. Isolationism",
-            "Traditional Morality vs. Social Liberalism", "Tax Cuts vs. Social Programs"
+            "Traditional Morality vs. Social Liberalism", "Regulation vs. Deregulation"
     );
     static Election e1948 = new Election(
             1948, "infl", "nam", "Northeast", "Regulation vs. Deregulation",
@@ -3345,15 +3510,15 @@ public class CardData {
     );
     static Election e1944 = new Election(
             1944, "infl", "nam", "Midwest", "Tough Foreign Policy vs. Isolationism",
-            "Tax Cuts vs. Social Programs", "Active Executive vs. Limited Government"
+            "Nationalism vs. Class Unity", "Active Executive vs. Limited Government"
     );
     static Election e1940 = new Election(
             1940, "pol", "nam", "Midwest", "Regulation vs. Deregulation",
             "Tough Foreign Policy vs. Isolationism", "Active Executive vs. Limited Government"
     );
     static Election e1936 = new Election(
-            1936, "pol", "infl", "Northeast", "Tax Cuts vs. Social Programs",
-            "Active Executive vs. Limited Government", "Law and Order vs. Personal Freedom"
+            1936, "infl", "exp", "Northeast", "Nationalism vs. Class Unity",
+            "Active Executive vs. Limited Government", "Traditional Morality vs. Personal Freedom"
     );
     static Election e1932 = new Election(
             1932, "infl", "pol", "Northeast", "Tax Cuts vs. Social Programs",
@@ -3361,7 +3526,7 @@ public class CardData {
     );
     static Election e1928 = new Election(
             1928, "infl", "nam", "South", "Traditional Morality vs. Social Liberalism",
-            "Civil Rights vs. Racism", "Regulation vs. Deregulation"
+            "Active Executive vs. Limited Government", "Regulation vs. Deregulation"
     );
     static Election e1924 = new Election(
             1924, "pol", "infl", "West", "Tax Cuts vs. Social Programs",
@@ -3377,7 +3542,7 @@ public class CardData {
     );
     static Election e1912 = new Election(
             1912, "pol", "nam", "West", "Regulation vs. Deregulation",
-            "Active Executive vs. Limited Government", "Free Trade vs. Tariffs"
+            "Active Executive vs. Limited Government", "Establishment vs. Anti-Establishment"
     );
     static Election e1908 = new Election(
             1908, "pol", "exp", "West", "Regulation vs. Deregulation", "Free Trade vs. Tariffs",
@@ -3408,15 +3573,15 @@ public class CardData {
     static Election e1884 = new Election(
             1884, "infl", "exp", "Northeast",
             "Establishment vs. Anti-Establishment",
-            "Laissez-Faire vs. Subsidies/Int. Imrp.", "Traditional Morality vs. Social Liberalism"
+            "Laissez-Faire vs. Strategic Investments", "Free Trade vs. Tariffs"
     );
     static Election e1880 = new Election(
-            1880, "exp", "infl", "South", "Civil Rights vs. Racism",
+            1880, "exp", "infl", "Northeast", "Establishment vs. Anti-Establishment",
             "Closed Borders vs. Open Borders", "Free Trade vs. Tariffs"
     );
     static Election e1876 = new Election(
             1876, "infl", "pol", "South", "States' Rights vs. Centralization",
-            "Civil Rights vs. Racism", "Laissez-Faire vs. Subsidies/Int. Imrp."
+            "Civil Rights vs. Racism", "Establishment vs. Anti-Establishment"
     );
     static Election e1872 = new Election(
             1872, "infl", "nam", "South", "Establishment vs. Anti-Establishment",
@@ -3451,11 +3616,11 @@ public class CardData {
             "Civil Rights vs. Racism", "States' Rights vs. Centralization"
     );
     static Election e1840 = new Election(
-            1840, "nam", "infl", "South", "Laissez-Faire vs. Subsidies/Int. Imrp.",
+            1840, "nam", "infl", "South", "Laissez-Faire vs. Strategic Investments",
             "Active Executive vs. Limited Government", "Establishment vs. Anti-Establishment"
     );
     static Election e1836 = new Election(
-            1836, "exp", "pol", "South", "Laissez-Faire vs. Subsidies/Int. Imrp.",
+            1836, "exp", "pol", "South", "Laissez-Faire vs. Strategic Investments",
             "States' Rights vs. Centralization", "Gold Standard vs. Inflation"
     );
     static Election e1832 = new Election(
@@ -3467,7 +3632,7 @@ public class CardData {
             "Free Trade vs. Tariffs", "Establishment vs. Anti-Establishment"
     );
     static Election e1824 = new Election(
-            1824, "infl", "nam", "Midwest", "Laissez-Faire vs. Subsidies/Int. Imrp.",
+            1824, "infl", "nam", "Midwest", "Laissez-Faire vs. Strategic Investments",
             "Social Hierarchy vs. Egalitarianism", "Central Bank vs. Anti-Central Bank"
     );
     static Election e1820 = new Election(
@@ -3475,36 +3640,36 @@ public class CardData {
             "Constructionism vs. Implied Powers", "Civil Rights vs. Racism"
     );
     static Election e1816 = new Election(
-            1816, "nam", "exp", "Northeast", "Tough Foreign Policy vs. Isolationism",
+            1816, "nam", "pol", "Northeast", "Nationalism vs. Class Unity",
             "Central Bank vs. Anti-Central Bank", "Free Trade vs. Tariffs"
     );
     static Election e1812 = new Election(
             1812, "pol", "nam", "Northeast", "Tough Foreign Policy vs. Isolationism",
-            "States' Rights vs. Centralization", "Laissez-Faire vs. Subsidies/Int. Imrp."
+            "States' Rights vs. Centralization", "Laissez-Faire vs. Strategic Investments"
     );
     static Election e1808 = new Election(
             1808, "pol", "infl", "Northeast", "Free Trade vs. Tariffs",
             "Constructionism vs. Implied Powers", "States' Rights vs. Centralization"
     );
     static Election e1804 = new Election(
-            1804, "exp", "nam", "Northeast", "Constructionism vs. Implied Powers",
-            "Free Trade vs. Tariffs", "Laissez-Faire vs. Subsidies/Int. Imrp."
+            1804, "pol", "nam", "Northeast", "Constructionism vs. Implied Powers",
+            "Free Trade vs. Tariffs", "Laissez-Faire vs. Strategic Investments"
     );
     static Election e1800 = new Election(
             1800, "exp", "nam", "Northeast", "States' Rights vs. Centralization",
             "Constructionism vs. Implied Powers", "Social Hierarchy vs. Egalitarianism"
     );
     static Election e1796 = new Election(
-            1796, "pol", "infl", "Northeast", "Tough Foreign Policy vs. Isolationism",
+            1796, "exp", "infl", "Northeast", "Tough Foreign Policy vs. Isolationism",
             "Social Hierarchy vs. Egalitarianism", "Law and Order vs. Personal Freedom"
     );
     static Election e1792 = new Election(
             1792, "nam", "infl", "South", "Constructionism vs. Implied Powers",
-            "Central Bank vs. Anti-Central Bank", "Laissez-Faire vs. Subsidies/Int. Imrp."
+            "Central Bank vs. Anti-Central Bank", "Laissez-Faire vs. Strategic Investments"
     );
     static Election e1788 = new Election(
-            1788, "nam", "infl", "Northeast", "States' Rights vs. Centralization",
-            "Social Hierarchy vs. Egalitarianism", "Constructionism vs. Implied Powers"
+            1788, "nam", "infl", "Northeast", "Constructionism vs. Implied Powers",
+            "Social Hierarchy vs. Egalitarianism", "States' Rights vs. Centralization"
     );
     static Election albania2017 = new Election(
             2017, "nam", "infl", "South", "Establishment vs. Anti-Establishment",
@@ -3565,10 +3730,8 @@ public class CardData {
     static Policy egalitarianism = new Policy(
             "Egalitarianism", "Progressive", "Populist", "Libertarian"
     );
-    static Policy intimprov = new Policy("Internal Improvements", "Conservative", "Progressive");
-    static Policy subsidies = new Policy("Subsidies", "Conservative", "Progressive");
+    static Policy strategicdev = new Policy("Strategic Investments", "Conservative", "Progressive");
     static Policy laissez1 = new Policy("Laissez-Faire", "Libertarian", "Populist");
-    static Policy laissez2 = new Policy("Laissez-Faire", "Libertarian", "Populist");
     static Policy openb = new Policy("Open Borders", "Progressive", "Libertarian");
     static Policy closedb = new Policy("Closed Borders", "Conservative", "Populist", "Libertarian");
     static Policy activeexec = new Policy("Active Executive", "Progressive", "Conservative", "Populist");
@@ -3586,7 +3749,11 @@ public class CardData {
     static Policy nationalism1 = new Policy("Nationalism", "Conservative", "Libertarian");
     static Policy classunity = new Policy("Class Unity", "Progressive", "Populist");
     static Policy establishment = new Policy("Establishment", "Conservative", "Progressive");
+    static Policy establishment2 = new Policy("Establishment", "Conservative", "Progressive");
     static Policy antiestablishment = new Policy(
+            "Anti-Establishment", "Progressive", "Libertarian", "Populist"
+    );
+    static Policy antiestablishment2 = new Policy(
             "Anti-Establishment", "Progressive", "Libertarian", "Populist"
     );
     static Policy communism = new Policy(
@@ -3611,7 +3778,7 @@ public class CardData {
     static String civilracism = "Civil Rights vs. Racism";
     static String reg = "Regulation vs. Deregulation";
     static String society = "Social Hierarchy vs. Egalitarianism";
-    static String cronyism = "Laissez-Faire vs. Subsidies/Int. Impr.";
+    static String cronyism = "Laissez-Faire vs. Strategic Investments";
     static String borders = "Closed Borders vs. Open Borders";
     static String exec = "Active Executive vs. Limited Government";
     static String consti = "Constructionism vs. Implied Powers";
@@ -3693,10 +3860,8 @@ public class CardData {
         policies.add(deregulation2);
         policies.add(socialhierarchy);
         policies.add(egalitarianism);
-        policies.add(intimprov);
-        policies.add(subsidies);
+        policies.add(strategicdev);
         policies.add(laissez1);
-        policies.add(laissez2);
         policies.add(openb);
         policies.add(closedb);
         policies.add(activeexec);
@@ -3710,7 +3875,9 @@ public class CardData {
         policies.add(nationalism1);
         policies.add(classunity);
         policies.add(establishment);
+        policies.add(establishment2);
         policies.add(antiestablishment);
+        policies.add(antiestablishment2);
         if (memes) {
             policies.add(communism);
             policies.add(anarchy);
@@ -4410,9 +4577,48 @@ public class CardData {
         nonpresidents.add(georgehoadly);
         nonpresidents.add(danielmanning);
         nonpresidents.add(thomasfgrady);
-        
-        
-        
+        nonpresidents.add(jdonaldcameron);
+        nonpresidents.add(benjaminfmarsh);
+        nonpresidents.add(williamoconnellbradley);
+        nonpresidents.add(allengthurman);
+        nonpresidents.add(henrywslocum);
+        nonpresidents.add(johntmorgan);
+        nonpresidents.add(johnrthomas);
+        nonpresidents.add(warnermiller);
+        nonpresidents.add(williamwhunt);
+        nonpresidents.add(clarksonnottpotter);
+        nonpresidents.add(charlesehooker);
+        nonpresidents.add(jproctorknott);
+        nonpresidents.add(thomasjbrady);
+        nonpresidents.add(stephenwdorsey);
+        nonpresidents.add(timothyohowe);
+        nonpresidents.add(jameshslater);
+        nonpresidents.add(samuelbmaxey);
+        nonpresidents.add(charleswjones);
+        nonpresidents.add(jamesfwilson);
+        nonpresidents.add(nathanielphill);
+        nonpresidents.add(thomaswpalmer);
+        nonpresidents.add(randalllgibson);
+        nonpresidents.add(jamestfarley);
+        nonpresidents.add(jamesbbeck);
+        nonpresidents.add(dwightmsabin);
+        nonpresidents.add(williampfrye);
+        nonpresidents.add(prestonbplumb);
+        nonpresidents.add(wilkinsoncall);
+        nonpresidents.add(josephebrown);
+        nonpresidents.add(alfredhcolquitt);
+        nonpresidents.add(johnalogan);
+        nonpresidents.add(powellclayton);
+        nonpresidents.add(johnrlynch);
+        nonpresidents.add(arthurpgorman);
+        nonpresidents.add(richardbhubbard);
+        nonpresidents.add(danielllockwood);
+        nonpresidents.add(johnbhenderson);
+        nonpresidents.add(charlesfoster);
+        nonpresidents.add(thomasnast);
+        nonpresidents.add(charlessfairchild);
+        nonpresidents.add(williamcendicott);
+        nonpresidents.add(augustushgarland);
         
         
         
@@ -4568,6 +4774,17 @@ public class CardData {
             Collections.shuffle(presidents);
             return presidents;
         } else if (preset.equals("standard")) {
+        	Iterator<President> it = nonpresidents.iterator();
+        	while (it.hasNext()) {
+        	    President curr = it.next();
+        	    boolean valid = true;
+        	    if(curr.getWeightedAve()<4) {
+        	        valid = false;
+        	    }
+        	    if(!valid) {
+        	        it.remove();
+        	    }
+        	}
             Collections.shuffle(nonpresidents);
             for (int i = 0; i < 7; i++) {
                 presidents.add(nonpresidents.get(i));
