@@ -6,6 +6,7 @@ package org.cis120.electiongame;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -290,6 +291,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		});
 
+		
 		final JButton reset = new JButton("Resign");
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

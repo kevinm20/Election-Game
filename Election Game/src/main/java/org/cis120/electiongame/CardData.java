@@ -384,7 +384,7 @@ public class CardData {
             new String[]{"President", "New Deal Era"}
     );
     static President benjaminHarrison = new President(
-            "Benjamin Harrison", "Midwest", 3, 4, 2, 3, "Conservative", "Tariffs",
+            "Benjamin Harrison", "Midwest", 3, 5, 4, 3, "Conservative", "Tariffs",
             new String[]{"President", "Reconstruction Era"}
     );
     static President chesterAArthur = new President(
@@ -574,7 +574,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President patBuchanan = new President(
-            "Pat Buchanan", "Northeast", 1, 2, 8, 2, "Conservative", "Isolationism",
+            "Pat Buchanan", "Northeast", 1, 4, 6, 2, "Conservative", "Traditional Morality",
             new String[]{"Reagan Era"}
     );
     static President thomasPaine = new President(
@@ -1189,7 +1189,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President oliverWolcottJr = new President(
-            "Oliver Wolcott Jr.", "Northeast", 5, 1, 2, 1, "Conservative", "Central Bank",
+            "Oliver Wolcott Jr.", "Northeast", 5, 1, 5, 2, "Conservative", "Central Bank",
             new String[]{"Founding Era"}
     );
     static President gouverneurMorris = new President(
@@ -1201,7 +1201,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesWilson = new President(
-            "James Wilson", "Northeast", 2, 3, 6, 2, "Conservative", "Active Executive",
+            "James Wilson", "Northeast", 4, 3, 6, 3, "Conservative", "Active Executive",
             new String[]{"Founding Era"}
     );
     static President oliverEllsworth = new President(
@@ -1297,7 +1297,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President abigailAdams = new President(
-            "Abigail Adams", "Northeast", 1, 5, 7, 6, "Conservative", "Social Liberalism",
+            "Abigail Adams", "Northeast", 1, 4, 7, 5, "Conservative", "Social Liberalism",
             new String[]{"Founding Era"}
     );
     static President williamCarroll = new President(
@@ -1353,11 +1353,11 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President robertYates = new President(
-            "Robert Yates", "Northeast", 2, 5, 5, 4, "Libertarian", "States' Rights",
+            "Robert Yates", "Northeast", 1, 4, 5, 2, "Libertarian", "States' Rights",
             new String[]{"Founding Era"}
     );
     static President georgeTroup = new President(
-            "George Troup", "South", 5, 1, 1, 2, "Populist", "Racism",
+            "George Troup", "South", 5, 3, 1, 2, "Populist", "Racism",
             new String[]{"Founding Era"}
     );
     static President lutherMartin = new President(
@@ -1385,7 +1385,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President johnLangdon = new President(
-            "John Langdon", "Northeast", 7, 1, 4, 3, "Libertarian", "Centralization",
+            "John Langdon", "Northeast", 6, 3, 4, 3, "Libertarian", "Centralization",
             new String[]{"Founding Era"}
     );
     static President jamesWarren = new President(
@@ -1401,7 +1401,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesSullivan = new President(
-            "James Sullivan", "Northeast", 2, 1, 6, 1, "Libertarian", "Egalitarianism",
+            "James Sullivan", "Northeast", 2, 3, 4, 1, "Libertarian", "Egalitarianism",
             new String[]{"Founding Era"}
     );
     static President morganLewis = new President(
@@ -1413,7 +1413,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President johnTaylor = new President(
-            "John Taylor", "South", 4, 1, 7, 2, "Libertarian", "States' Rights",
+            "John Taylor", "South", 4, 2, 7, 3, "Libertarian", "States' Rights",
             new String[]{"Founding Era"}
     );
     static President josephBradleyVarnum = new President(
@@ -1433,7 +1433,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President philipBBarbour = new President(
-            "Philip B. Barbour", "South", 6, 3, 5, 5, "Libertarian", "Constructionism",
+            "Philip B. Barbour", "South", 6, 3, 4, 4, "Populist", "Constructionism",
             new String[]{"Founding Era"}
     );
     static President langdonCheves = new President(
@@ -1441,7 +1441,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President simonSnyder = new President(
-            "Simon Snyder", "Northeast", 4, 3, 2, 1, "Libertarian", "Tough Foreign Policy",
+            "Simon Snyder", "Northeast", 4, 3, 2, 2, "Libertarian", "Tough Foreign Policy",
             new String[]{"Founding Era"}
     );
     static President thomasMcKean = new President(
@@ -1594,7 +1594,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President josephDennie = new President(
-            "Joseph Dennie", "Northeast", 1, 4, 1, 2, "Conservative", "Social Hierarchy",
+            "Joseph Dennie", "Northeast", 1, 4, 2, 3, "Conservative", "Social Hierarchy",
             new String[]{"Founding Era"}
     );
     static President robertRLivingston = new President(
@@ -1602,7 +1602,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesTallmadgeJr = new President(
-            "James Tallmadge Jr.", "Northeast", 2, 1, 2, 1, "Libertarian", "Civil Rights",
+            "James Tallmadge Jr.", "Northeast", 2, 1, 2, 2, "Libertarian", "Civil Rights",
             new String[]{"Founding Era"}
     );
     static President frederickMuhlenberg = new President(
@@ -1626,7 +1626,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President williamMaclay = new President(
-            "William Maclay", "Northeast", 2, 1, 2, 2, "Libertarian", "Anti-Establishment",
+            "William Maclay", "Northeast", 2, 4, 1, 2, "Libertarian", "Anti-Establishment",
             new String[]{"Founding Era"}
     );
     static President jonathanJennings = new President(
@@ -1674,7 +1674,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President johnWTaylor = new President(
-            "John W. Taylor", "Northeast", 6, 2, 1, 2, "Libertarian", "Civil Rights",
+            "John W. Taylor", "Northeast", 6, 2, 2, 2, "Libertarian", "Civil Rights",
             new String[]{"Founding Era"}
     );
     static President williamGrayson = new President(
@@ -1710,7 +1710,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President williamRichardsonDavie = new President(
-            "William Richardson Davie", "South", 2, 1, 1, 2, "Conservative", "Active Executive",
+            "William Richardson Davie", "South", 2, 2, 3, 2, "Conservative", "Active Executive",
             new String[]{"Founding Era"}
     );
     static President jamesLloyd = new President(
@@ -1886,7 +1886,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President samuelSmith = new President(
-            "Samuel Smith", "Northeast", 7, 5, 1, 2, "Libertarian", "Tariffs",
+            "Samuel Smith", "Northeast", 6, 5, 1, 3, "Libertarian", "Tariffs",
             new String[]{"Founding Era"}
     );
     static President jamesTurner = new President(
@@ -2574,7 +2574,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President kimReynolds = new President(
-            "Kim Reynolds", "Midwest", 4, 4, 4, 1, "Conservative", "Tough Foreign Policy",
+            "Kim Reynolds", "Midwest", 4, 4, 4, 1, "Conservative", "Traditional Morality",
             new String[]{"Present Era"}
     );
     static President andrewYang = new President(
@@ -2982,7 +2982,7 @@ public class CardData {
             new String[]{"Reconstruction Era"}
     );
     static President georgefedmunds = new President(
-            "George F. Edmunds", "Northeast", 6, 2, 3, 3, "Conservative", "Traditional Morality",
+            "George F. Edmunds", "Northeast", 7, 3, 3, 4, "Conservative", "Traditional Morality",
             new String[]{"Reconstruction Era"}
     );
     static President marshalljewell = new President(
@@ -3499,6 +3499,242 @@ public class CardData {
     );
     static President jamesblackgroome = new President(
             "James Black Groome", "Northeast", 4, 1, 1, 1, "Populist", "Laissez-Faire",
+            new String[]{"Reconstruction Era"}
+    );
+    static President russellaalger = new President(
+            "Russell A. Alger", "Midwest", 3, 6, 1, 2, "Conservative", "Nationalism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President chaunceydepew = new President(
+            "Chauncey Depew", "Northeast", 3, 2, 3, 3, "Libertarian", "Deregulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President isaacpgray = new President(
+            "Isaac P. Gray", "Midwest", 3, 1, 2, 2, "Conservative", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johncblack = new President(
+            "John C. Black", "Midwest", 2, 2, 1, 1, "Populist", "Social Programs",
+            new String[]{"Reconstruction Era"}
+    );
+    static President stephenmwhite = new President(
+            "Stephen M. White", "West", 3, 1, 2, 2, "Populist", "Strategic Investments",
+            new String[]{"Reconstruction Era"}
+    );
+    static President levipmorton = new President(
+            "Levi P. Morton", "Northeast", 6, 1, 4, 3, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamwphelps = new President(
+            "William W. Phelps", "Northeast", 2, 2, 3, 1, "Libertarian", "Deregulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President jeremiahmrusk = new President(
+            "Jeremiah M. Rusk", "Midwest", 5, 1, 2, 2, "Conservative", "Deregulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President walterqgresham = new President(
+            "Walter Q. Gresham", "Midwest", 2, 4, 3, 2, "Populist", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President silaswoodson = new President(
+            "Silas Woodson", "South", 2, 2, 1, 1, "Populist", "Regulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President prestonleslie = new President(
+            "Preston Leslie", "West", 3, 3, 2, 1, "Libertarian", "Traditional Morality",
+            new String[]{"Reconstruction Era"}
+    );
+    static President redfieldproctor = new President(
+            "Redfield Proctor", "Northeast", 5, 1, 4, 1, "Conservative", "Active Executive",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnwanamaker = new President(
+            "John Wanamaker", "Northeast", 2, 3, 1, 1, "Libertarian", "Deregulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamhhmiller = new President(
+            "William H. H. Miller", "Northeast", 2, 2, 4, 1, "Conservative", "Implied Powers",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnbgordon = new President(
+            "John B. Gordon", "South", 4, 3, 1, 2, "Libertarian", "States' Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlesoconor = new President(
+            "Charles O'Conor", "Northeast", 1, 2, 4, 1, "Libertarian", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomasccatchings = new President(
+            "Thomas C. Catchings", "South", 3, 1, 3, 1, "Libertarian", "Gold Standard",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamemason = new President(
+            "William E. Mason", "Midwest", 3, 2, 2, 1, "Progressive", "Isolationism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlesfmanderson = new President(
+            "Charles F. Manderson", "Midwest", 4, 1, 3, 1, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomasbracketreed = new President(
+            "Thomas Bracket Reed", "Northeast", 6, 5, 2, 4, "Libertarian", "Gold Standard",
+            new String[]{"Reconstruction Era"}
+    );
+    static President rufusblodgett = new President(
+            "Rufus Blodgett", "Northeast", 2, 1, 3, 1, "Libertarian", "Deregulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President hughsmiththompson = new President(
+            "Hugh Smith Thompson", "South", 2, 1, 2, 1, "Libertarian", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamsholman = new President(
+            "William S. Holman", "Midwest", 5, 1, 5, 2, "Libertarian", "Laissez-Faire",
+            new String[]{"Reconstruction Era"}
+    );
+    static President matthewquay = new President(
+            "Matthew Quay", "Northeast", 3, 5, 1, 2, "Conservative", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President markhdunnell = new President(
+            "Mark H. Dunnell", "Midwest", 3, 1, 1, 1, "Progressive", "Regulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President frankhiscock = new President(
+            "Frank Hiscock", "Northeast", 4, 1, 1, 1, "Conservative", "Tariffs",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnhreagan = new President(
+            "John H. Reagan", "South", 3, 1, 3, 1, "Populist", "Regulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President robertepattison = new President(
+            "Robert E. Pattison", "Northeast", 3, 5, 2, 2, "Libertarian", "Law and Order",
+            new String[]{"Reconstruction Era"}
+    );
+    static President charlesfcrisp = new President(
+            "Charles F. Crisp", "South", 5, 1, 4, 2, "Libertarian", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President petercooper = new President(
+            "Peter Cooper", "Northeast", 1, 3, 4, 2, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President samuelfcary = new President(
+            "Samuel F. Cary", "Midwest", 2, 1, 3, 3, "Populist", "Traditional Morality",
+            new String[]{"Reconstruction Era"}
+    );
+    static President barzillaivchambers = new President(
+            "Barzillai V. Chambers", "South", 1, 2, 4, 1, "Populist", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President benjaminbutler = new President(
+            "Benjamin Butler", "Northeast", 4, 4, 1, 3, "Progressive", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President absolommwest = new President(
+            "Absolom M. West", "South", 1, 1, 1, 1, "Populist", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomasewingjr = new President(
+            "Thomas Ewing Jr.", "Midwest", 2, 1, 3, 2, "Progressive", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President edwardhgillette = new President(
+            "Edward H. Gillette", "Midwest", 2, 2, 1, 1, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President hendrickbwright = new President(
+            "Hendrick B. Wright", "Midwest", 3, 1, 2, 1, "Populist", "Class Unity",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thompsonhmurch = new President(
+            "Thompson H. Murch", "Northeast", 2, 1, 2, 1, "Populist", "Class Unity",
+            new String[]{"Reconstruction Era"}
+    );
+    static President lumanhamlinweller = new President(
+            "Luman Hamlin Weller", "Midwest", 2, 1, 1, 2, "Populist", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President newtonbooth = new President(
+            "Newton Booth", "West", 4, 2, 1, 1, "Populist", "Regulation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President ignatiusldonnelly = new President(
+            "Ignatius L. Donnelly", "Midwest", 2, 2, 1, 3, "Populist", "Anti-Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President whitelawreid = new President(
+            "Whitelaw Reid", "Northeast", 1, 4, 1, 3, "Conservative", "Civil Rights",
+            new String[]{"Reconstruction Era"}
+    );
+    static President benjaminftracy = new President(
+            "Benjamin F. Tracy", "Northeast", 2, 2, 5, 1, "Conservative", "Tough Foreign Policy",
+            new String[]{"Reconstruction Era"}
+    );
+    static President edwardowolcott = new President(
+            "Edward O. Wolcott", "West", 3, 2, 1, 1, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President davidbhill = new President(
+            "David B. Hill", "Northeast", 4, 4, 1, 2, "Populist", "Establishment",
+            new String[]{"Reconstruction Era"}
+    );
+    static President horaceboies = new President(
+            "Horace Boies", "Midwest", 2, 4, 1, 2, "Populist", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President calvinsbrice = new President(
+            "Calvin S. Brice", "Midwest", 2, 4, 1, 1, "Libertarian", "Tariff",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomashcarter = new President(
+            "Thomas H. Carter", "West", 3, 1, 1, 1, "Conservative", "Tariffs",
+            new String[]{"Reconstruction Era"}
+    );
+    static President thomasjhenderson = new President(
+            "Thomas J. Henderson", "Midwest", 4, 2, 2, 1, "Conservative", "Centralization",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnwfoster = new President(
+            "John W. Foster", "Midwest", 3, 1, 3, 1, "Conservative", "Tough Foreign Policy",
+            new String[]{"Reconstruction Era"}
+    );
+    static President leonabbett = new President(
+            "Leon Abbett", "Northeast", 3, 4, 1, 1, "Populist", "Class Unity",
+            new String[]{"Reconstruction Era"}
+    );
+    static President edwardmurphyjr = new President(
+            "Edward Murphy Jr.", "Northeast", 2, 1, 3, 1, "Libertarian", "Laissez-Faire",
+            new String[]{"Reconstruction Era"}
+    );
+    static President johnlmitchell = new President(
+            "John L. Mitchell", "Midwest", 3, 1, 5, 1, "Libertarian", "Gold Standard",
+            new String[]{"Reconstruction Era"}
+    );
+    static President freddubois = new President(
+            "Fred Dubois", "West", 3, 4, 2, 2, "Populist", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President frankjcannon = new President(
+            "Frank J. Cannon", "West", 2, 2, 2, 1, "Progressive", "Free Trade",
+            new String[]{"Reconstruction Era"}
+    );
+    static President willissweet = new President(
+            "Willis Sweet", "West", 2, 3, 3, 2, "Progressive", "Inflation",
+            new String[]{"Reconstruction Era"}
+    );
+    static President richardolney = new President(
+            "Richard Olney", "Northeast", 3, 2, 5, 2, "Libertarian", "Law and Order",
+            new String[]{"Reconstruction Era"}
+    );
+    static President danielslamont = new President(
+            "Daniel S. Lamont", "Northeast", 2, 1, 4, 1, "Libertarian", "Isolationism",
+            new String[]{"Reconstruction Era"}
+    );
+    static President williamlwilson = new President(
+            "William L. Wilson", "Midwest", 3, 2, 5, 2, "Libertarian", "Free Trade",
             new String[]{"Reconstruction Era"}
     );
     
@@ -4734,6 +4970,62 @@ public class CardData {
         nonpresidents.add(benjaminfjonas);
         nonpresidents.add(jameszgeorge);
         nonpresidents.add(jamesblackgroome);
+        nonpresidents.add(russellaalger);
+        nonpresidents.add(chaunceydepew);
+        nonpresidents.add(isaacpgray);
+        nonpresidents.add(johncblack);
+        nonpresidents.add(stephenmwhite);
+        nonpresidents.add(levipmorton);
+        nonpresidents.add(williamwphelps);
+        nonpresidents.add(jeremiahmrusk);
+        nonpresidents.add(walterqgresham);
+        nonpresidents.add(silaswoodson);
+        nonpresidents.add(prestonleslie);
+        nonpresidents.add(redfieldproctor);
+        nonpresidents.add(johnwanamaker);
+        nonpresidents.add(williamhhmiller);
+        nonpresidents.add(johnbgordon);
+        nonpresidents.add(charlesoconor);
+        nonpresidents.add(thomasccatchings);
+        nonpresidents.add(williamemason);
+        nonpresidents.add(charlesfmanderson);
+        nonpresidents.add(thomasbracketreed);
+        nonpresidents.add(rufusblodgett);
+        nonpresidents.add(hughsmiththompson);
+        nonpresidents.add(williamsholman);
+        nonpresidents.add(petercooper);
+        nonpresidents.add(samuelfcary);
+        nonpresidents.add(barzillaivchambers);
+        nonpresidents.add(benjaminbutler);
+        nonpresidents.add(absolommwest);
+        nonpresidents.add(thomasewingjr);
+        nonpresidents.add(edwardhgillette);
+        nonpresidents.add(hendrickbwright);
+        nonpresidents.add(thompsonhmurch);
+        nonpresidents.add(lumanhamlinweller);
+        nonpresidents.add(newtonbooth);
+        nonpresidents.add(ignatiusldonnelly);
+        nonpresidents.add(whitelawreid);
+        nonpresidents.add(benjaminftracy);
+        nonpresidents.add(edwardowolcott);
+        nonpresidents.add(davidbhill);
+        nonpresidents.add(horaceboies);
+        nonpresidents.add(calvinsbrice);
+        nonpresidents.add(thomashcarter);
+        nonpresidents.add(thomasjhenderson);
+        nonpresidents.add(johnwfoster);
+        nonpresidents.add(leonabbett);
+        nonpresidents.add(edwardmurphyjr);
+        nonpresidents.add(johnlmitchell);
+        nonpresidents.add(freddubois);
+        nonpresidents.add(frankjcannon);
+        nonpresidents.add(willissweet);
+        nonpresidents.add(richardolney);
+        nonpresidents.add(danielslamont);
+        nonpresidents.add(williamlwilson);
+        
+        
+        
         
         
         

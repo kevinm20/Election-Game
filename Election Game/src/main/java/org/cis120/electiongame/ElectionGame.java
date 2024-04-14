@@ -1,5 +1,6 @@
 package org.cis120.electiongame;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -670,6 +671,39 @@ public class ElectionGame {
 
     public static void main(String[] args) {
 
+    	
+    	List<President> preses = CardData.getPresidents("expanded", null, 0);
+    	
+    	List<String> imageNames = new ArrayList<>();
+        
+        // Specify the directory where the images are stored
+        String path = "files/";  // Adjust path as necessary
+        
+        // Load image filenames from the directory into the list
+        File dir = new File(path);
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    imageNames.add(file.getName());
+                }
+            }
+        }
+        
+        for (int i = 0; i < imageNames.size(); i++) {
+            imageNames.set(i, "files/" + imageNames.get(i));
+            imageNames.set(i, imageNames.get(i).toLowerCase());
+        }
+
+        // Check each president's image URL against the image filenames
+        for (President pres : preses) {
+            String imageUrl = pres.getImageURL();
+            imageUrl = imageUrl.toLowerCase();
+            if (imageUrl != null && !imageNames.contains(imageUrl)) {
+                System.out.println("No image found for President: " + pres.getName() + " with URL: " + imageUrl);
+            }
+        }
+    	
     	/*
     	Pack pack1 = new Pack(3, 50, CardData.calvinCoolidge,CardData.abrahamLincoln,
     			CardData.georgeWashington,CardData.georgeHWBush, CardData.alGore);
