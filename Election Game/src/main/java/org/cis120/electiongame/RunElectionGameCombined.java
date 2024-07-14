@@ -1151,39 +1151,47 @@ public class RunElectionGameCombined implements Runnable {
 
 		// This is the most important method. Loop through the hand, draw all the cards
 		public void paintCards() {
-			this.removeAll();
-			this.updateUI();
-			this.hand = election.getActivePlayer().getHand();
+		    try {
+		        this.removeAll();
+		        this.updateUI();
+		        this.hand = election.getActivePlayer().getHand();
 
-			for (President curr : hand) {
-				ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-						.getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
-				final JButton usercd = new JButton(img);
-				if (cardInfoMode) {
-					usercd.setIcon(null);
-					usercd.setText("<html>" + curr.getCardInfo() + "</html>");
-				}
-				this.add(usercd);
-				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
+		        for (President curr : hand) {
+		            ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+		                    .getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+		            final JButton usercd = new JButton(img);
+		            if (cardInfoMode) {
+		                usercd.setIcon(null);
+		                usercd.setText("<html>" + curr.getCardInfo() + "</html>");
+		            }
+		            this.add(usercd);
+		            usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
 
-				// This makes all of the cards buttons that play the card if clicked
-				usercd.addMouseListener(new MouseAdapter() {
-					public void mouseReleased(MouseEvent e) {
-						if (election.getActivePinCard() != null) {
-							election.getActivePlayer().add(election.getActivePinCard());
-						}
-						election.activePinCard(curr);
-						election.getActivePlayer().place(curr);
-						board.draw();
-						paintCards();
-						repaint();
-					}
-				});
+		            // This makes all of the cards buttons that play the card if clicked
+		            usercd.addMouseListener(new MouseAdapter() {
+		                public void mouseReleased(MouseEvent e) {
+		                    if (election.getActivePinCard() != null) {
+		                        election.getActivePlayer().add(election.getActivePinCard());
+		                    }
+		                    election.activePinCard(curr);
+		                    election.getActivePlayer().place(curr);
+		                    board.draw();
+		                    paintCards();
+		                    repaint();
+		                }
+		            });
+		        }
 
-			}
-
-			repaint();
+		        repaint();
+		    } catch (NullPointerException e) {
+		        StringBuilder message = new StringBuilder("One of the cards has an error, please exit the game. Here is the hand:");
+		        for (President card : hand) {
+		        	message.append("\n").append(card.toString());
+		        }
+		        JOptionPane.showMessageDialog(this, message.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+		    }
 		}
+
 
 		public void reset() {
 			this.removeAll();
