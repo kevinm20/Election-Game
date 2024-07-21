@@ -498,7 +498,7 @@ public class CardData {
             new String[]{"Civil Rights Era"}
     );
     static President ronDeSantis = new President(
-            "Ron DeSantis", "South", 4, 4, 8, 5, "Conservative", "Traditional Morality",
+            "Ron DeSantis", "South", 4, 2, 7, 5, "Conservative", "Traditional Morality",
             new String[]{"Present Era"}
     );
     static President hillaryClinton = new President(
@@ -874,7 +874,7 @@ public class CardData {
             new String[]{"Meme Card"}
     );
     static President margaretChaseSmith = new President(
-    		"Margaret Chase Smith", "Northeast", 6, 4, 4, 4, "Conservative", "Tough Foreign Policy",
+    		"Margaret Chase Smith", "Northeast", 4, 3, 3, 3, "Conservative", "Tough Foreign Policy",
             new String[]{"New Deal Era"}
     );
     static President bobDole = new President(
@@ -882,7 +882,7 @@ public class CardData {
             new String[]{"Reagan Era"}
     );
     static President eugeneDebs = new President(
-    		"Eugene Debs", "Midwest", 1, 3, 3, 3, "Progressive", "Class Unity",
+    		"Eugene Debs", "Midwest", 1, 4, 3, 4, "Progressive", "Class Unity",
             new String[]{"Progressive Era"}
     );
     static President garyHart = new President(
@@ -1467,7 +1467,7 @@ public class CardData {
             new String[]{"Present Era"}
     );
     static President leeZeldin = new President(
-            "Lee Zeldin", "Northeast", 3, 5, 6, 3, "Conservative", "Law and Order",
+            "Lee Zeldin", "Northeast", 3, 4, 5, 2, "Conservative", "Law and Order",
             new String[]{"Present Era"}
     );
     static President glennYoungkin = new President(
@@ -2532,7 +2532,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President vivekRamaswamy = new President(
-            "Vivek Ramaswamy", "Midwest", 1, 1, 2, 1, "Conservative", "Traditional Morality",
+            "Vivek Ramaswamy", "Midwest", 1, 4, 4, 2, "Libertarian", "Anti-Establishment",
             new String[]{"Present Era"}
     );
     static President jamesBuckley = new President(
