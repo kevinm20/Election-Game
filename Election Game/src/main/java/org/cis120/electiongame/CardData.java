@@ -4296,6 +4296,41 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     
+    static President jimwright = new President(
+            "Jim Wright", "South", 7, 3, 2, 2, "Progressive", "Civil Rights",
+            new String[]{"Reagan Era"}
+    );
+    
+    static President howardbaker = new President(
+            "Howard Baker", "South", 5, 3, 2, 3, "Conservative", "Establishment",
+            new String[]{"Reagan Era"}
+    );
+    
+    static President edkoch = new President(
+            "Ed Koch", "Northeast", 3, 4, 1, 2, "Populist", "Law and Order",
+            new String[]{"Reagan Era"}
+    );
+    
+    static President jeanekirkpatrick = new President(
+            "Jeane Kirkpatrick", "Northeast", 2, 2, 4, 2, "Conservative", "Tough Foreign Policy",
+            new String[]{"Reagan Era"}
+    );
+    
+    static President donaldregan = new President(
+            "Donald Regan", "Northeast", 2, 1, 1, 3, "Conservative", "Tax Cuts",
+            new String[]{"Reagan Era"}
+    );
+    
+    static President lawrenceeagleburger = new President(
+            "Lawrence Eagleburger", "Midwest", 2, 2, 1, 2, "Conservative", "Tough Foreign Policy",
+            new String[]{"Reagan Era"}
+    );
+    
+    static President edwinedwards = new President(
+            "Edwin Edwards", "South", 4, 2, 1, 3, "Populist", "Social Programs",
+            new String[]{"Reagan Era"}
+    );
+    
     
     
     
@@ -5737,6 +5772,14 @@ public class CardData {
         nonpresidents.add(luciusfcgarvin);
         nonpresidents.add(jeffdavis);
         nonpresidents.add(alexandermdockery);
+        nonpresidents.add(jimwright);
+        nonpresidents.add(howardbaker);   
+        nonpresidents.add(edkoch); 
+        nonpresidents.add(jeanekirkpatrick);    
+        nonpresidents.add(donaldregan);    
+        nonpresidents.add(lawrenceeagleburger); 
+        nonpresidents.add(edwinedwards);    
+        
 
 
 
