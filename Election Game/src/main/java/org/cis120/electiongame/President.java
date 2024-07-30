@@ -190,9 +190,11 @@ public class President extends Card {
     }
 
     int checkMatch(Policy p) {
-        if (marquee.equals(p.getName())) {
+        if (marquee.equals(p.getName())&&p.checkIdeology(ideology)) {
             return 5;
-        } else if (p.checkIdeology(ideology)) {
+        } else if (marquee.equals(p.getName())) {
+        	return 4;
+        }else if (p.checkIdeology(ideology)) {
             return 2;
         }
         return 0;
