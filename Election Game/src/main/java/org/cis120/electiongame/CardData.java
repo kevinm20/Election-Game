@@ -4647,7 +4647,7 @@ public class CardData {
     );
     static Election e1936 = new Election(
             1936, "infl", "exp", "Northeast", "Nationalism vs. Class Unity",
-            "Active Executive vs. Limited Government", "Traditional Morality vs. Personal Freedom"
+            "Active Executive vs. Limited Government", "Law and Order vs. Personal Freedom"
     );
     static Election e1932 = new Election(
             1932, "infl", "pol", "Northeast", "Tax Cuts vs. Social Programs",

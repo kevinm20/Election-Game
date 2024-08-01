@@ -47,7 +47,7 @@ public class RunElectionGameCombined implements Runnable {
 	static String prefix = "";
 
 	// Change this if the screen is wacky
-	int cardSize = 225;
+	int cardSize = 275;
 
 	public static InputStream loadImage(String path) {
 		InputStream input = RunElectionGameCombined.class.getResourceAsStream(path);
@@ -56,12 +56,27 @@ public class RunElectionGameCombined implements Runnable {
 		}
 		return input;
 	}
+	
+	// Helper to update all component fonts in a container recursively
+	public void updateFonts(Component comp, Font font) {
+	    if (comp instanceof JLabel || comp instanceof JButton || comp instanceof JTextField ||
+	            comp instanceof JTextArea || comp instanceof JCheckBox || comp instanceof JRadioButton ||
+	            comp instanceof JComboBox || comp instanceof JMenu || comp instanceof JMenuItem ||
+	            comp instanceof JTabbedPane || comp instanceof JPanel || comp instanceof JScrollBar ||
+	            comp instanceof JScrollPane) {
+	        comp.setFont(font);
+	    }
+	    if (comp instanceof Container) {
+	        for (Component child : ((Container) comp).getComponents()) {
+	            updateFonts(child, font);
+	        }
+	    }
+	}
 
+	
 	public void run() {
 		// Used to track stats
 		long startTime = System.nanoTime();
-
-		
 
 		// Top-level frame in which game components live
 		final JFrame frame = new JFrame("Election Game");
@@ -73,12 +88,12 @@ public class RunElectionGameCombined implements Runnable {
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		userPolicies.getHorizontalScrollBar().setUnitIncrement(100);
 
-		userPolicies.setPreferredSize(new Dimension(600, 325));
+		userPolicies.setPreferredSize(new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325)));
 
 		// User Card Deck
 		// final UserDeck user_cards = new UserDeck();
 		user_cards = new UserDeck();
-		user_cards.setPreferredSize(new Dimension(600, 325));
+		user_cards.setPreferredSize(new Dimension((int)(cardSize/225.0*600), (int)(cardSize/225.0*325)));
 		frame.add(user_cards, BorderLayout.SOUTH);
 
 		// Game board/Election Area
@@ -89,12 +104,6 @@ public class RunElectionGameCombined implements Runnable {
 		JPanel ai_cards = new JPanel();
 		frame.add(ai_cards, BorderLayout.NORTH);
 
-		/*
-		 * for (int i = 0; i < 5; i++) { ImageIcon img = new ImageIcon(new
-		 * ImageIcon("files/aicard.png").getImage() .getScaledInstance((int)
-		 * (0.266666667 * cardSize), (int)(0.351111111*cardSize), Image.SCALE_SMOOTH));
-		 * final JLabel aicardlabel = new JLabel(img); ai_cards.add(aicardlabel); }
-		 */
 		for (int i = 0; i < 5; i++) {
 			URL imgURL = getClass().getClassLoader().getResource(prefix + "files/aicard.PNG");
 			ImageIcon icon = new ImageIcon(new ImageIcon(imgURL).getImage().getScaledInstance(
@@ -106,26 +115,27 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Deck Area and status, for visuals
 		final JPanel decks = new JPanel();
-		decks.setPreferredSize(new Dimension(175, 200));
+		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 
 		frame.add(decks, BorderLayout.WEST);
 		final JLabel status = new JLabel(election.currentScore(), SwingConstants.CENTER);
 		setLabel(status);
 		decks.add(status);
 
+
 		final JLabel elecdeck = new JLabel(
 				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/electionsdeck.PNG"))
-						.getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
 		decks.add(elecdeck);
 
 		final JLabel prezdeck = new JLabel(
 				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentdeck.PNG"))
-						.getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
 		decks.add(prezdeck);
 
 		final JLabel poldeck = new JLabel(
 				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policydeck.PNG"))
-						.getImage().getScaledInstance(85, 65, Image.SCALE_SMOOTH)));
+						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
 		decks.add(poldeck);
 
 		decks.setLayout(new GridLayout(4, 1));
@@ -138,10 +148,6 @@ public class RunElectionGameCombined implements Runnable {
 		 * Play button: Where most of the real action happens
 		 */
 		final JButton play = new JButton("Play");
-		/*
-		 * Color can changed play.setBackground(new Color(47, 84, 150));
-		 * play.setForeground(Color.YELLOW);
-		 */
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
@@ -554,11 +560,61 @@ public class RunElectionGameCombined implements Runnable {
 						if (newCardSize < 10) {
 							newCardSize = 10;
 						}
-						cardSize = newCardSize;
+						cardSize = newCardSize;				
+						
+						// Calculate new font size based on cardSize
+				        int newFontSize = (int)(16 * (cardSize / 225.0));  // Example scaling, adjust as needed
+				        Font newFont = new Font("Dialog", Font.PLAIN, newFontSize);
+
+				        // Update JLabel components recursively within the frame
+				        updateFonts(frame, newFont);
+
+				        // Update JOptionPane font
+				        UIManager.put("OptionPane.messageFont", newFont);
+				        UIManager.put("OptionPane.buttonFont", newFont);
+				        
+				        
 						user_cards.paintCards();
-						ai_cards.revalidate();
-						ai_cards.repaint();
+						
+						// Update the JScrollPane size
+				        userPolicies.setPreferredSize(new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325)));
+				        userPolicies.revalidate();
+				        userPolicies.repaint();
+
+						ai_cards.removeAll();  // Clear existing cards
+				        for (int i = 0; i < 5; i++) {
+				            URL imgURL = getClass().getClassLoader().getResource(prefix + "files/aicard.PNG");
+				            ImageIcon icon = new ImageIcon(new ImageIcon(imgURL).getImage().getScaledInstance(
+				                (int) (0.266666667 * cardSize), (int) (0.351111111 * cardSize), Image.SCALE_SMOOTH));
+				            JLabel aicardlabel = new JLabel(icon);
+				            ai_cards.add(aicardlabel);
+				        }				        
+				        ai_cards.revalidate();
+				        ai_cards.repaint();
+				        
+				        // Update deck images with new scaled instances
+				        elecdeck.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/electionsdeck.PNG"))
+				                .getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
+				        prezdeck.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentdeck.PNG"))
+				                .getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
+				        poldeck.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policydeck.PNG"))
+				                .getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
+
+				        // Redraw decks panel to reflect new sizes
+				        decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
+				        decks.revalidate();
+				        decks.repaint();
+				        
+						control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
+						control_panel.revalidate();
+						control_panel.repaint();
+						
 						board.draw();
+						
+						// Force the frame to lay out its components again
+				        frame.invalidate();  // Invalidate the layout
+				        frame.validate();    // Validate the layout again to apply changes
+				        frame.repaint();     // Repaint the whole frame to reflect changes
 					} catch (Exception ex) {
 						JOptionPane.showMessageDialog(board, "Error: Your input was invalid.", "Error",
 								JOptionPane.ERROR_MESSAGE);
@@ -608,18 +664,23 @@ public class RunElectionGameCombined implements Runnable {
 		});
 
 		control_panel.add(play);
-		// control_panel.add(undo);
 		control_panel.add(help);
 		control_panel.add(stats);
 		control_panel.add(reset);
 		control_panel.add(swap);
-		control_panel.setPreferredSize(new Dimension(175, 200));
+		control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 		control_panel.setLayout(new GridLayout(5, 1));
+		
+		// Calculate initial font size based on the initial card size
+		int initialFontSize = (int)(16 * (cardSize / 225.0));
+		Font initialFont = new Font("Dialog", Font.PLAIN, initialFontSize);
 
-		/*
-		 * frame.getContentPane().removeAll(); final CardPanel testcards = new
-		 * CardPanel(); frame.add(testcards, BorderLayout.NORTH); frame.repaint();
-		 */
+		// Update JLabel components recursively within the frame
+		updateFonts(frame, initialFont);
+
+		// Update JOptionPane font
+		UIManager.put("OptionPane.messageFont", initialFont);
+		UIManager.put("OptionPane.buttonFont", initialFont);
 
 		// Put the frame on the screen
 		frame.pack();
@@ -1129,13 +1190,13 @@ public class RunElectionGameCombined implements Runnable {
 
 		private List<President> hand;
 
-		public static final int BOARD_WIDTH = 600;
-		public static final int BOARD_HEIGHT = 325;
+		public int BOARD_WIDTH = 600;
+		public int BOARD_HEIGHT = (int)(cardSize/225.0*325);
+		
 
 		public UserDeck() {
 
 			setFocusable(true);
-
 			this.hand = election.getActivePlayer().getHand();
 			paintCards();
 
@@ -1223,7 +1284,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		@Override
 		public Dimension getPreferredSize() {
-			return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
+			return new Dimension(BOARD_WIDTH, (int)(cardSize/225.0*325));
 		}
 	}
 
@@ -1234,8 +1295,8 @@ public class RunElectionGameCombined implements Runnable {
 
 		private List<Policy> hand;
 
-		public static final int BOARD_WIDTH = 3600;
-		public static final int BOARD_HEIGHT = 325;
+		public int BOARD_WIDTH = 3600;
+		public int BOARD_HEIGHT = (int)(cardSize/225.0*325);
 
 		public UserPolicies() {
 
@@ -1333,7 +1394,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		@Override
 		public Dimension getPreferredSize() {
-			return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
+			return new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325));
 		}
 	}
 
