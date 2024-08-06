@@ -35,6 +35,7 @@ public class RunElectionGameCombined implements Runnable {
 	private UserDeck user_cards;
 	private UserPolicies up;
 	private boolean mode = false;
+	private boolean swapmode = false;
 	private String deckSet = "standard";
 	private int cumulativeWins = 0;
 	private int cumulativeGames = 0;
@@ -116,6 +117,12 @@ public class RunElectionGameCombined implements Runnable {
 		// Deck Area and status, for visuals
 		final JPanel decks = new JPanel();
 		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
+		
+		// Add the logo to the top left
+		ImageIcon logoIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"))
+		        .getImage().getScaledInstance((int)(cardSize/225.0*100), (int)(cardSize/225.0*100), Image.SCALE_SMOOTH));
+		JLabel logoLabel = new JLabel(logoIcon);
+		decks.add(logoLabel);
 
 		frame.add(decks, BorderLayout.WEST);
 		final JLabel status = new JLabel(election.currentScore(), SwingConstants.CENTER);
@@ -138,16 +145,34 @@ public class RunElectionGameCombined implements Runnable {
 						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
 		decks.add(poldeck);
 
-		decks.setLayout(new GridLayout(4, 1));
+		decks.setLayout(new GridLayout(5, 1));
 
 		// Control panel
-		final JPanel control_panel = new JPanel();
-		frame.add(control_panel, BorderLayout.EAST);
+		final JPanel control_panel = new JPanel(new GridBagLayout());
+		
+		// GridBagConstraints setup
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.insets = new Insets(10, 10, 10, 10); // Padding around buttons
 
 		/*
 		 * Play button: Where most of the real action happens
 		 */
-		final JButton play = new JButton("Play");
+		final JButton play = new JButton(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/play.PNG")));
+		
+		ImageIcon playIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/play.PNG"));
+		ImageIcon playHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/playhover.PNG"));
+
+
+		// Set initial icon size
+		play.setIcon(new ImageIcon(playIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+		play.setRolloverIcon(new ImageIcon(playHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+
+		
+		// Set the icon on the button initially
+		play.setContentAreaFilled(false);                      
+		play.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40)));
+				
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
@@ -259,46 +284,28 @@ public class RunElectionGameCombined implements Runnable {
 			}
 
 		});
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.weightx = 1.0;
+		gbc.weighty = 1.0;
+		control_panel.add(play, gbc);
+		
+		// Load the resign icon and hover icon
+		ImageIcon resignIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/resign.PNG"));
+		ImageIcon resignHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/resignhover.PNG"));
 
-		final JButton undo = new JButton("Undo Cards");
-		undo.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		// Create the reset button with the resign icon
+		final JButton reset = new JButton(new ImageIcon(resignIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
 
-				if (election.getActivePinCard() == null && election.getActivePinnedPolicies().get(0) == null
-						&& election.getActivePinnedPolicies().get(1) == null) {
-					JOptionPane.showMessageDialog(null, "Error: you haven't played a card", "Error",
-							JOptionPane.ERROR_MESSAGE);
-				} else {
+		// Set the rollover icon to the hover image
+		reset.setRolloverIcon(new ImageIcon(resignHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
 
-					if (election.getActivePinCard() != null) {
-						election.getActivePlayer().add(election.getActivePinCard());
-					}
-
-					if (election.getActivePinnedPolicies().get(0) != null) {
-						election.getActivePlayer().add(election.getActivePinnedPolicies().get(0));
-					}
-
-					if (election.getActivePinnedPolicies().get(1) != null) {
-						election.getActivePlayer().add(election.getActivePinnedPolicies().get(1));
-					}
-
-					user_cards.paintCards();
-
-					election.activePinCard(null);
-
-					election.nullifyActive();
-
-					up.paintCards();
-
-					board.draw();
-
-				}
-			}
-
-		});
+		// Set button preferences
+		reset.setContentAreaFilled(false); // Remove default button background
+		reset.setBorderPainted(false);     // Remove button border
+		reset.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
 
 		
-		final JButton reset = new JButton("Resign");
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!askToResign) {
@@ -331,8 +338,24 @@ public class RunElectionGameCombined implements Runnable {
 				}
 			}
 		});
+		gbc.gridy = 3;
+		control_panel.add(reset, gbc);
 
-		final JButton help = new JButton("Help");
+		// Load the help icon and hover icon
+		ImageIcon helpIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/help.PNG"));
+		ImageIcon helpHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/helphover.PNG"));
+
+		// Create the help button with the help icon
+		final JButton help = new JButton(new ImageIcon(helpIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+
+		// Set the rollover icon to the hover image
+		help.setRolloverIcon(new ImageIcon(helpHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+
+		// Set button preferences
+		help.setContentAreaFilled(false); // Remove default button background
+		help.setBorderPainted(false);     // Remove button border
+		help.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
+
 		help.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object[] settingOptions = { "Card Info", "Instructions" };
@@ -403,8 +426,78 @@ public class RunElectionGameCombined implements Runnable {
 				}
 			}
 		});
+		gbc.gridy = 1;
+		control_panel.add(help, gbc);
+		
+		// Load the icons for both modes
+		ImageIcon policiesIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policies.PNG"));
+		ImageIcon policiesHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policieshover.PNG"));
+		ImageIcon presidentsIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidents.PNG"));
+		ImageIcon presidentsHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentshover.PNG"));
 
-		final JButton stats = new JButton("Stats/Settings");
+		// Create the swap button with initial policies icon
+		final JButton swap = new JButton();
+
+		// Set button preferences
+		swap.setContentAreaFilled(false); // Remove default button background
+		swap.setBorderPainted(false);     // Remove button border
+		swap.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
+
+		// Initialize the button to start with the "policies" icon and add the initial component
+		swap.setIcon(new ImageIcon(policiesIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		swap.setRolloverIcon(new ImageIcon(policiesHoverIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+
+		// Initially display the president deck at the bottom
+		frame.add(user_cards, BorderLayout.SOUTH);
+		
+		swap.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+		    	
+		        if (!swapmode) {
+		            // Switch to policies view
+		            swap.setIcon(new ImageIcon(presidentsIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		            swap.setRolloverIcon(new ImageIcon(presidentsHoverIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		            frame.add(userPolicies, BorderLayout.SOUTH);
+		            frame.remove(user_cards);
+		            swapmode = true;
+		        } else {
+		            // Switch to presidents view
+		            swap.setIcon(new ImageIcon(policiesIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		            swap.setRolloverIcon(new ImageIcon(policiesHoverIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		            frame.add(user_cards, BorderLayout.SOUTH);
+		            frame.remove(userPolicies);
+		            swapmode = false;
+		        }
+		        user_cards.paintCards();
+		        up.paintCards();
+		        frame.revalidate();
+		        frame.repaint();
+		    }
+		});
+
+
+
+
+
+		gbc.gridy = 4;
+		control_panel.add(swap, gbc);
+
+		
+		// Load the settings icon and hover icon
+		ImageIcon settingsIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/settings.PNG"));
+		ImageIcon settingsHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/settingshover.PNG"));
+
+		// Create the stats button with the settings icon
+		final JButton stats = new JButton(new ImageIcon(settingsIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+
+		// Set the rollover icon to the hover image
+		stats.setRolloverIcon(new ImageIcon(settingsHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+
+		// Set button preferences
+		stats.setContentAreaFilled(false); // Remove default button background
+		stats.setBorderPainted(false);     // Remove button border
+		stats.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
+
 		stats.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				long endTime = System.nanoTime();
@@ -427,7 +520,7 @@ public class RunElectionGameCombined implements Runnable {
 								+ totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" + "Total wins: "
 								+ cumulativeWins + " wins out of " + cumulativeGames + " (" + winPct + "%). \n \n"
 								+ "Select one of the settings below to change (may reset game):",
-						"Stats/Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+						"Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
 						settingOptions, -1);
 
 				// Change Name
@@ -602,12 +695,17 @@ public class RunElectionGameCombined implements Runnable {
 
 				        // Redraw decks panel to reflect new sizes
 				        decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
+				        for (Component comp : control_panel.getComponents()) {
+				            if (comp instanceof JButton) {
+				                comp.setPreferredSize(new Dimension((int)(cardSize / 225.0 * 150), (int)(cardSize / 225.0 * 50)));  // Maintain proportional size
+				            }
+				        }
 				        decks.revalidate();
 				        decks.repaint();
-				        
+				        				        				        
 						control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 						control_panel.revalidate();
-						control_panel.repaint();
+						control_panel.repaint();						
 						
 						board.draw();
 						
@@ -636,40 +734,19 @@ public class RunElectionGameCombined implements Runnable {
 
 			}
 		});
-
-		// Swaps between policies and presidents in view
-		final JButton swap = new JButton("Policies ->");
-		swap.addActionListener(new ActionListener() {
-			boolean mode = true;
-
-			public void actionPerformed(ActionEvent e) {
-				if (!mode) {
-					swap.setText("Policies ->");
-					swap.repaint();
-					frame.add(user_cards, BorderLayout.SOUTH);
-					frame.remove(userPolicies);
-					user_cards.paintCards();
-					up.paintCards();
-					mode = !mode;
-				} else {
-					swap.setText("<- Presidents");
-					swap.repaint();
-					frame.add(userPolicies, BorderLayout.SOUTH);
-					frame.remove(user_cards);
-					user_cards.paintCards();
-					up.paintCards();
-					mode = !mode;
-				}
-			}
-		});
-
+		gbc.gridy = 2;
+		control_panel.add(stats, gbc);
+		
+		/*
 		control_panel.add(play);
 		control_panel.add(help);
 		control_panel.add(stats);
 		control_panel.add(reset);
 		control_panel.add(swap);
+		*/
 		control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
-		control_panel.setLayout(new GridLayout(5, 1));
+		//control_panel.setLayout(new GridLayout(5, 1));
+		frame.add(control_panel, BorderLayout.EAST);
 		
 		// Calculate initial font size based on the initial card size
 		int initialFontSize = (int)(16 * (cardSize / 225.0));
@@ -682,12 +759,16 @@ public class RunElectionGameCombined implements Runnable {
 		UIManager.put("OptionPane.messageFont", initialFont);
 		UIManager.put("OptionPane.buttonFont", initialFont);
 
+		// Set the icon image for the frame
+		frame.setIconImage(logoIcon.getImage());
+		
 		// Put the frame on the screen
 		frame.pack();
 		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
-		user_cards.hideCards(5);
+		user_cards.hideCards(5);		
+
 
 		/******************************************************
 		 ********************** START GAME**********************
