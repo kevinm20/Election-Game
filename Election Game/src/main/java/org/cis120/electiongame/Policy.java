@@ -37,10 +37,10 @@ public class Policy extends Card {
     // This method was not very fun...
     public String setCategory(String s) {
         switch (s) {
-            case ("Tough Foreign Policy"):
-                return "Tough Foreign Policy vs. Isolationism";
+            case ("Imperialism"):
+                return "Imperialism vs. Isolationism";
             case ("Isolationism"):
-                return "Tough Foreign Policy vs. Isolationism";
+                return "Imperialism vs. Isolationism";
             case ("Tax Cuts"):
                 return "Tax Cuts vs. Social Programs";
             case ("Social Programs"):
@@ -74,9 +74,9 @@ public class Policy extends Card {
             case ("Egalitarianism"):
                 return "Social Hierarchy vs. Egalitarianism";
             case ("Laissez-Faire"):
-                return "Laissez-Faire vs. Strategic Investments";
-            case ("Strategic Investments"):
-                return "Laissez-Faire vs. Strategic Investments";
+                return "Laissez-Faire vs. Internal Improvements";
+            case ("Internal Improvements"):
+                return "Laissez-Faire vs. Internal Improvements";
             case ("Closed Borders"):
                 return "Closed Borders vs. Open Borders";
             case ("Open Borders"):
@@ -90,9 +90,9 @@ public class Policy extends Card {
             case ("Implied Powers"):
                 return "Constructionism vs. Implied Powers";
             case ("Law and Order"):
-                return "Law and Order vs. Personal Freedom";
-            case ("Personal Freedom"):
-                return "Law and Order vs. Personal Freedom";
+                return "Law and Order vs. Civil Liberties";
+            case ("Civil Liberties"):
+                return "Law and Order vs. Civil Liberties";
             case ("Central Bank"):
                 return "Central Bank vs. Anti-Central Bank";
             case ("Anti-Central Bank"):
