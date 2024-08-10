@@ -1404,8 +1404,12 @@ public class RunElectionGameCombined implements Runnable {
 			this.hand = election.getActivePlayer().getPolicies();
 
 			for (Policy curr : hand) {
+				//System.out.println(curr);
+				//try {
 				ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
 						.getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+					
+				
 				final JButton usercd = new JButton(img);
 				this.add(usercd);
 				usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
@@ -1439,6 +1443,7 @@ public class RunElectionGameCombined implements Runnable {
 						}
 					}
 				});
+				//} catch (Exception ex) { System.out.println("Error:" + curr); }
 
 			}
 
