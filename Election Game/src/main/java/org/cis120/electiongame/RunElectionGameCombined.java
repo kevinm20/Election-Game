@@ -23,6 +23,10 @@ import javax.swing.*;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Window;
+
 
 /**
  * This class sets up the top-level frame and widgets for the GUI.
@@ -79,9 +83,11 @@ public class RunElectionGameCombined implements Runnable {
 		// Used to track stats
 		long startTime = System.nanoTime();
 
-		// Top-level frame in which game components live
-		final JFrame frame = new JFrame("Election Game");
-		frame.setLocation(0, 0);
+		 // Top-level frame in which game components live
+	    final JFrame frame = new JFrame("Election Game");
+
+	    // Set the frame to be undecorated before making it displayable
+	    frame.setUndecorated(true);
 
 		// User Policy Deck, I added a scrollbar since you get 18 policies
 		up = new UserPolicies();
@@ -189,7 +195,7 @@ public class RunElectionGameCombined implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
 						|| election.getActivePinnedPolicies().get(1) == null) {
-					JOptionPane.showMessageDialog(null, "Error: you haven't played all cards!", "Error",
+					JOptionPane.showMessageDialog(frame, "Error: you haven't played all cards!", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				} else {
 					if (!mode) {
@@ -217,7 +223,7 @@ public class RunElectionGameCombined implements Runnable {
 							user_cards.hideCards(4);
 							up.hideCards();
 							board.draw();
-							JOptionPane.showMessageDialog(null, "Please pass the computer to Player 2.");
+							JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 2.");
 							user_cards.paintCards();
 							up.paintCards();
 							board.draw();
@@ -226,7 +232,7 @@ public class RunElectionGameCombined implements Runnable {
 							up.hideCards();
 							board.flipUser();
 							board.draw();
-							JOptionPane.showMessageDialog(null, "Click 'OK' when both players are ready!");
+							JOptionPane.showMessageDialog(frame, "Click 'OK' when both players are ready!");
 							board.flipUser();
 							// election.printGameState();
 
@@ -248,16 +254,16 @@ public class RunElectionGameCombined implements Runnable {
 					if (!mode || election.getTurn()) {
 						setLabel(status);
 						status.repaint();
-						JOptionPane.showMessageDialog(null, election.getMessage());
+						JOptionPane.showMessageDialog(frame, election.getMessage());
 						if (election.getAchievement() != null) {
-							JOptionPane.showMessageDialog(null, election.getAchievement());
+							JOptionPane.showMessageDialog(frame, election.getAchievement());
 						}
 
 						if (election.checkWinner() == 1) {
-							JOptionPane.showMessageDialog(null,
+							JOptionPane.showMessageDialog(frame,
 									election.getPlayer1().getName() + " has won!!! " + election.finalScore(true));
 							if (mode) {
-								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
+								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
 							}
 							cumulativeWins++;
 							cumulativeGames++;
@@ -268,10 +274,10 @@ public class RunElectionGameCombined implements Runnable {
 							setLabel(status);
 							status.repaint();
 						} else if (election.checkWinner() == 2) {
-							JOptionPane.showMessageDialog(null,
+							JOptionPane.showMessageDialog(frame,
 									election.getPlayer2().getName() + " has won!!! " + election.finalScore(false));
 							if (mode) {
-								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
+								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
 							}
 							cumulativeGames++;
 							election.reset(deckSet, null, 0.0, 5);
@@ -286,7 +292,7 @@ public class RunElectionGameCombined implements Runnable {
 							board.flipCPU();
 							board.draw();
 							if (mode) {
-								JOptionPane.showMessageDialog(null, "Please pass the computer to Player 1.");
+								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
 							}
 							user_cards.paintCards();
 							up.paintCards();
@@ -323,7 +329,7 @@ public class RunElectionGameCombined implements Runnable {
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!askToResign) {
-					JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
+					JOptionPane.showMessageDialog(frame, "You have resigned. " + election.finalScore(false));
 					cumulativeGames++;
 					election.reset(deckSet, null, 0.0, 5);
 					setLabel(status);
@@ -333,11 +339,11 @@ public class RunElectionGameCombined implements Runnable {
 					board.reset();
 				} else {
 					Object[] resignOptions = { "Yes and don't ask again", "Yes", "No" };
-					int resignChoice = JOptionPane.showOptionDialog(null, "Are you sure you would like to resign?",
+					int resignChoice = JOptionPane.showOptionDialog(frame, "Are you sure you would like to resign?",
 							"Resign", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, resignOptions, 2);
 
 					if (resignChoice == 0 || !askToResign || resignChoice == 1) {
-						JOptionPane.showMessageDialog(null, "You have resigned. " + election.finalScore(false));
+						JOptionPane.showMessageDialog(frame, "You have resigned. " + election.finalScore(false));
 						if (resignChoice == 0) {
 							askToResign = !askToResign;
 						}
@@ -376,11 +382,11 @@ public class RunElectionGameCombined implements Runnable {
 		help.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object[] settingOptions = { "Card Info", "Instructions" };
-				int helpMode = JOptionPane.showOptionDialog(null, "What would you like help with?", "Help",
+				int helpMode = JOptionPane.showOptionDialog(frame, "What would you like help with?", "Help",
 						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, settingOptions, -1);
 
 				if (helpMode == 1) {
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(frame,
 							"Welcome to Election Game! First, I will explain how to play the game in s"
 									+ "hort, and then we'll dive into the details of each card. \n"
 									+ "Simply put, each round, there is a certain election chosen. You d"
@@ -389,7 +395,7 @@ public class RunElectionGameCombined implements Runnable {
 									+ " to play your best combo of these cards. A new election is chos"
 									+ "en each round\n" + " and the game is best-of-five.\n"
 									+ "Now, we'll look at each type of card.");
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(frame,
 							"The first type of card is an ELECTION CARD. There is one for each US elec"
 									+ "tion historically. In the 'Context' section, the election will" + " imply wh"
 									+ "at attributes\n"
@@ -399,7 +405,7 @@ public class RunElectionGameCombined implements Runnable {
 									+ " of scoring will be explained last.\n"
 									+ "Finally, each election has a 'swing region', and if your Preside"
 									+ "nt is from the same region, you receive a bonus.");
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(frame,
 							"The next type of card is a PRESIDENT CARD. They are a combination of all"
 									+ " US presidents, and other prominent political figures. These ca" + "rds have"
 									+ " quite a decent amount of information.\n"
@@ -421,7 +427,7 @@ public class RunElectionGameCombined implements Runnable {
 									+ "get bonuses if the policies played 'match' the candidates ideo" + "logy.\n"
 									+ "Finally, each candidate also has a 'Marquee Policy', which always"
 									+ " gives them a bonus if paired with the candidate.");
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(frame,
 							"Last, here is the specific breakdown of the scoring for each round: \n"
 									+ "First, add the two key attributes of the president card, based "
 									+ "on the desired attributes of the election.\n"
@@ -541,7 +547,7 @@ public class RunElectionGameCombined implements Runnable {
 
 				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice",
 						"Change Card Size" };
-				int settingToChange = JOptionPane.showOptionDialog(null,
+				int settingToChange = JOptionPane.showOptionDialog(frame,
 						"Stats for " + election.getPlayer1().getName() + " this session: \n" + "Total play time: "
 								+ totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" + "Total wins: "
 								+ cumulativeWins + " wins out of " + cumulativeGames + " (" + winPct + "%). \n \n"
@@ -553,7 +559,7 @@ public class RunElectionGameCombined implements Runnable {
 				if (settingToChange == 0) {
 					String playername = election.getActivePlayer().getName();
 
-					playername = JOptionPane.showInputDialog(null, "What would you like to change your name to?");
+					playername = JOptionPane.showInputDialog(frame, "What would you like to change your name to?");
 					election.nameActivePlayer(playername);
 					setLabel(status);
 					status.repaint();
@@ -562,7 +568,7 @@ public class RunElectionGameCombined implements Runnable {
 				// Change Difficulty
 				if (settingToChange == 1) {
 					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-					int diff = JOptionPane.showOptionDialog(null, "What would you like to change the AI difficulty to?",
+					int diff = JOptionPane.showOptionDialog(frame, "What would you like to change the AI difficulty to?",
 							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
 							election.aiDifficulty);
 					String difficulty = "Medium";
@@ -591,7 +597,7 @@ public class RunElectionGameCombined implements Runnable {
 					// Add back memes?
 					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Generational",
 							"Custom" };
-					int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
+					int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
 							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
 					if (deck == 0) {
@@ -633,7 +639,7 @@ public class RunElectionGameCombined implements Runnable {
 								panel.add(checkBox);
 							}
 
-							int result = JOptionPane.showConfirmDialog(null, panel, "Select tags",
+							int result = JOptionPane.showConfirmDialog(frame, panel, "Select tags",
 									JOptionPane.OK_CANCEL_OPTION);
 
 							if (result == JOptionPane.OK_OPTION) {
@@ -650,7 +656,7 @@ public class RunElectionGameCombined implements Runnable {
 								selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
 
 								// This might crash stuff
-								double minRating = Double.parseDouble(JOptionPane.showInputDialog(null,
+								double minRating = Double.parseDouble(JOptionPane.showInputDialog(frame,
 										"What would you like the minimum weighted average rating of a card to be?"));
 
 								deckSet = "custom";
@@ -674,7 +680,7 @@ public class RunElectionGameCombined implements Runnable {
 				// Change card size
 				if (settingToChange == 3) {
 				    try {
-				        int newCardSize = Integer.parseInt(JOptionPane.showInputDialog(null,
+				        int newCardSize = Integer.parseInt(JOptionPane.showInputDialog(frame,
 				                "What would you like the new card size to be (current is " + cardSize + ")?"));
 				        if (newCardSize < 10) {
 				            newCardSize = 10;
@@ -806,12 +812,15 @@ public class RunElectionGameCombined implements Runnable {
 		// Set the icon image for the frame
 		frame.setIconImage(logoIcon.getImage());
 		
-		// Put the frame on the screen
-		frame.pack();
+		// Pack and set the frame to full-screen mode
+	    frame.pack();
 		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setVisible(true);
-		user_cards.hideCards(5);		
+
+	    
+	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	    frame.setVisible(true);
+	    user_cards.hideCards(5);
+		
 
 
 		/******************************************************
@@ -877,7 +886,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Now, open up the login menu
 		Object[] loginOptions = { "Continue as " + activeAccount, "Change Account", "Continue as Guest" };
-		int loginMode = JOptionPane.showOptionDialog(null,
+		int loginMode = JOptionPane.showOptionDialog(frame,
 				"Welcome back to Election Game " + activeAccount + "! Login below:", "Login",
 				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, loginOptions, loginOptions[2]);
 
@@ -924,7 +933,7 @@ public class RunElectionGameCombined implements Runnable {
 					e.printStackTrace();
 				}
 			}
-			int loginAccountOption = JOptionPane.showOptionDialog(null,
+			int loginAccountOption = JOptionPane.showOptionDialog(frame,
 					"Welcome back to Election Game " + activeAccount + "! Login below:", "Login",
 					JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList, accountList[0]);
 			// Continue as the selected account
@@ -998,13 +1007,13 @@ public class RunElectionGameCombined implements Runnable {
 				// First find what choice the user wants to make
 				// WIP
 				Object[] editOptions = { "Delete Account", "Edit Account", "New Account" };
-				int editAccountOption = JOptionPane.showOptionDialog(null, "How would you like to edit the accounts?",
+				int editAccountOption = JOptionPane.showOptionDialog(frame, "How would you like to edit the accounts?",
 						"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, editOptions,
 						editOptions[2]);
 				// Delete Account
 				if (editAccountOption == 0) {
 					// First, choose which account to delete
-					int deleteOption = JOptionPane.showOptionDialog(null, "Which account would you like to delete?",
+					int deleteOption = JOptionPane.showOptionDialog(frame, "Which account would you like to delete?",
 							"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
 							accountList[0]);
 					String acctToDelete = accountList[deleteOption];
@@ -1048,25 +1057,25 @@ public class RunElectionGameCombined implements Runnable {
 					// Choose account to edit
 					String newAcctName = null;
 					if (editAccountOption == 1) {
-						int editOption = JOptionPane.showOptionDialog(null, "Which account would you like to edit?",
+						int editOption = JOptionPane.showOptionDialog(frame, "Which account would you like to edit?",
 								"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
 								accountList[0]);
 						newAcctName = accountList[editOption];
 					} else {
 						// Choose new settings
 						// Name
-						newAcctName = JOptionPane.showInputDialog(null, "What would you like the account name to be?");
+						newAcctName = JOptionPane.showInputDialog(frame, "What would you like the account name to be?");
 					}
 					// AI difficulty
 					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-					int diff = JOptionPane.showOptionDialog(null, "Choose the difficulty of the AI:",
+					int diff = JOptionPane.showOptionDialog(frame, "Choose the difficulty of the AI:",
 							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
 							diffs[1]);
 					String aiDifficulty = (String) diffs[diff];
 					// Deck choice
 					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational",
 							"Custom" };
-					int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
+					int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
 							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 					String deckChoice = (String) cardDecks[deck];
 					String acctLine = newAcctName + "," + aiDifficulty + "," + deckChoice;
@@ -1111,7 +1120,7 @@ public class RunElectionGameCombined implements Runnable {
 						}
 					}
 					// Now, begin the game.
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(frame,
 							"Account settings updated. You will now begin a new game with the updated account!");
 					// First, change the active account.
 					BufferedReader reader4 = null;
@@ -1165,7 +1174,7 @@ public class RunElectionGameCombined implements Runnable {
 			 **********************/
 
 			Object[] options = { "1-Player", "2-Player"};
-			int gameMode = JOptionPane.showOptionDialog(null, "Welcome to Election Game! Please select your game mode:",
+			int gameMode = JOptionPane.showOptionDialog(frame, "Welcome to Election Game! Please select your game mode:",
 					"Select Game Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options,
 					options[0]);
 
@@ -1178,10 +1187,10 @@ public class RunElectionGameCombined implements Runnable {
 				// Name Player 1
 				String playername = "Player 1";
 				if (mode) {
-					playername = JOptionPane.showInputDialog(null,
+					playername = JOptionPane.showInputDialog(frame,
 							"Hello and welcome to the Election Game! Player 1, please enter your name: ");
 				} else {
-					playername = JOptionPane.showInputDialog(null,
+					playername = JOptionPane.showInputDialog(frame,
 							"Hello and welcome to the Election Game! Please enter your name: ");
 					election.namePlayer2("CPU");
 				}
@@ -1191,13 +1200,13 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Name Player 2 or set AI difficulty
 				if (mode) {
-					String player2name = JOptionPane.showInputDialog(null, "Player 2, please enter your name: ");
+					String player2name = JOptionPane.showInputDialog(frame, "Player 2, please enter your name: ");
 					election.namePlayer2(player2name);
 					setLabel(status);
 					status.repaint();
 				} else {
 					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-					int diff = JOptionPane.showOptionDialog(null, "Choose the difficulty of the AI:",
+					int diff = JOptionPane.showOptionDialog(frame, "Choose the difficulty of the AI:",
 							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
 							diffs[1]);
 					String difficulty = "Medium";
@@ -1222,7 +1231,7 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Add back "memes"?
 				Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Generational", "Custom" };
-				int deck = JOptionPane.showOptionDialog(null, "Choose the game deck:", "Select Deck",
+				int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
 						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
 				if (deck == 0) {
@@ -1262,7 +1271,7 @@ public class RunElectionGameCombined implements Runnable {
 							panel.add(checkBox);
 						}
 
-						int result = JOptionPane.showConfirmDialog(null, panel, "Select tags",
+						int result = JOptionPane.showConfirmDialog(frame, panel, "Select tags",
 								JOptionPane.OK_CANCEL_OPTION);
 
 						if (result == JOptionPane.OK_OPTION) {
@@ -1279,7 +1288,7 @@ public class RunElectionGameCombined implements Runnable {
 							selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
 
 							// This might crash stuff
-							double minRating = Double.parseDouble(JOptionPane.showInputDialog(null,
+							double minRating = Double.parseDouble(JOptionPane.showInputDialog(frame,
 									"What would you like the minimum weighted average rating of a card to be?"));
 
 							deckSet = "custom";
@@ -1533,6 +1542,7 @@ public class RunElectionGameCombined implements Runnable {
 	public class GameBoard extends JPanel {
 		private boolean cpuPlayed;
 		private boolean hideUsers;
+	    private boolean electionCardZoomed = false; // Track if the election card is zoomed in
 
 		// Game constants
 		public static final int BOARD_WIDTH = 600;
@@ -1577,6 +1587,7 @@ public class RunElectionGameCombined implements Runnable {
 				cardSize = 225;
 			}
 
+			if (!electionCardZoomed) {
 			for (int i = 0; i < 2; i++) {
 				if (hideUsers && mode) {
 					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
@@ -1638,23 +1649,34 @@ public class RunElectionGameCombined implements Runnable {
 				final JLabel label = new JLabel(usercard);
 				this.add(label);
 			}
-
-			/*
-			 * Current Election Card
-			 */
-
-			if (starting) {
-				ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-						.getImage().getScaledInstance((int) (0.888888889 * cardSize), (int) (1.17777778 * cardSize), Image.SCALE_SMOOTH));
-				final JLabel elec = new JLabel(currelection);
-				this.add(elec);
-			} else {
-				ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getElection().getImageURL()))
-						.getImage().getScaledInstance((int) (0.888888889 * cardSize), (int) (1.17777778 * cardSize), Image.SCALE_SMOOTH));
-				final JLabel elec = new JLabel(currelection);
-				this.add(elec);
 			}
+			/*
+	         * Current Election Card
+	         */
+	        final int electionCardWidth = electionCardZoomed ? (int) (0.888888889 * cardSize * 1.75) : (int) (0.888888889 * cardSize);
+	        final int electionCardHeight = electionCardZoomed ? (int) (1.17777778 * cardSize * 1.75) : (int) (1.17777778 * cardSize);
 
+	        if (starting) {
+	            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+	                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
+	            final JLabel elec = new JLabel(currelection);
+	            this.add(elec);
+	        } else {
+	            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getElection().getImageURL()))
+	                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
+	            final JLabel elec = new JLabel(currelection);
+	            this.add(elec);
+
+	            // Add mouse listener to toggle zoom
+	            elec.addMouseListener(new MouseAdapter() {
+	                @Override
+	                public void mouseReleased(MouseEvent e) {
+	                    electionCardZoomed = !electionCardZoomed; // Toggle the zoom state
+	                    draw(); // Redraw the board to update the size of the election card
+	                }
+	            });
+	        }
+	        if (!electionCardZoomed) {
 			/*
 			 * CPU Pinned Cards
 			 */
@@ -1744,6 +1766,7 @@ public class RunElectionGameCombined implements Runnable {
 				cpupin.setLayout(new GridLayout(2, 1));
 				this.add(cpupin);
 			}
+	        }
 			repaint();
 		}
 
