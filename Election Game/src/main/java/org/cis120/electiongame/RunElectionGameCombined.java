@@ -223,14 +223,15 @@ public class RunElectionGameCombined implements Runnable {
 		// GridBagConstraints setup
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.fill = GridBagConstraints.BOTH;
-		gbc.insets = new Insets(10, 10, 10, 10); // Padding around buttons
+		int insetSize = (int) (cardSize/275.0 * 10.0);
+		gbc.insets = new Insets(insetSize, insetSize, insetSize, insetSize); // Padding around buttons
 
 		// Play button: Where most of the real action happens
 		final JButton play = new JButton();
 
 		// Set the button preferences
 		play.setContentAreaFilled(false);
-		play.setPreferredSize(new Dimension((int)(cardSize / 225.0 * 175), (int)(cardSize / 225.0 * 40)));
+		play.setPreferredSize(new Dimension((int)(cardSize / 275.0 * 193), (int)(cardSize / 275.0 * 110)));
 		play.setBorderPainted(false);
 
 		// Load the initial icons
@@ -238,23 +239,23 @@ public class RunElectionGameCombined implements Runnable {
 		ImageIcon playHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/playhover.PNG"));
 		ImageIcon playClickIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/playclicked.PNG"));
 
-		// Calculate initial scaling based on the button's preferred size
-		int buttonWidth = (int)(cardSize / 225.0 * 175);
-		int buttonHeight = (int)(cardSize / 225.0 * 40);
+		// Get the exact dimensions of the button
+		int buttonWidth = play.getPreferredSize().width;
+		int buttonHeight = play.getPreferredSize().height;
+		
+		System.out.println("Button size: " + buttonWidth + " + " + buttonHeight);
 
-		// Scale the icons according to the button's initial size
-		int scaledWidth = (int)(160.0 / 175.0 * buttonWidth);
-		int scaledHeight = (int)(85.0 / 40.0 * buttonHeight);
-
-		play.setIcon(new ImageIcon(playIcon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH)));
-		play.setRolloverIcon(new ImageIcon(playHoverIcon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH)));
-		play.setPressedIcon(new ImageIcon(playClickIcon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH)));
+		// Scale the icons to fit exactly within the button dimensions
+		play.setIcon(new ImageIcon(playIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+		play.setRolloverIcon(new ImageIcon(playHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+		play.setPressedIcon(new ImageIcon(playClickIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
 		// Revalidate and repaint to apply the changes
 		play.revalidate();
 		play.repaint();
 
-				
+		System.out.println("Painted image size: " + play.getSize());
+		
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// Play the button click sound
@@ -380,17 +381,21 @@ public class RunElectionGameCombined implements Runnable {
 		ImageIcon resignHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/resignhover.PNG"));
 		ImageIcon resignClickIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/resignclicked.PNG"));
 
-		// Create the reset button with the resign icon
-		final JButton reset = new JButton(new ImageIcon(resignIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+		// Create the reset button with the resign icon scaled to buttonWidth and buttonHeight
+		final JButton reset = new JButton(new ImageIcon(resignIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
-		// Set the rollover icon to the hover image
-		reset.setRolloverIcon(new ImageIcon(resignHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
-		reset.setPressedIcon(new ImageIcon(resignClickIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
-		
+		// Set the rollover icon to the hover image, scaled to buttonWidth and buttonHeight
+		reset.setRolloverIcon(new ImageIcon(resignHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+
+		// Set the pressed icon to the clicked image, scaled to buttonWidth and buttonHeight
+		reset.setPressedIcon(new ImageIcon(resignClickIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+
 		// Set button preferences
 		reset.setContentAreaFilled(false); // Remove default button background
 		reset.setBorderPainted(false);     // Remove button border
-		reset.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
+
+		// Set the preferred size of the button to buttonWidth and buttonHeight
+		reset.setPreferredSize(new Dimension(buttonWidth, buttonHeight)); // Set preferred size
 
 		
 		reset.addActionListener(new ActionListener() {
@@ -435,18 +440,20 @@ public class RunElectionGameCombined implements Runnable {
 		ImageIcon helpHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/helphover.PNG"));
 		ImageIcon helpClickIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/helpclicked.PNG"));
 
+		// Create the help button with the help icon scaled to buttonWidth and buttonHeight
+		final JButton help = new JButton(new ImageIcon(helpIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
-		// Create the help button with the help icon
-		final JButton help = new JButton(new ImageIcon(helpIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+		// Set the rollover icon to the hover image, scaled to buttonWidth and buttonHeight
+		help.setRolloverIcon(new ImageIcon(helpHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
-		// Set the rollover icon to the hover image
-		help.setRolloverIcon(new ImageIcon(helpHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
-		help.setPressedIcon(new ImageIcon(helpClickIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
-		
+		// Set the pressed icon to the clicked image, scaled to buttonWidth and buttonHeight
+		help.setPressedIcon(new ImageIcon(helpClickIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+
 		// Set button preferences
 		help.setContentAreaFilled(false); // Remove default button background
 		help.setBorderPainted(false);     // Remove button border
-		help.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
+		help.setPreferredSize(new Dimension(buttonWidth, buttonHeight)); // Set preferred size
+
 
 		help.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -525,25 +532,19 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Load the icons for both modes
 		ImageIcon policiesIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policies.PNG"));
-		ImageIcon policiesHoverIcon = new ImageIcon(
-				getClass().getClassLoader().getResource(prefix + "files/policieshover.PNG"));
-		ImageIcon presidentsIcon = new ImageIcon(
-				getClass().getClassLoader().getResource(prefix + "files/presidents.PNG"));
-		ImageIcon presidentsHoverIcon = new ImageIcon(
-				getClass().getClassLoader().getResource(prefix + "files/presidentshover.PNG"));
-		ImageIcon policiesClickIcon = new ImageIcon(
-				getClass().getClassLoader().getResource(prefix + "files/policiesclicked.PNG"));
-		ImageIcon presidentsClickIcon = new ImageIcon(
-				getClass().getClassLoader().getResource(prefix + "files/presidentsclicked.PNG"));
-		
-		
-		// Pre-scale all icons during initialization
-		ImageIcon policiesIconScaled = new ImageIcon(policiesIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH));
-		ImageIcon policiesHoverIconScaled = new ImageIcon(policiesHoverIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH));
-		ImageIcon policiesClickIconScaled = new ImageIcon(policiesClickIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH));
-		ImageIcon presidentsIconScaled = new ImageIcon(presidentsIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH));
-		ImageIcon presidentsHoverIconScaled = new ImageIcon(presidentsHoverIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH));
-		ImageIcon presidentsClickIconScaled = new ImageIcon(presidentsClickIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH));
+		ImageIcon policiesHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policieshover.PNG"));
+		ImageIcon presidentsIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidents.PNG"));
+		ImageIcon presidentsHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentshover.PNG"));
+		ImageIcon policiesClickIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policiesclicked.PNG"));
+		ImageIcon presidentsClickIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentsclicked.PNG"));
+
+		// Pre-scale all icons during initialization using buttonWidth and buttonHeight
+		ImageIcon policiesIconScaled = new ImageIcon(policiesIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH));
+		ImageIcon policiesHoverIconScaled = new ImageIcon(policiesHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH));
+		ImageIcon policiesClickIconScaled = new ImageIcon(policiesClickIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH));
+		ImageIcon presidentsIconScaled = new ImageIcon(presidentsIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH));
+		ImageIcon presidentsHoverIconScaled = new ImageIcon(presidentsHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH));
+		ImageIcon presidentsClickIconScaled = new ImageIcon(presidentsClickIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH));
 
 		// Create the swap button with initial policies icon
 		final JButton swap = new JButton();
@@ -551,18 +552,13 @@ public class RunElectionGameCombined implements Runnable {
 		// Set button preferences
 		swap.setContentAreaFilled(false); // Remove default button background
 		swap.setBorderPainted(false); // Remove button border
-		swap.setPreferredSize(new Dimension((int) (cardSize / 225.0 * 175), (int) (cardSize / 225.0 * 40))); // Set
-																												// preferred
-																												// size
+		swap.setPreferredSize(new Dimension(buttonWidth, buttonHeight)); // Set preferred size
 
-		// Initialize the button to start with the "policies" icon and add the initial
-		// component
-		swap.setIcon(new ImageIcon(policiesIcon.getImage().getScaledInstance((int) (cardSize / 225.0 * 160),
-				(int) (cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
-		swap.setRolloverIcon(new ImageIcon(policiesHoverIcon.getImage()
-				.getScaledInstance((int) (cardSize / 225.0 * 160), (int) (cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
-		swap.setPressedIcon(new ImageIcon(policiesClickIcon.getImage().getScaledInstance((int) (cardSize / 225.0 * 160),
-				(int) (cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		// Initialize the button to start with the "policies" icon and add the initial component
+		swap.setIcon(policiesIconScaled);
+		swap.setRolloverIcon(policiesHoverIconScaled);
+		swap.setPressedIcon(policiesClickIconScaled);
+
 
 		// Initially display the president deck at the bottom
 		frame.add(user_cards, BorderLayout.SOUTH);
@@ -607,16 +603,17 @@ public class RunElectionGameCombined implements Runnable {
 		ImageIcon settingsClickedIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/settingsclicked.PNG"));
 
 		// Create the stats button with the settings icon
-		final JButton stats = new JButton(new ImageIcon(settingsIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
+		final JButton stats = new JButton(new ImageIcon(settingsIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
 		// Set the rollover icon to the hover image
-		stats.setRolloverIcon(new ImageIcon(settingsHoverIcon.getImage().getScaledInstance((int)(cardSize/225.0*160), (int)(cardSize/225.0*85), Image.SCALE_SMOOTH)));
-		stats.setPressedIcon(new ImageIcon(settingsClickedIcon.getImage().getScaledInstance((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
+		stats.setRolloverIcon(new ImageIcon(settingsHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+		stats.setPressedIcon(new ImageIcon(settingsClickedIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
 		// Set button preferences
 		stats.setContentAreaFilled(false); // Remove default button background
 		stats.setBorderPainted(false);     // Remove button border
-		stats.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*40))); // Set preferred size
+		stats.setPreferredSize(new Dimension(buttonWidth, buttonHeight)); // Set preferred size
+
 
 		stats.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
