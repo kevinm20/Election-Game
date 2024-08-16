@@ -93,23 +93,6 @@ public class RunElectionGameCombined implements Runnable {
 	public void run() {
 		// Used to track stats
 		long startTime = System.nanoTime();
-		
-		/*
-	    // Make a loading/starting screen with this info
-		// Make a function here that gets full screen size
-	    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	    int screenWidth = screenSize.width;
-	    int screenHeight = screenSize.height;
-	    
-	    screenWidth = 1900;
-	    screenHeight = 1200;
-	    
-	    // Figure out the actual math here
-	    cardSize = 275;
-	    
-	    System.out.println("Card Size: " + cardSize);
-	    */
-	    
 
 		// Top-level frame in which game components live
 	    final JFrame frame = new JFrame("Election Game");
@@ -146,8 +129,9 @@ public class RunElectionGameCombined implements Runnable {
 		int frameWidth = frame.getWidth();
 		int frameHeight = frame.getHeight();
 		
-		cardSize = (int)(frameWidth/1900.0*275.0);
-
+		cardSize = (int)(frameWidth/1920.0*275.0);
+		
+		System.out.println("Card Size: " + cardSize);
 	    
 	    // Initialize soundtrack
 	    List<String> tracks = Arrays.asList(
@@ -236,20 +220,19 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Height and width ratios for the decks area
 		double deckHeightRatio = 697.0 / 1200.0;
-		double deckWidthRatio = 211.0 / 1900.0;
+		double deckWidthRatio = 215.0 / 1920.0;
 		double deckStartYRatio = 106.0 / 1200.0;
 		double deckStartXRatio = 0.0; // Start cropping from the left side of the image
 
 		// Using the new constructor with cropping starting from a specific position
 		BackgroundPanel decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
-		deckWidthRatio = decks.getWidth()/frameWidth;
-		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 
 		JLabel logoLabel = new JLabel(logoIcon);
 		decks.add(logoLabel);
 
 		frame.add(decks, BorderLayout.WEST);
+
 		final JLabel status = new JLabel(election.currentScore(), SwingConstants.CENTER);
 		setLabel(status);
 		decks.add(status);
@@ -259,7 +242,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Control panel with custom background
 		double controlPanelHeightRatio = 697.0 / 1200.0; // Same height ratio as decks
-		double controlPanelWidthRatio = 210.0 / 1900.0; // Width ratio for the control panel
+		double controlPanelWidthRatio = 215.0 / 1920.0; // Width ratio for the control panel
 		double controlPanelStartYRatio = 106.0 / 1200.0; // Start after AI cards area (same as decks)
 		double controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
 
@@ -270,10 +253,6 @@ public class RunElectionGameCombined implements Runnable {
 		    controlPanelWidthRatio, 
 		    controlPanelStartXRatio
 		);
-		
-		controlPanelWidthRatio = control_panel.getWidth()/frameWidth;
-		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
-		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
 		
 		control_panel.setLayout(new GridBagLayout()); // Set layout after initializing the panel
 		
@@ -989,7 +968,6 @@ public class RunElectionGameCombined implements Runnable {
 		    }
 		}
 
-		
 		control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 		//control_panel.setLayout(new GridLayout(5, 1));
 		frame.add(control_panel, BorderLayout.EAST);
@@ -1006,6 +984,9 @@ public class RunElectionGameCombined implements Runnable {
 		UIManager.put("OptionPane.buttonFont", initialFont);
 
 	    user_cards.hideCards(5);
+	    
+	    System.out.println("Deck width: " + decks.getWidth());
+		System.out.println("Frame width: " + frameWidth);
 		
 	    /*
 	    System.out.println("AI Cards: " + ai_cards.getSize());
@@ -1506,6 +1487,18 @@ public class RunElectionGameCombined implements Runnable {
 		user_cards.paintCards();
 		starting = false;
 		board.draw();
+				
+		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
+
+		controlPanelWidthRatio = (double) control_panel.getWidth()/(double) frameWidth;
+		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
+		
+		System.out.println("Deck width: " + decks.getWidth());
+		System.out.println("Frame width: " + frameWidth);
+		
+		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
 		
 		frame.remove(loadingScreen);
 		frame.revalidate();
@@ -1838,6 +1831,8 @@ public class RunElectionGameCombined implements Runnable {
 	    private boolean electionCardZoomed = false; // Track if the election card is zoomed in
 	    private Image backgroundImage; // To hold the background image
 	    private SoundtrackPlayer player;
+	    private double xref;
+	    private double frameXRef;
 
 		// Game constants
 		public static final int BOARD_WIDTH = 600;
@@ -1853,7 +1848,9 @@ public class RunElectionGameCombined implements Runnable {
 
 			// Load the background image
 	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
-
+	        xref = 215.0;
+	        frameXRef = 1920.0;
+	        
 			draw();
 
 			addMouseListener(new MouseAdapter() {
@@ -1863,6 +1860,12 @@ public class RunElectionGameCombined implements Runnable {
 					repaint(); // repaints the game board
 				}
 			});
+		}
+		
+		// For background
+		public void setRefs(double ref, double frameRef) {
+			xref=ref;
+			frameXRef=frameRef;
 		}
 
 		// Flip CPU cards when cards are played
@@ -2096,10 +2099,12 @@ public class RunElectionGameCombined implements Runnable {
 		        int imageWidth = bufferedImage.getWidth();
 		        int imageHeight = bufferedImage.getHeight();
 
+		        System.out.println("Deck xref: " + xref);
+				System.out.println("Frame xref: " + frameXRef);
 		        // Calculate the cropping parameters for the board
-		        int cropStartX = (int) (211.5 / 1900.0 * imageWidth); // Start X at 213/1900 from the left
+		        int cropStartX = (int) (xref / frameXRef * imageWidth); // Start X at 213/1900 from the left
 		        int cropStartY = (int) (106.0 / 1200.0 * imageHeight); // Start Y at 106/1200 from the top
-		        int cropWidth = (int) ((imageWidth * (1 - 2 * 211 / 1900.0))); // Width from 213/1900 from the left to 213/1900 from the right
+		        int cropWidth = (int) ((imageWidth * (1 - 2 * (xref - 0.5) / frameXRef))); // Width from 213/1900 from the left to 213/1900 from the right
 		        int cropHeight = (int) (679.0 / 1200.0 * imageHeight); // Height from 106/1200 to 679/1200
 
 		        // Crop the BufferedImage
