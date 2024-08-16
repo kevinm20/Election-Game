@@ -111,13 +111,42 @@ public class RunElectionGameCombined implements Runnable {
 	    */
 	    
 
-		 // Top-level frame in which game components live
+		// Top-level frame in which game components live
 	    final JFrame frame = new JFrame("Election Game");
 	    
-	    //System.out.println(screenWidth + " " + screenHeight);
+	    // Create a loading screen panel with the desired background image
+	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
+	    // Set up the layout and add the loading screen to the frame
+	    frame.setLayout(new BorderLayout());
+	    frame.add(loadingScreen, BorderLayout.CENTER);
 
-	    // Size add the loading screen, first buttons, and size the frame.
-	    // frame.setSize(screenWidth, screenHeight);
+		// Add the logo to the top left
+		ImageIcon logoIcon = new ImageIcon(
+				new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG")).getImage()
+						.getScaledInstance((int) (cardSize / 225.0 * 100), (int) (cardSize / 225.0 * 100),
+								Image.SCALE_SMOOTH));
+		// Set the icon image for the frame
+		frame.setIconImage(logoIcon.getImage());
+		
+	    // Set the frame to be undecorated before making it displayable
+	    frame.setUndecorated(true);
+
+		// Pack and set the frame to full-screen mode
+		frame.pack();
+		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setVisible(true);
+		frame.requestFocus();
+		
+		frame.revalidate();
+		frame.repaint();
+		
+		// Get the frame stats
+	 	    
+		int frameWidth = frame.getWidth();
+		int frameHeight = frame.getHeight();
+		
+		cardSize = (int)(frameWidth/1900.0*275.0);
 
 	    
 	    // Initialize soundtrack
@@ -131,7 +160,19 @@ public class RunElectionGameCombined implements Runnable {
             "src/main/resources/files/starspangledbanner.MP3",
             "src/main/resources/files/whenjohnnycomesmarchinghome.MP3",
             "src/main/resources/files/yankeedoodle.MP3",
-            "src/main/resources/files/youreagrandoldflag.MP3"
+            "src/main/resources/files/youreagrandoldflag.MP3",
+            "src/main/resources/files/camptownraces.MP3",
+            "src/main/resources/files/itsalonglongwaytotipperary.MP3",
+            "src/main/resources/files/justlikewashingtoncrossedthedelawaregeneralpershingwillcrosstherhine.MP3",
+            "src/main/resources/files/myoldkentuckyhome.MP3",
+            "src/main/resources/files/onthealamo.MP3",
+            "src/main/resources/files/onthemississippi.MP3",
+            "src/main/resources/files/packupyourtroublesinyouroldkitbagandsmilesmilesmile.MP3",
+            "src/main/resources/files/ragtimecowboyjoe.MP3",
+            "src/main/resources/files/swanee.MP3",
+            "src/main/resources/files/temptationrag.MP3",
+            "src/main/resources/files/thebattlecryoffreedom.MP3",
+            "src/main/resources/files/tramptramptramp.MP3"
 	    );
 
 	    // Create the SoundtrackPlayer instance
@@ -149,10 +190,6 @@ public class RunElectionGameCombined implements Runnable {
 	    }).start();
 	    
 	    board = new GameBoard(player);
-
-	    // Set the frame to be undecorated before making it displayable
-	    frame.setUndecorated(true);
-
 	    // User Policy Deck, I added a scrollbar since you get 18 policies
 	    up = new UserPolicies(player);
 
@@ -206,10 +243,9 @@ public class RunElectionGameCombined implements Runnable {
 		// Using the new constructor with cropping starting from a specific position
 		BackgroundPanel decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
+		deckWidthRatio = decks.getWidth()/frameWidth;
+		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 
-		// Add the logo to the top left
-		ImageIcon logoIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"))
-		        .getImage().getScaledInstance((int)(cardSize/225.0*100), (int)(cardSize/225.0*100), Image.SCALE_SMOOTH));
 		JLabel logoLabel = new JLabel(logoIcon);
 		decks.add(logoLabel);
 
@@ -234,6 +270,10 @@ public class RunElectionGameCombined implements Runnable {
 		    controlPanelWidthRatio, 
 		    controlPanelStartXRatio
 		);
+		
+		controlPanelWidthRatio = control_panel.getWidth()/frameWidth;
+		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
 		
 		control_panel.setLayout(new GridBagLayout()); // Set layout after initializing the panel
 		
@@ -965,17 +1005,6 @@ public class RunElectionGameCombined implements Runnable {
 		UIManager.put("OptionPane.messageFont", initialFont);
 		UIManager.put("OptionPane.buttonFont", initialFont);
 
-		// Set the icon image for the frame
-		frame.setIconImage(logoIcon.getImage());
-		
-		// Pack and set the frame to full-screen mode
-	    frame.pack();
-		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-
-	    
-	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	    frame.setVisible(true);
-	    frame.requestFocus();
 	    user_cards.hideCards(5);
 		
 	    /*
@@ -1477,6 +1506,10 @@ public class RunElectionGameCombined implements Runnable {
 		user_cards.paintCards();
 		starting = false;
 		board.draw();
+		
+		frame.remove(loadingScreen);
+		frame.revalidate();
+	    frame.repaint();
 	}
 
 	/*

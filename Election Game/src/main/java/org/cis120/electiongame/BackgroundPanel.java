@@ -1,4 +1,3 @@
-// Updated BackgroundPanel with width cropping and x-start ratio
 package org.cis120.electiongame;
 
 import java.awt.Graphics;
@@ -10,14 +9,17 @@ import javax.swing.JPanel;
 public class BackgroundPanel extends JPanel {
     private Image backgroundImage;
     private BufferedImage croppedImage;
+    private boolean useCropping = false;
     private double cropHeightRatio;
     private double startYRatio;
     private double cropWidthRatio;
     private double startXRatio;
 
-    // Constructor with height cropping option
+    // Constructor for full image display (no cropping)
     public BackgroundPanel(String imagePath) {
-        this(imagePath, 1, 1, 0, 0); // Full width and no horizontal cropping by default
+        // Load the background image
+        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(imagePath)).getImage();
+        useCropping = false;
     }
 
     // Constructor with both height and width cropping options
@@ -28,11 +30,25 @@ public class BackgroundPanel extends JPanel {
         this.startYRatio = startYRatio;
         this.cropWidthRatio = cropWidthRatio;
         this.startXRatio = startXRatio;
+        useCropping = true;
         cropImage();
+    }
+    
+    // Method to set or reset the background image with cropping
+    public void setBackgroundImage(String imagePath, double cropHeightRatio, double startYRatio, double cropWidthRatio, double startXRatio) {
+        // Load the background image
+        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(imagePath)).getImage();
+        this.cropHeightRatio = cropHeightRatio;
+        this.startYRatio = startYRatio;
+        this.cropWidthRatio = cropWidthRatio;
+        this.startXRatio = startXRatio;
+        useCropping = true;
+        cropImage();
+        repaint(); // Repaint the panel with the new cropped image
     }
 
     private void cropImage() {
-        if (cropHeightRatio > 0 && cropWidthRatio > 0) {
+        if (useCropping && cropHeightRatio > 0 && cropWidthRatio > 0) {
             int imageWidth = backgroundImage.getWidth(null);
             int imageHeight = backgroundImage.getHeight(null);
 
@@ -53,9 +69,11 @@ public class BackgroundPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Draw the cropped image
-        if (croppedImage != null) {
+        // Draw the appropriate image (either cropped or full)
+        if (useCropping && croppedImage != null) {
             g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         }
     }
 }
