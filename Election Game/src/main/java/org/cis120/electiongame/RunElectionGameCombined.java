@@ -7,6 +7,7 @@ package org.cis120.electiongame;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -148,18 +149,26 @@ public class RunElectionGameCombined implements Runnable {
 	    }).start();
 	    
 	    board = new GameBoard(player);
-	    board.setBorder(new LineBorder(Color.RED, 5));
 
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
 
-		// User Policy Deck, I added a scrollbar since you get 18 policies
-		up = new UserPolicies(player);
-		JScrollPane userPolicies = new JScrollPane(up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
-				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-		userPolicies.getHorizontalScrollBar().setUnitIncrement(100);
+	    // User Policy Deck, I added a scrollbar since you get 18 policies
+	    up = new UserPolicies(player);
 
-		userPolicies.setPreferredSize(new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325)));
+	    JScrollPane userPolicies = new JScrollPane(up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+	            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+	    userPolicies.getHorizontalScrollBar().setUnitIncrement(100);
+
+	    // Set the background color to brown
+	    Color brown = new Color(0, 0, 0); // RGB values for a brown color
+	    userPolicies.getViewport().setBackground(brown);
+	    userPolicies.setBackground(brown);
+	    up.setBackground(brown);
+
+	    // Set the preferred size of the JScrollPane
+	    userPolicies.setPreferredSize(new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325)));
+
 		
 		// User Card Deck
 		user_cards = new UserDeck(player);
@@ -172,7 +181,12 @@ public class RunElectionGameCombined implements Runnable {
 		board.setLayout(new GridLayout(1, 7));
 
 		// AI Card Deck, just for visuals
-		BackgroundPanel ai_cards = new BackgroundPanel(prefix + "files/aicardtable.PNG");
+		double aiCardHeightRatio = 106.0 / 1200.0; // Proportionate height for the AI Cards section
+		double aiCardWidthRatio = 1.0; // Use the full width of the image
+		double aiCardStartXRatio = 0.0; // Start cropping from the very left of the image
+		double aiCardStartYRatio = 0.0; // Start cropping from the very top of the image
+
+		BackgroundPanel ai_cards = new BackgroundPanel(prefix + "files/backgroundfull.PNG", aiCardHeightRatio, aiCardStartYRatio, aiCardWidthRatio, aiCardStartXRatio);
 		frame.add(ai_cards, BorderLayout.NORTH);
 
 		for (int i = 0; i < 5; i++) {
@@ -183,11 +197,16 @@ public class RunElectionGameCombined implements Runnable {
 		    ai_cards.add(aicardlabel);
 		}
 
-		
-		// Deck Area and status, for visuals
-		BackgroundPanel decks = new BackgroundPanel(prefix + "files/decktable.PNG");
+		// Height and width ratios for the decks area
+		double deckHeightRatio = 697.0 / 1200.0;
+		double deckWidthRatio = 211.0 / 1900.0;
+		double deckStartYRatio = 106.0 / 1200.0;
+		double deckStartXRatio = 0.0; // Start cropping from the left side of the image
+
+		// Using the new constructor with cropping starting from a specific position
+		BackgroundPanel decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
-		
+
 		// Add the logo to the top left
 		ImageIcon logoIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"))
 		        .getImage().getScaledInstance((int)(cardSize/225.0*100), (int)(cardSize/225.0*100), Image.SCALE_SMOOTH));
@@ -199,25 +218,23 @@ public class RunElectionGameCombined implements Runnable {
 		setLabel(status);
 		decks.add(status);
 
-
-		final JLabel elecdeck = new JLabel(
-				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/electionsdeck.PNG"))
-						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
-		decks.add(elecdeck);
-
-		final JLabel prezdeck = new JLabel(
-				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentdeck.PNG"))
-						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
-		decks.add(prezdeck);
-
-		final JLabel poldeck = new JLabel(
-				new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policydeck.PNG"))
-						.getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
-		decks.add(poldeck);
 		decks.setLayout(new GridLayout(5, 1));
 
+
 		// Control panel with custom background
-		final BackgroundPanel control_panel = new BackgroundPanel(prefix + "files/controlpaneltable.PNG");
+		double controlPanelHeightRatio = 697.0 / 1200.0; // Same height ratio as decks
+		double controlPanelWidthRatio = 210.0 / 1900.0; // Width ratio for the control panel
+		double controlPanelStartYRatio = 106.0 / 1200.0; // Start after AI cards area (same as decks)
+		double controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+
+		BackgroundPanel control_panel = new BackgroundPanel(
+		    prefix + "files/backgroundfull.PNG", 
+		    controlPanelHeightRatio, 
+		    controlPanelStartYRatio, 
+		    controlPanelWidthRatio, 
+		    controlPanelStartXRatio
+		);
+		
 		control_panel.setLayout(new GridBagLayout()); // Set layout after initializing the panel
 		
 		// GridBagConstraints setup
@@ -243,8 +260,6 @@ public class RunElectionGameCombined implements Runnable {
 		int buttonWidth = play.getPreferredSize().width;
 		int buttonHeight = play.getPreferredSize().height;
 		
-		System.out.println("Button size: " + buttonWidth + " + " + buttonHeight);
-
 		// Scale the icons to fit exactly within the button dimensions
 		play.setIcon(new ImageIcon(playIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 		play.setRolloverIcon(new ImageIcon(playHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
@@ -253,8 +268,6 @@ public class RunElectionGameCombined implements Runnable {
 		// Revalidate and repaint to apply the changes
 		play.revalidate();
 		play.repaint();
-
-		System.out.println("Painted image size: " + play.getSize());
 		
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -965,13 +978,14 @@ public class RunElectionGameCombined implements Runnable {
 	    frame.requestFocus();
 	    user_cards.hideCards(5);
 		
-	    
+	    /*
 	    System.out.println("AI Cards: " + ai_cards.getSize());
 	    System.out.println("Decks : " + decks.getSize());
 	    System.out.println("Board: " + board.getSize());
 	    System.out.println("Control Panel: " + control_panel.getSize());
 	    System.out.println("User Cards: " + user_cards.getSize());
 	    System.out.println("Total Frame: " + frame.getSize());
+	    */
 	    
 
 		/******************************************************
@@ -1494,7 +1508,7 @@ public class RunElectionGameCombined implements Runnable {
 	        this.imageCache = new HashMap<>(); // Initialize the cache
 	        paintCards();
 
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/usertable.PNG")).getImage();
+	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
@@ -1532,7 +1546,7 @@ public class RunElectionGameCombined implements Runnable {
 	                    // This makes all of the cards buttons that play the card if clicked
 	                    usercd.addMouseListener(new MouseAdapter() {
 	                        public void mouseReleased(MouseEvent e) {
-	                            player.playSoundEffect("files/playbutton.MP3");
+	                            player.playSoundEffect("files/cardplay.MP3");
 	                            if (election.getActivePinCard() != null) {
 	                                election.getActivePlayer().add(election.getActivePinCard());
 	                            }
@@ -1597,11 +1611,33 @@ public class RunElectionGameCombined implements Runnable {
 	    @Override
 	    public void paintComponent(Graphics g) {
 	        super.paintComponent(g);
-	        // Draw the background image
 	        if (backgroundImage != null) {
-	            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+	            // Convert Image to BufferedImage
+	            BufferedImage bufferedImage = new BufferedImage(
+	                backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+	            Graphics2D bGr = bufferedImage.createGraphics();
+	            bGr.drawImage(backgroundImage, 0, 0, null);
+	            bGr.dispose();
+
+	            // Get the size of the original background image
+	            int imageWidth = bufferedImage.getWidth();
+	            int imageHeight = bufferedImage.getHeight();
+
+	            // Calculate the cropping parameters for the UserDeck
+	            int cropStartX = 0; // Start X at 0 (full width)
+	            int cropStartY = (int) (785.0 / 1200.0 * imageHeight); // Start Y at 803/1200 from the top
+	            int cropWidth = imageWidth; // Full width
+	            int cropHeight = (int) (415.0 / 1200.0 * imageHeight); // Height of 397/1200 of the image
+
+	            // Crop the BufferedImage
+	            BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+
+	            // Draw the cropped image scaled to the UserDeck's size
+	            g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
 	        }
 	    }
+
 
 	    @Override
 	    public Dimension getPreferredSize() {
@@ -1636,7 +1672,7 @@ public class RunElectionGameCombined implements Runnable {
 	        this.imageCache = new HashMap<>(); // Initialize the cache
 	        paintCards();
 
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/usertable.PNG")).getImage();
+	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
@@ -1670,7 +1706,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	                    usercd.addMouseListener(new MouseAdapter() {
 	                        public void mouseReleased(MouseEvent e) {
-	                            player.playSoundEffect("files/playbutton.MP3");
+	                            player.playSoundEffect("files/cardplay.MP3");
 	                            if ((election.getActivePinnedPolicies().get(0) != null
 	                                    && election.getActivePinnedPolicies().get(0).sameCategory(curr))
 	                                    || election.getActivePinnedPolicies().get(0) == null
@@ -1751,11 +1787,8 @@ public class RunElectionGameCombined implements Runnable {
 	    @Override
 	    public void paintComponent(Graphics g) {
 	        super.paintComponent(g);
-	        // Draw the background image
-	        if (backgroundImage != null) {
-	            g.drawImage(backgroundImage, 0, 0, 1900, 397, this);
-	        }
 	    }
+
 
 	    @Override
 	    public Dimension getPreferredSize() {
@@ -1764,7 +1797,7 @@ public class RunElectionGameCombined implements Runnable {
 	}
 
 
-	/// This class represents the game board
+	/// This class represents the main game board in the center of the screen.
 	@SuppressWarnings("serial")
 	public class GameBoard extends JPanel {
 		private boolean cpuPlayed;
@@ -1786,7 +1819,7 @@ public class RunElectionGameCombined implements Runnable {
 			this.player = player;
 
 			// Load the background image
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/boardtable.PNG")).getImage();
+	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
 
 			draw();
 
@@ -1838,7 +1871,7 @@ public class RunElectionGameCombined implements Runnable {
 						final JLabel label = new JLabel(usercard);
 						label.addMouseListener(new MouseAdapter() {
 							public void mouseReleased(MouseEvent e) {
-								player.playSoundEffect("files/playbutton.MP3");
+								player.playSoundEffect("files/cardplay.MP3");
 								election.getActivePlayer().add(election.pinActivePolicy(null, pos));
 								draw();
 								up.paintCards();
@@ -1873,7 +1906,7 @@ public class RunElectionGameCombined implements Runnable {
 				butt.addMouseListener(new MouseAdapter() {
 
 					public void mouseReleased(MouseEvent e) {
-						player.playSoundEffect("files/playbutton.MP3");
+						player.playSoundEffect("files/cardplay.MP3");
 						election.getActivePlayer().add(election.getActivePinCard());
 						election.activePinCard(null);
 						draw();
@@ -2015,12 +2048,35 @@ public class RunElectionGameCombined implements Runnable {
 
 		@Override
 		public void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			// Draw the background image
-	        if (backgroundImage != null) {
-	            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
-	        }
+		    super.paintComponent(g);
+
+		    if (backgroundImage != null) {
+		        // Convert Image to BufferedImage
+		        BufferedImage bufferedImage = new BufferedImage(
+		            backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+		        Graphics2D bGr = bufferedImage.createGraphics();
+		        bGr.drawImage(backgroundImage, 0, 0, null);
+		        bGr.dispose();
+
+		        // Get the size of the original background image
+		        int imageWidth = bufferedImage.getWidth();
+		        int imageHeight = bufferedImage.getHeight();
+
+		        // Calculate the cropping parameters for the board
+		        int cropStartX = (int) (211.5 / 1900.0 * imageWidth); // Start X at 213/1900 from the left
+		        int cropStartY = (int) (106.0 / 1200.0 * imageHeight); // Start Y at 106/1200 from the top
+		        int cropWidth = (int) ((imageWidth * (1 - 2 * 211 / 1900.0))); // Width from 213/1900 from the left to 213/1900 from the right
+		        int cropHeight = (int) (679.0 / 1200.0 * imageHeight); // Height from 106/1200 to 679/1200
+
+		        // Crop the BufferedImage
+		        BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+
+		        // Draw the cropped image scaled to the GameBoard's size
+		        g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
+		    }
 		}
+
 
 		/**
 		 * Returns the size of the game board.
