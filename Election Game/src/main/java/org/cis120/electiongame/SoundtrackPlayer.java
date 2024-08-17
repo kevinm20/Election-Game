@@ -3,20 +3,18 @@ package org.cis120.electiongame;
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
-import javax.sound.sampled.*;
-import java.io.File;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class SoundtrackPlayer {
 
@@ -37,9 +35,13 @@ public class SoundtrackPlayer {
 
         String trackPath = tracks.get(currentTrackIndex);
         playbackThread = new Thread(() -> {
-            try (FileInputStream fis = new FileInputStream(trackPath)) {
-                player = new AdvancedPlayer(fis);
-                player.play();
+            try (InputStream audioStream = getClass().getClassLoader().getResourceAsStream(trackPath)) {
+                if (audioStream != null) {
+                    player = new AdvancedPlayer(audioStream);
+                    player.play();
+                } else {
+                    System.err.println("Could not find file: " + trackPath);
+                }
             } catch (JavaLayerException | IOException e) {
                 e.printStackTrace();
             }
@@ -69,7 +71,7 @@ public class SoundtrackPlayer {
     }
 
     public String getCurrentTrackName() {
-        return new File(tracks.get(currentTrackIndex)).getName();
+        return tracks.get(currentTrackIndex);
     }
 
     public void playNext() {
@@ -85,21 +87,19 @@ public class SoundtrackPlayer {
     }
 
     public void playSoundEffect(String soundFile) {
-        try {
-            // Load the file as a resource
-            InputStream audioSrc = getClass().getClassLoader().getResourceAsStream(soundFile);
-            if (audioSrc == null) {
-                throw new IOException("File not found: " + soundFile);
+        try (InputStream audioSrc = getClass().getClassLoader().getResourceAsStream(soundFile);
+             BufferedInputStream bufferedIn = new BufferedInputStream(audioSrc)) {
+
+            if (bufferedIn != null) {
+                AudioInputStream audioStream = AudioSystem.getAudioInputStream(bufferedIn);
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioStream);
+                clip.start();
+            } else {
+                System.err.println("Could not find sound effect: " + soundFile);
             }
-            
-            // Convert the resource into an AudioInputStream
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioSrc);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioStream);
-            clip.start();
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();
         }
     }
-
 }

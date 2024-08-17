@@ -1,0 +1,4 @@
+Kevin
+name, ai_difficulty, game_deck
+Kevin,Hard,full
+Meggy,Hard,standard

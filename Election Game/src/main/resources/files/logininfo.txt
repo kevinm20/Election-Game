@@ -1,4 +1,0 @@
-Kevin
-name, ai_difficulty, game_deck
-Kevin,Hard,expanded
-Meggy,Hard,generational

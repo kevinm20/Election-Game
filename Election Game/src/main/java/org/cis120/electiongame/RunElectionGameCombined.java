@@ -73,6 +73,23 @@ public class RunElectionGameCombined implements Runnable {
 		return input;
 	}
 	
+	private void printMemoryUsage() {
+	    Runtime runtime = Runtime.getRuntime();
+
+	    long totalMemory = runtime.totalMemory();
+	    long freeMemory = runtime.freeMemory();
+	    long usedMemory = totalMemory - freeMemory;
+	    long maxMemory = runtime.maxMemory();
+
+	    System.out.println("---------------------------------------");
+	    System.out.println("Used Memory: " + usedMemory / (1024 * 1024) + " MB");
+	    System.out.println("Free Memory: " + freeMemory / (1024 * 1024) + " MB");
+	    System.out.println("Total Memory: " + totalMemory / (1024 * 1024) + " MB");
+	    System.out.println("Max Memory: " + maxMemory / (1024 * 1024) + " MB");
+	    System.out.println("---------------------------------------");
+	}
+
+	
 	// Helper to update all component fonts in a container recursively
 	public void updateFonts(Component comp, Font font) {
 	    if (comp instanceof JLabel || comp instanceof JButton || comp instanceof JTextField ||
@@ -97,8 +114,12 @@ public class RunElectionGameCombined implements Runnable {
 		// Top-level frame in which game components live
 	    final JFrame frame = new JFrame("Election Game");
 	    
+	    printMemoryUsage();
 	    // Create a loading screen panel with the desired background image
 	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
+	    
+	    printMemoryUsage();
+	    
 	    // Set up the layout and add the loading screen to the frame
 	    frame.setLayout(new BorderLayout());
 	    frame.add(loadingScreen, BorderLayout.CENTER);
@@ -130,34 +151,33 @@ public class RunElectionGameCombined implements Runnable {
 		int frameHeight = frame.getHeight();
 		
 		cardSize = (int)(frameWidth/1920.0*275.0);
-		
-		System.out.println("Card Size: " + cardSize);
-	    
-	    // Initialize soundtrack
-	    List<String> tracks = Arrays.asList(
-    		"src/main/resources/files/americathebeautiful.MP3",
-            "src/main/resources/files/battlehymnoftherepublic.MP3",
-            "src/main/resources/files/columbiathegemoftheocean.MP3",
-            "src/main/resources/files/dixie.MP3",
-            "src/main/resources/files/mycountrytisofthee.MP3",
-            "src/main/resources/files/starsandstripesforever.MP3",
-            "src/main/resources/files/starspangledbanner.MP3",
-            "src/main/resources/files/whenjohnnycomesmarchinghome.MP3",
-            "src/main/resources/files/yankeedoodle.MP3",
-            "src/main/resources/files/youreagrandoldflag.MP3",
-            "src/main/resources/files/camptownraces.MP3",
-            "src/main/resources/files/itsalonglongwaytotipperary.MP3",
-            "src/main/resources/files/justlikewashingtoncrossedthedelawaregeneralpershingwillcrosstherhine.MP3",
-            "src/main/resources/files/myoldkentuckyhome.MP3",
-            "src/main/resources/files/onthealamo.MP3",
-            "src/main/resources/files/onthemississippi.MP3",
-            "src/main/resources/files/packupyourtroublesinyouroldkitbagandsmilesmilesmile.MP3",
-            "src/main/resources/files/ragtimecowboyjoe.MP3",
-            "src/main/resources/files/swanee.MP3",
-            "src/main/resources/files/temptationrag.MP3",
-            "src/main/resources/files/thebattlecryoffreedom.MP3",
-            "src/main/resources/files/tramptramptramp.MP3"
-	    );
+			    
+		// Initialize soundtrack with prefix
+		List<String> tracks = Arrays.asList(
+		    prefix + "files/americathebeautiful.MP3",
+		    prefix + "files/battlehymnoftherepublic.MP3",
+		    prefix + "files/columbiathegemoftheocean.MP3",
+		    prefix + "files/dixie.MP3",
+		    prefix + "files/mycountrytisofthee.MP3",
+		    prefix + "files/starsandstripesforever.MP3",
+		    prefix + "files/starspangledbanner.MP3",
+		    prefix + "files/whenjohnnycomesmarchinghome.MP3",
+		    prefix + "files/yankeedoodle.MP3",
+		    prefix + "files/youreagrandoldflag.MP3",
+		    prefix + "files/camptownraces.MP3",
+		    prefix + "files/itsalonglongwaytotipperary.MP3",
+		    prefix + "files/justlikewashingtoncrossedthedelawaregeneralpershingwillcrosstherhine.MP3",
+		    prefix + "files/myoldkentuckyhome.MP3",
+		    prefix + "files/onthealamo.MP3",
+		    prefix + "files/onthemississippi.MP3",
+		    prefix + "files/packupyourtroublesinyouroldkitbagandsmilesmilesmile.MP3",
+		    prefix + "files/ragtimecowboyjoe.MP3",
+		    prefix + "files/swanee.MP3",
+		    prefix + "files/temptationrag.MP3",
+		    prefix + "files/thebattlecryoffreedom.MP3",
+		    prefix + "files/tramptramptramp.MP3"
+		);
+
 
 	    // Create the SoundtrackPlayer instance
 	    SoundtrackPlayer player = new SoundtrackPlayer(tracks);
@@ -291,7 +311,7 @@ public class RunElectionGameCombined implements Runnable {
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// Play the button click sound
-		        player.playSoundEffect("files/playbutton.MP3");
+		        player.playSoundEffect(prefix + "files/playbutton.MP3");
 		        
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
 						|| election.getActivePinnedPolicies().get(1) == null) {
@@ -334,7 +354,6 @@ public class RunElectionGameCombined implements Runnable {
 							board.draw();
 							JOptionPane.showMessageDialog(frame, "Click 'OK' when both players are ready!");
 							board.flipUser();
-							// election.printGameState();
 
 							election.getPlayer2().draw(election.getPres());
 							election.getPlayer2().drawPols(election.getPol());
@@ -432,7 +451,7 @@ public class RunElectionGameCombined implements Runnable {
 		
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				player.playSoundEffect("files/playbutton.MP3");
+				player.playSoundEffect(prefix + "files/playbutton.MP3");
 				
 				if (!askToResign) {
 					JOptionPane.showMessageDialog(frame, "You have resigned. " + election.finalScore(false));
@@ -489,7 +508,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		help.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				player.playSoundEffect("files/playbutton.MP3");
+				player.playSoundEffect(prefix + "files/playbutton.MP3");
 
 				Object[] settingOptions = { "Card Info", "Instructions" };
 				int helpMode = JOptionPane.showOptionDialog(frame, "What would you like help with?", "Help",
@@ -597,7 +616,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		swap.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				player.playSoundEffect("files/playbutton.MP3");
+				player.playSoundEffect(prefix + "files/playbutton.MP3");
 
 				if (!swapmode) {
 					// Switch to policies view
@@ -649,7 +668,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		stats.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				player.playSoundEffect("files/playbutton.MP3");
+				player.playSoundEffect(prefix + "files/playbutton.MP3");
 
 				long endTime = System.nanoTime();
 				long totalTime = endTime - startTime;
@@ -714,28 +733,23 @@ public class RunElectionGameCombined implements Runnable {
 				// Change Deck
 				if (settingToChange == 2) {
 					// Add back memes?
-					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Generational",
-							"Custom" };
+					Object[] cardDecks = {"Standard", "Expanded", "Full", "Custom" };
 					int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
 							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
 
 					if (deck == 0) {
-						election.reset("presidentsonly", null, 0.0, 5);
-						deckSet = "presidentsonly";
-					}
-					if (deck == 1) {
 						election.reset("standard", null, 0.0, 5);
 						deckSet = "standard";
 					}
-					if (deck == 2) {
+					if (deck == 1) {
 						election.reset("expanded", null, 0.0, 5);
 						deckSet = "expanded";
 					}
-					if (deck == 3) {
-						election.reset("generational", null, 0.0, 5);
-						deckSet = "generational";
+					if (deck == 2) {
+						election.reset("full", null, 0.0, 5);
+						deckSet = "full";
 					}
-					if (deck == 4) {
+					if (deck == 3) {
 						// Find a way to screen this so it doesn't get broken. Also find ways to be more
 						// creative with this, maybe
 						// add generational cards, sort all presidents/nonpresidents and get the top 50
@@ -984,9 +998,6 @@ public class RunElectionGameCombined implements Runnable {
 		UIManager.put("OptionPane.buttonFont", initialFont);
 
 	    user_cards.hideCards(5);
-	    
-	    System.out.println("Deck width: " + decks.getWidth());
-		System.out.println("Frame width: " + frameWidth);
 		
 	    /*
 	    System.out.println("AI Cards: " + ai_cards.getSize());
@@ -996,7 +1007,6 @@ public class RunElectionGameCombined implements Runnable {
 	    System.out.println("User Cards: " + user_cards.getSize());
 	    System.out.println("Total Frame: " + frame.getSize());
 	    */
-	    
 
 		/******************************************************
 		 ********************** START GAME**********************
@@ -1008,13 +1018,13 @@ public class RunElectionGameCombined implements Runnable {
 		 **********/
 		
 		
-
+	    if (!jarmode) {
 		// First get the active account. Have a check for if activeAccount ends up being
 		// null.
 		BufferedReader reader = null;
 		String activeAccount = null;
 		try {
-			reader = new BufferedReader(new FileReader("files/logininfo.txt"));
+			reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 
 			// Read the first line of the file
 			activeAccount = reader.readLine();
@@ -1038,7 +1048,7 @@ public class RunElectionGameCombined implements Runnable {
 		BufferedReader reader2 = null;
 		String accountSettings = null;
 		try {
-			reader2 = new BufferedReader(new FileReader("files/logininfo.txt"));
+			reader2 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 			String line;
 			while ((line = reader2.readLine()) != null) {
 				if (line.startsWith(activeAccount)) {
@@ -1084,7 +1094,7 @@ public class RunElectionGameCombined implements Runnable {
 			BufferedReader reader3 = null;
 			String[] accountList = null;
 			try {
-				reader3 = new BufferedReader(new FileReader("files/logininfo.txt"));
+				reader3 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 				List<String> entries = new ArrayList<>();
 				String line;
 				int lineNumber = 1;
@@ -1118,7 +1128,7 @@ public class RunElectionGameCombined implements Runnable {
 				reader2 = null;
 				accountSettings = null;
 				try {
-					reader2 = new BufferedReader(new FileReader("files/logininfo.txt"));
+					reader2 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 					String line;
 					while ((line = reader2.readLine()) != null) {
 						if (line.startsWith(activeAccount)) {
@@ -1142,7 +1152,7 @@ public class RunElectionGameCombined implements Runnable {
 				BufferedReader reader4 = null;
 				BufferedWriter writer = null;
 				try {
-					reader4 = new BufferedReader(new FileReader("files/logininfo.txt"));
+					reader4 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 					List<String> lines = new ArrayList<>();
 					String line;
 					while ((line = reader4.readLine()) != null) {
@@ -1150,7 +1160,7 @@ public class RunElectionGameCombined implements Runnable {
 					}
 					lines.set(0, activeAccount);
 
-					writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+					writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
 					for (String modifiedLine : lines) {
 						writer.write(modifiedLine);
 						writer.newLine();
@@ -1197,7 +1207,7 @@ public class RunElectionGameCombined implements Runnable {
 					reader = null;
 					BufferedWriter writer = null;
 					try {
-						reader = new BufferedReader(new FileReader("files/logininfo.txt"));
+						reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 						List<String> lines = new ArrayList<>();
 						String line;
 						boolean deleted = false;
@@ -1209,7 +1219,7 @@ public class RunElectionGameCombined implements Runnable {
 							}
 						}
 
-						writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+						writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
 						for (String modifiedLine : lines) {
 							writer.write(modifiedLine);
 							writer.newLine();
@@ -1248,7 +1258,7 @@ public class RunElectionGameCombined implements Runnable {
 							diffs[1]);
 					String aiDifficulty = (String) diffs[diff];
 					// Deck choice
-					Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Memes", "Generational",
+					Object[] cardDecks = { "Full", "Standard", "Expanded", "Memes", "Generational",
 							"Custom" };
 					int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
 							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
@@ -1258,7 +1268,7 @@ public class RunElectionGameCombined implements Runnable {
 					reader = null;
 					BufferedWriter writer = null;
 					try {
-						reader = new BufferedReader(new FileReader("files/logininfo.txt"));
+						reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 						List<String> lines = new ArrayList<>();
 						String line;
 						boolean replaced = false;
@@ -1275,7 +1285,7 @@ public class RunElectionGameCombined implements Runnable {
 							lines.add(acctLine);
 						}
 
-						writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+						writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
 						for (String modifiedLine : lines) {
 							writer.write(modifiedLine);
 							writer.newLine();
@@ -1301,7 +1311,7 @@ public class RunElectionGameCombined implements Runnable {
 					BufferedReader reader4 = null;
 					writer = null;
 					try {
-						reader4 = new BufferedReader(new FileReader("files/logininfo.txt"));
+						reader4 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 						List<String> lines = new ArrayList<>();
 						String line;
 						while ((line = reader4.readLine()) != null) {
@@ -1309,7 +1319,7 @@ public class RunElectionGameCombined implements Runnable {
 						}
 						lines.set(0, newAcctName);
 
-						writer = new BufferedWriter(new FileWriter("files/logininfo.txt"));
+						writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
 						for (String modifiedLine : lines) {
 							writer.write(modifiedLine);
 							writer.newLine();
@@ -1342,7 +1352,7 @@ public class RunElectionGameCombined implements Runnable {
 		
 			
 		
-		} else {
+		}} else {
 
 			/*********************
 			 * Normal Guest Login *
@@ -1495,9 +1505,6 @@ public class RunElectionGameCombined implements Runnable {
 		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
 		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
 		
-		System.out.println("Deck width: " + decks.getWidth());
-		System.out.println("Frame width: " + frameWidth);
-		
 		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
 		
 		frame.remove(loadingScreen);
@@ -1515,6 +1522,9 @@ public class RunElectionGameCombined implements Runnable {
 
 	    private List<President> hand;
 	    private Image backgroundImage; // To hold the background image
+	    private BufferedImage bufferedImage; // To hold buffered image of background image
+	    private BufferedImage croppedImage; // To hold cropped version of BG image
+
 	    
 	    private int scaledCardWidth;
 	    private int scaledCardHeight;
@@ -1572,7 +1582,7 @@ public class RunElectionGameCombined implements Runnable {
 	                    // This makes all of the cards buttons that play the card if clicked
 	                    usercd.addMouseListener(new MouseAdapter() {
 	                        public void mouseReleased(MouseEvent e) {
-	                            player.playSoundEffect("files/cardplay.MP3");
+	                            player.playSoundEffect(prefix + "files/cardplay.MP3");
 	                            if (election.getActivePinCard() != null) {
 	                                election.getActivePlayer().add(election.getActivePinCard());
 	                            }
@@ -1634,35 +1644,43 @@ public class RunElectionGameCombined implements Runnable {
 	        }
 	    }
 
-	    @Override
-	    public void paintComponent(Graphics g) {
-	        super.paintComponent(g);
-	        if (backgroundImage != null) {
-	            // Convert Image to BufferedImage
-	            BufferedImage bufferedImage = new BufferedImage(
-	                backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			if (backgroundImage != null) {
+				System.out.println("Userdeck time:");
+				printMemoryUsage();
+				// Convert Image to BufferedImage
+				if (bufferedImage == null) {
+					bufferedImage = new BufferedImage(backgroundImage.getWidth(null), backgroundImage.getHeight(null),
+							BufferedImage.TYPE_INT_ARGB);
 
-	            Graphics2D bGr = bufferedImage.createGraphics();
-	            bGr.drawImage(backgroundImage, 0, 0, null);
-	            bGr.dispose();
+					Graphics2D bGr = bufferedImage.createGraphics();
+					bGr.drawImage(backgroundImage, 0, 0, null);
+					bGr.dispose();
+				}
 
-	            // Get the size of the original background image
-	            int imageWidth = bufferedImage.getWidth();
-	            int imageHeight = bufferedImage.getHeight();
+				if (croppedImage == null) {
+					// Get the size of the original background image
+					int imageWidth = bufferedImage.getWidth();
+					int imageHeight = bufferedImage.getHeight();
 
-	            // Calculate the cropping parameters for the UserDeck
-	            int cropStartX = 0; // Start X at 0 (full width)
-	            int cropStartY = (int) (785.0 / 1200.0 * imageHeight); // Start Y at 803/1200 from the top
-	            int cropWidth = imageWidth; // Full width
-	            int cropHeight = (int) (415.0 / 1200.0 * imageHeight); // Height of 397/1200 of the image
+					// Calculate the cropping parameters for the UserDeck
+					int cropStartX = 0; // Start X at 0 (full width)
+					int cropStartY = (int) (785.0 / 1200.0 * imageHeight); // Start Y at 803/1200 from the top
+					int cropWidth = imageWidth; // Full width
+					int cropHeight = (int) (415.0 / 1200.0 * imageHeight); // Height of 397/1200 of the image
 
-	            // Crop the BufferedImage
-	            BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
-
-	            // Draw the cropped image scaled to the UserDeck's size
-	            g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
-	        }
-	    }
+					// Crop the BufferedImage
+					croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth,
+							cropHeight);
+				}
+				// Draw the cropped image scaled to the UserDeck's size
+				g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
+				System.out.println("Userdeck finish time:");
+				printMemoryUsage();
+			}
+		}
 
 
 	    @Override
@@ -1732,7 +1750,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	                    usercd.addMouseListener(new MouseAdapter() {
 	                        public void mouseReleased(MouseEvent e) {
-	                            player.playSoundEffect("files/cardplay.MP3");
+	                            player.playSoundEffect(prefix + "files/cardplay.MP3");
 	                            if ((election.getActivePinnedPolicies().get(0) != null
 	                                    && election.getActivePinnedPolicies().get(0).sameCategory(curr))
 	                                    || election.getActivePinnedPolicies().get(0) == null
@@ -1830,6 +1848,7 @@ public class RunElectionGameCombined implements Runnable {
 		private boolean hideUsers;
 	    private boolean electionCardZoomed = false; // Track if the election card is zoomed in
 	    private Image backgroundImage; // To hold the background image
+	    private BufferedImage croppedImage; // Cropped version of above
 	    private SoundtrackPlayer player;
 	    private double xref;
 	    private double frameXRef;
@@ -1907,7 +1926,7 @@ public class RunElectionGameCombined implements Runnable {
 						final JLabel label = new JLabel(usercard);
 						label.addMouseListener(new MouseAdapter() {
 							public void mouseReleased(MouseEvent e) {
-								player.playSoundEffect("files/cardplay.MP3");
+								player.playSoundEffect(prefix + "files/cardplay.MP3");
 								election.getActivePlayer().add(election.pinActivePolicy(null, pos));
 								draw();
 								up.paintCards();
@@ -1942,7 +1961,7 @@ public class RunElectionGameCombined implements Runnable {
 				butt.addMouseListener(new MouseAdapter() {
 
 					public void mouseReleased(MouseEvent e) {
-						player.playSoundEffect("files/cardplay.MP3");
+						player.playSoundEffect(prefix + "files/cardplay.MP3");
 						election.getActivePlayer().add(election.getActivePinCard());
 						election.activePinCard(null);
 						draw();
@@ -1977,7 +1996,7 @@ public class RunElectionGameCombined implements Runnable {
 	            elec.addMouseListener(new MouseAdapter() {
 	                @Override
 	                public void mouseReleased(MouseEvent e) {
-	                	player.playSoundEffect("files/playbutton.MP3");
+	                	player.playSoundEffect(prefix + "files/playbutton.MP3");
 	                    electionCardZoomed = !electionCardZoomed; // Toggle the zoom state
 	                    draw(); // Redraw the board to update the size of the election card
 	                }
@@ -2087,6 +2106,9 @@ public class RunElectionGameCombined implements Runnable {
 		    super.paintComponent(g);
 
 		    if (backgroundImage != null) {
+		    	if (croppedImage == null) {
+		    	System.out.println("Gameboard time:");
+		    	printMemoryUsage();
 		        // Convert Image to BufferedImage
 		        BufferedImage bufferedImage = new BufferedImage(
 		            backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
@@ -2099,17 +2121,15 @@ public class RunElectionGameCombined implements Runnable {
 		        int imageWidth = bufferedImage.getWidth();
 		        int imageHeight = bufferedImage.getHeight();
 
-		        System.out.println("Deck xref: " + xref);
-				System.out.println("Frame xref: " + frameXRef);
 		        // Calculate the cropping parameters for the board
 		        int cropStartX = (int) (xref / frameXRef * imageWidth); // Start X at 213/1900 from the left
 		        int cropStartY = (int) (106.0 / 1200.0 * imageHeight); // Start Y at 106/1200 from the top
-		        int cropWidth = (int) ((imageWidth * (1 - 2 * (xref - 0.5) / frameXRef))); // Width from 213/1900 from the left to 213/1900 from the right
+		        int cropWidth = (int) ((imageWidth * (1 - 2 * (xref) / frameXRef))); // Width from 213/1900 from the left to 213/1900 from the right
 		        int cropHeight = (int) (679.0 / 1200.0 * imageHeight); // Height from 106/1200 to 679/1200
 
 		        // Crop the BufferedImage
-		        BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
-
+		        croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+		    	}
 		        // Draw the cropped image scaled to the GameBoard's size
 		        g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
 		    }

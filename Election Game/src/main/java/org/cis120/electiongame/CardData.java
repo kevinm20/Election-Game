@@ -6474,13 +6474,28 @@ public class CardData {
             return presidents;
         }
         
-        if (preset.equals("presidentsonly")) {
-            //System.out.println("PRESIDENTS ONLY CARD DECK");
+        if (preset.equals("expanded")) {
+            //System.out.println("EXPANDED DECK");
+        	Iterator<President> it = nonpresidents.iterator();
+        	while (it.hasNext()) {
+        	    President curr = it.next();
+        	    boolean valid = true;
+        	    if(curr.getWeightedAve()<4) {
+        	        valid = false;
+        	    }
+        	    if(!valid) {
+        	        it.remove();
+        	    }
+        	}
+        	Collections.shuffle(nonpresidents);
+            for (int i = 0; i < 54; i++) {
+                presidents.add(nonpresidents.get(i));
+            }
             Collections.shuffle(presidents);
             return presidents;
-        } else if (preset.equals("expanded")) {
+        } else if (preset.equals("full")) {
             presidents.addAll(nonpresidents);
-            //System.out.println("EXPANDED CARD DECK");
+            //System.out.println("FULL CARD DECK");
             Collections.shuffle(presidents);
             return presidents;
         } else if (preset.equals("memes")) {
@@ -6502,7 +6517,7 @@ public class CardData {
         	    }
         	}
             Collections.shuffle(nonpresidents);
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 6; i++) {
                 presidents.add(nonpresidents.get(i));
             }
             //System.out.println("STANDARD CARD DECK");
