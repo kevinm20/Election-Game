@@ -59,8 +59,8 @@ public class RunElectionGameCombined implements Runnable {
 
 	// Turn this to TRUE if trying to export to JAR file, FALSE otherwise. Make prefix "resources/" if exporting to JAR.
 
-	private boolean jarmode = false;
-	static String prefix = "";
+	private boolean jarmode = true;
+	static String prefix = "resources/";
 
 	// Change this if the screen is wacky
 	int cardSize = 275;
