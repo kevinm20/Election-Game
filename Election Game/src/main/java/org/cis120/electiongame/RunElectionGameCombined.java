@@ -1,7 +1,7 @@
 package org.cis120.electiongame;
 
 /**
- * Kevin Mani - Election game
+ * Kevin Mani - Campaign Clash
  */
 
 import java.awt.*;
@@ -59,8 +59,8 @@ public class RunElectionGameCombined implements Runnable {
 
 	// Turn this to TRUE if trying to export to JAR file, FALSE otherwise. Make prefix "resources/" if exporting to JAR.
 
-	private boolean jarmode = true;
-	static String prefix = "resources/";
+	private boolean jarmode = false;
+	static String prefix = "";
 
 	// Change this if the screen is wacky
 	int cardSize = 275;
@@ -112,14 +112,11 @@ public class RunElectionGameCombined implements Runnable {
 		long startTime = System.nanoTime();
 
 		// Top-level frame in which game components live
-	    final JFrame frame = new JFrame("Election Game");
+	    final JFrame frame = new JFrame("Campaign Clash");
 	    
-	    printMemoryUsage();
 	    // Create a loading screen panel with the desired background image
 	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
-	    
-	    printMemoryUsage();
-	    
+	    	    
 	    // Set up the layout and add the loading screen to the frame
 	    frame.setLayout(new BorderLayout());
 	    frame.add(loadingScreen, BorderLayout.CENTER);
@@ -193,6 +190,9 @@ public class RunElectionGameCombined implements Runnable {
 	        }
 	    }).start();
 	    
+	    CustomDialog.setGlobalPlayer(player);
+	    CustomDialog.setGlobalFontSize((int)(16.0 * (cardSize / 225.0)));
+	    
 	    board = new GameBoard(player);
 	    // User Policy Deck, I added a scrollbar since you get 18 policies
 	    up = new UserPolicies(player);
@@ -214,7 +214,6 @@ public class RunElectionGameCombined implements Runnable {
 		// User Card Deck
 		user_cards = new UserDeck(player);
 		user_cards.setPreferredSize(new Dimension((int)(cardSize/225.0*600), (int)(cardSize/225.0*325)));
-		frame.add(user_cards, BorderLayout.SOUTH);
 
 		
 		// Game board/Election Area
@@ -516,7 +515,7 @@ public class RunElectionGameCombined implements Runnable {
 
 				if (helpMode == 1) {
 					JOptionPane.showMessageDialog(frame,
-							"Welcome to Election Game! First, I will explain how to play the game in s"
+							"Welcome to Campaign Clash! First, I will explain how to play the game in s"
 									+ "hort, and then we'll dive into the details of each card. \n"
 									+ "Simply put, each round, there is a certain election chosen. You d"
 									+ "raw 5 Candidate cards and 15 Policy cards, \n"
@@ -683,15 +682,19 @@ public class RunElectionGameCombined implements Runnable {
 					winPct = (int) (Math.round(((float) (cumulativeWins) * 100.0) / cumulativeGames));
 				}
 
-				Object[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice",
+				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice",
 						"Exit Game" };
-				int settingToChange = JOptionPane.showOptionDialog(frame,
-						"Stats for " + election.getPlayer1().getName() + " this session: \n" + "Total play time: "
-								+ totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" + "Total wins: "
-								+ cumulativeWins + " wins out of " + cumulativeGames + " (" + winPct + "%). \n \n"
-								+ "Select one of the settings below to change (may reset game):",
-						"Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-						settingOptions, -1);
+				int settingToChange = CustomDialog.showCustomDialog(
+					    frame,
+					    "Stats for " + election.getPlayer1().getName() + " this session: \n" 
+					    + "Total play time: " + totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" 
+					    + "Total wins: " + cumulativeWins + " wins out of " + cumulativeGames + " (" + winPct + "%). \n \n"
+					    + "Select one of the settings below to change (may reset game):",
+					    "Settings",
+					    settingOptions,
+					    "settings"
+					);
+
 
 				// Change Name
 				if (settingToChange == 0) {
@@ -1072,7 +1075,7 @@ public class RunElectionGameCombined implements Runnable {
 		// Now, open up the login menu
 		Object[] loginOptions = { "Continue as " + activeAccount, "Change Account", "Continue as Guest" };
 		int loginMode = JOptionPane.showOptionDialog(frame,
-				"Welcome back to Election Game " + activeAccount + "! Login below:", "Login",
+				"Welcome back to Campaign Clash " + activeAccount + "! Login below:", "Login",
 				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, loginOptions, loginOptions[2]);
 
 		// User continues as active account
@@ -1119,7 +1122,7 @@ public class RunElectionGameCombined implements Runnable {
 				}
 			}
 			int loginAccountOption = JOptionPane.showOptionDialog(frame,
-					"Welcome back to Election Game " + activeAccount + "! Login below:", "Login",
+					"Welcome back to Campaign Clash " + activeAccount + "! Login below:", "Login",
 					JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList, accountList[0]);
 			// Continue as the selected account
 			if (loginAccountOption > 0) {
@@ -1359,7 +1362,7 @@ public class RunElectionGameCombined implements Runnable {
 			 **********************/
 
 			Object[] options = { "1-Player", "2-Player"};
-			int gameMode = JOptionPane.showOptionDialog(frame, "Welcome to Election Game! Please select your game mode:",
+			int gameMode = JOptionPane.showOptionDialog(frame, "Welcome to Campaign Clash! Please select your game mode:",
 					"Select Game Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options,
 					options[0]);
 
@@ -1373,10 +1376,10 @@ public class RunElectionGameCombined implements Runnable {
 				String playername = "Player 1";
 				if (mode) {
 					playername = JOptionPane.showInputDialog(frame,
-							"Hello and welcome to the Election Game! Player 1, please enter your name: ");
+							"Hello and welcome to the Campaign Clash! Player 1, please enter your name: ");
 				} else {
 					playername = JOptionPane.showInputDialog(frame,
-							"Hello and welcome to the Election Game! Please enter your name: ");
+							"Hello and welcome to the Campaign Clash! Please enter your name: ");
 					election.namePlayer2("CPU");
 				}
 				election.namePlayer(playername);
@@ -1523,8 +1526,6 @@ public class RunElectionGameCombined implements Runnable {
 	    private List<President> hand;
 	    private Image backgroundImage; // To hold the background image
 	    private BufferedImage bufferedImage; // To hold buffered image of background image
-	    private BufferedImage croppedImage; // To hold cropped version of BG image
-
 	    
 	    private int scaledCardWidth;
 	    private int scaledCardHeight;
@@ -1648,8 +1649,6 @@ public class RunElectionGameCombined implements Runnable {
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			if (backgroundImage != null) {
-				System.out.println("Userdeck time:");
-				printMemoryUsage();
 				// Convert Image to BufferedImage
 				if (bufferedImage == null) {
 					bufferedImage = new BufferedImage(backgroundImage.getWidth(null), backgroundImage.getHeight(null),
@@ -1660,25 +1659,21 @@ public class RunElectionGameCombined implements Runnable {
 					bGr.dispose();
 				}
 
-				if (croppedImage == null) {
-					// Get the size of the original background image
-					int imageWidth = bufferedImage.getWidth();
-					int imageHeight = bufferedImage.getHeight();
+				// Get the size of the original background image
+				int imageWidth = bufferedImage.getWidth();
+				int imageHeight = bufferedImage.getHeight();
 
-					// Calculate the cropping parameters for the UserDeck
-					int cropStartX = 0; // Start X at 0 (full width)
-					int cropStartY = (int) (785.0 / 1200.0 * imageHeight); // Start Y at 803/1200 from the top
-					int cropWidth = imageWidth; // Full width
-					int cropHeight = (int) (415.0 / 1200.0 * imageHeight); // Height of 397/1200 of the image
+				// Calculate the cropping parameters for the UserDeck
+				int cropStartX = 0; // Start X at 0 (full width)
+				int cropStartY = (int) (785.0 / 1200.0 * imageHeight); // Start Y at 803/1200 from the top
+				int cropWidth = imageWidth; // Full width
+				int cropHeight = (int) (415.0 / 1200.0 * imageHeight); // Height of 397/1200 of the image
 
-					// Crop the BufferedImage
-					croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth,
-							cropHeight);
-				}
+				// Crop the BufferedImage
+				BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+
 				// Draw the cropped image scaled to the UserDeck's size
 				g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
-				System.out.println("Userdeck finish time:");
-				printMemoryUsage();
 			}
 		}
 
@@ -1848,7 +1843,7 @@ public class RunElectionGameCombined implements Runnable {
 		private boolean hideUsers;
 	    private boolean electionCardZoomed = false; // Track if the election card is zoomed in
 	    private Image backgroundImage; // To hold the background image
-	    private BufferedImage croppedImage; // Cropped version of above
+	    private BufferedImage bufferedImage; // To hold buffered image of background image
 	    private SoundtrackPlayer player;
 	    private double xref;
 	    private double frameXRef;
@@ -2106,17 +2101,15 @@ public class RunElectionGameCombined implements Runnable {
 		    super.paintComponent(g);
 
 		    if (backgroundImage != null) {
-		    	if (croppedImage == null) {
-		    	System.out.println("Gameboard time:");
-		    	printMemoryUsage();
+		    	if (bufferedImage == null) {
 		        // Convert Image to BufferedImage
-		        BufferedImage bufferedImage = new BufferedImage(
+		        bufferedImage = new BufferedImage(
 		            backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
 
 		        Graphics2D bGr = bufferedImage.createGraphics();
 		        bGr.drawImage(backgroundImage, 0, 0, null);
 		        bGr.dispose();
-
+		    	}
 		        // Get the size of the original background image
 		        int imageWidth = bufferedImage.getWidth();
 		        int imageHeight = bufferedImage.getHeight();
@@ -2128,8 +2121,8 @@ public class RunElectionGameCombined implements Runnable {
 		        int cropHeight = (int) (679.0 / 1200.0 * imageHeight); // Height from 106/1200 to 679/1200
 
 		        // Crop the BufferedImage
-		        croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
-		    	}
+		        BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+		    	
 		        // Draw the cropped image scaled to the GameBoard's size
 		        g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
 		    }
