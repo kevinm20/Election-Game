@@ -49,7 +49,7 @@ public class RunElectionGameCombined implements Runnable {
 	GameBoard board = null;
 	private UserDeck user_cards;
 	private UserPolicies up;
-	private boolean mode = false;
+	private boolean twoplayermode = false;
 	private boolean swapmode = false;
 	private String deckSet = "standard";
 	private int cumulativeWins = 0;
@@ -317,7 +317,7 @@ public class RunElectionGameCombined implements Runnable {
 					JOptionPane.showMessageDialog(frame, "Error: you haven't played all cards!", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				} else {
-					if (!mode) {
+					if (!twoplayermode) {
 						// election.printGameState();
 
 						election.getPlayer1().draw(election.getPres());
@@ -369,10 +369,16 @@ public class RunElectionGameCombined implements Runnable {
 						}
 					}
 
-					if (!mode || election.getTurn()) {
+					if (!twoplayermode || election.getTurn()) {
 						setLabel(status);
 						status.repaint();
-						JOptionPane.showMessageDialog(frame, election.getMessage());
+						CustomDialog.showCustomDialog(
+							    frame,
+							    election.getMessage(),  // The message from the election object
+							    "Election",  // Title of the dialog
+							    new String[] { "Ok" },  // Single "Ok" button directly in the method call
+							    "round"  // Dialog type indicating it's a round result
+							);
 						if (election.getAchievement() != null) {
 							JOptionPane.showMessageDialog(frame, election.getAchievement());
 						}
@@ -380,7 +386,7 @@ public class RunElectionGameCombined implements Runnable {
 						if (election.checkWinner() == 1) {
 							JOptionPane.showMessageDialog(frame,
 									election.getPlayer1().getName() + " has won!!! " + election.finalScore(true));
-							if (mode) {
+							if (twoplayermode) {
 								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
 							}
 							cumulativeWins++;
@@ -394,7 +400,7 @@ public class RunElectionGameCombined implements Runnable {
 						} else if (election.checkWinner() == 2) {
 							JOptionPane.showMessageDialog(frame,
 									election.getPlayer2().getName() + " has won!!! " + election.finalScore(false));
-							if (mode) {
+							if (twoplayermode) {
 								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
 							}
 							cumulativeGames++;
@@ -409,7 +415,7 @@ public class RunElectionGameCombined implements Runnable {
 							election.player2PlayCard(null);
 							board.flipCPU();
 							board.draw();
-							if (mode) {
+							if (twoplayermode) {
 								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
 							}
 							user_cards.paintCards();
@@ -453,7 +459,6 @@ public class RunElectionGameCombined implements Runnable {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
 				
 				if (!askToResign) {
-					JOptionPane.showMessageDialog(frame, "You have resigned. " + election.finalScore(false));
 					cumulativeGames++;
 					election.reset(deckSet, null, 0.0, 5);
 					setLabel(status);
@@ -462,12 +467,27 @@ public class RunElectionGameCombined implements Runnable {
 					up.reset();
 					board.reset();
 				} else {
-					Object[] resignOptions = { "Yes and don't ask again", "Yes", "No" };
-					int resignChoice = JOptionPane.showOptionDialog(frame, "Are you sure you would like to resign?",
-							"Resign", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, resignOptions, 2);
-
+					int resignChoice = CustomDialog.showCustomDialog(
+						    frame,
+						    "Are you sure you would like to resign?",  // The message
+						    "Resign",  // Title of the dialog
+						    new String[] { "Yes (don't ask)", "Yes", "No" },  // The three options
+						    "resign",  // Type indicating it's a resign menu
+						    "files/resignmenu.PNG",  // Custom background image
+						    0.75,  // Height ratio
+						    1  // Width ratio
+						);
 					if (resignChoice == 0 || !askToResign || resignChoice == 1) {
-						JOptionPane.showMessageDialog(frame, "You have resigned. " + election.finalScore(false));
+						CustomDialog.showCustomDialog(
+							    frame,
+							    "You have resigned. " + election.finalScore(false),  // The message
+							    "Resign",  // Title of the dialog
+							    new String[] { "Ok" },  // Single "Ok" button directly in the method call
+							    "resign",  // Type indicating it's a resign menu
+							    "files/resignmenu.PNG",  // Custom background image
+							    0.75,  // Height ratio
+							    1  // Width ratio
+							);
 						if (resignChoice == 0) {
 							askToResign = !askToResign;
 						}
@@ -509,67 +529,90 @@ public class RunElectionGameCombined implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
 
-				Object[] settingOptions = { "Card Info", "Instructions" };
-				int helpMode = JOptionPane.showOptionDialog(frame, "What would you like help with?", "Help",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, settingOptions, -1);
+				int helpMode = CustomDialog.showCustomDialog(
+					    frame,
+					    "What would you like help with?",  // The message
+					    "Help",  // Title of the dialog
+					    new String[] { "Card Info", "Instructions" },  // Options for Card Info and Instructions
+					    "help",  // Type indicating it's a help menu
+					    "files/helpmenu.PNG",  // Custom background image
+					    1.0,  // Height ratio
+					    1.0   // Width ratio
+					);
+
 
 				if (helpMode == 1) {
-					JOptionPane.showMessageDialog(frame,
-							"Welcome to Campaign Clash! First, I will explain how to play the game in s"
-									+ "hort, and then we'll dive into the details of each card. \n"
-									+ "Simply put, each round, there is a certain election chosen. You d"
-									+ "raw 5 Candidate cards and 15 Policy cards, \n"
-									+ "and based on traits or policies desired by the election, you have"
-									+ " to play your best combo of these cards. A new election is chos"
-									+ "en each round\n" + " and the game is best-of-five.\n"
-									+ "Now, we'll look at each type of card.");
-					JOptionPane.showMessageDialog(frame,
-							"The first type of card is an ELECTION CARD. There is one for each US elec"
-									+ "tion historically. In the 'Context' section, the election will" + " imply wh"
-									+ "at attributes\n"
-									+ "to focus on, or what policies are important that year. Each elect"
-									+ "ion has 2 'desired attributes' from the President cards,\n"
-									+ "1 'main' policy issue, and two 'side' policy issues. The details"
-									+ " of scoring will be explained last.\n"
-									+ "Finally, each election has a 'swing region', and if your Preside"
-									+ "nt is from the same region, you receive a bonus.");
-					JOptionPane.showMessageDialog(frame,
-							"The next type of card is a PRESIDENT CARD. They are a combination of all"
-									+ " US presidents, and other prominent political figures. These ca" + "rds have"
-									+ " quite a decent amount of information.\n"
-									+ "First, each president has 4 attributes, EXP, INFL, POL, and NAM. "
-									+ "Each election year will desire 2 of these attributes, \n"
-									+ "and the attributes are rated 1-10, with 5 being average. Here's w"
-									+ "hat they mean: \n"
-									+ "Experience (EXP): How long the candidate has been involved in pol"
-									+ "itics, and their highest office.\n"
-									+ "Influence (INFL): How well a candidate can convince and sway peop"
-									+ "le, and other personality aspects like leadership, charisma, " + "etc.\n"
-									+ "Policy (POL): How well-versed the candidate is in ideas and polic"
-									+ "y, and their knowledge of the issues.\n"
-									+ "Name Recogntion (NAM): How well-known the candidate is to the gen"
-									+ "eral public, including outside of political life.\n"
-									+ "The cards have a little more information. One of them is their ho"
-									+ "me region, giving a bonus if this matches the election's swing " + "region.\n"
-									+ "Also, the cards show the candidates ideology. These are used to "
-									+ "get bonuses if the policies played 'match' the candidates ideo" + "logy.\n"
-									+ "Finally, each candidate also has a 'Marquee Policy', which always"
-									+ " gives them a bonus if paired with the candidate.");
-					JOptionPane.showMessageDialog(frame,
-							"Last, here is the specific breakdown of the scoring for each round: \n"
-									+ "First, add the two key attributes of the president card, based "
-									+ "on the desired attributes of the election.\n"
-									+ "You get 3 points if one of your policies is the main issue, and"
-									+ " 2 for either of the side issues.\n"
-									+ "For each policy that matches the president's ideology, you get" + " 2 points.\n"
-									+ "If you played the president's Marquee Policy, you get 3 points"
-									+ " (and the ideology match always).\n"
-									+ "Finally, you get 3 points if your candidates' region is the same"
-									+ " as the swing region.\n"
-									+ "Whichever player has the highest round score wins, and "
-									+ "best-of-five wins it all.\n"
-									+ "In case of a tie, the first tiebreaker is the sum of the "
-									+ "candidate's attributes, then just chosen randomly.\n" + "Good luck!");
+					CustomDialog.showCustomDialog(
+						    frame,
+						    "Welcome to Campaign Clash! First, I will explain how to play the game in short, and then we'll dive into the details of each card. \n" +
+						    "Simply put, each round, there is a certain election chosen. You draw 5 Candidate cards and 15 Policy cards, \n" +
+						    "and based on traits or policies desired by the election, you have to play your best combo of these cards. A new election is chosen each round\n" +
+						    "and the game is best-of-five.\n" +
+						    "Now, we'll look at each type of card.",
+						    "Welcome",  // Title of the dialog
+						    new String[] { "Ok" },  // Single "Ok" button
+						    "help",  // Type indicating it's a help dialog
+						    "files/helpmenubig.PNG",  // Custom background image
+						    1.5,  // Height ratio
+						    1.5   // Width ratio
+						);
+
+						CustomDialog.showCustomDialog(
+						    frame,
+						    "The first type of card is an ELECTION CARD. There is one for each US election historically. In the 'Context' section, the election will imply what attributes\n" +
+						    "to focus on, or what policies are important that year. Each election has 2 'desired attributes' from the President cards,\n" +
+						    "1 'main' policy issue, and two 'side' policy issues. The details of scoring will be explained last.\n" +
+						    "Finally, each election has a 'swing region', and if your President is from the same region, you receive a bonus.",
+						    "Election Card",  // Title of the dialog
+						    new String[] { "Ok" },  // Single "Ok" button
+						    "help",  // Type indicating it's a help dialog
+						    "files/helpmenubig.PNG",  // Custom background image
+						    1.5,  // Height ratio
+						    1.5   // Width ratio
+						);
+
+						CustomDialog.showCustomDialog(
+						    frame,
+						    "The next type of card is a PRESIDENT CARD. They are a combination of all US presidents, and other prominent political figures. These cards have quite a decent amount of information.\n" +
+						    "First, each president has 4 attributes, EXP, INFL, POL, and NAM. Each election year will desire 2 of these attributes, \n" +
+						    "and the attributes are rated 1-10, with 5 being average. Here's what they mean: \n" +
+						    "Experience (EXP): How long the candidate has been involved in politics, and their highest office.\n" +
+						    "Influence (INFL): How well a candidate can convince and sway people, and other personality aspects like leadership, charisma, etc.\n" +
+						    "Policy (POL): How well-versed the candidate is in ideas and policy, and their general intelligence.\n" +
+						    "Name Recognition (NAM): How well-known the candidate is to the general public, including outside of political life.\n" +
+						    "The cards have a little more information. One of them is their home region, giving a bonus if this matches the election's swing region.\n" +
+						    "Also, the cards show the candidate's ideology. These are used to get bonuses if the policies played 'match' the candidate's ideology.\n" +
+						    "Finally, each candidate also has a 'Marquee Policy', which always gives them a bonus if paired with the candidate.",
+						    "President Card",  // Title of the dialog
+						    new String[] { "Ok" },  // Single "Ok" button
+						    "help",  // Type indicating it's a help dialog
+						    "files/helpmenubig.PNG",  // Custom background image
+						    1.5,  // Height ratio
+						    1.5   // Width ratio
+						);
+
+						CustomDialog.showCustomDialog(
+						    frame,
+						    "Last, here is the specific breakdown of the scoring for each round: \n" +
+						    "First, add the two key attributes of the president card, based on the desired attributes of the election.\n" +
+						    "You get 3 points if one of your policies is the main issue, and 2 for either of the side issues.\n" +
+						    "For each policy that matches the president's ideology, you get 2 points.\n" +
+						    "If you played the president's Marquee Policy, you get 3 points (If marquee is non-ideology, 1 ideology match point is given).\n" +
+						    "Finally, you get 3 points if your candidate's region is the same as the swing region.\n" +
+						    "Whichever player has the highest round score wins, and best-of-five wins it all.\n" +
+						    "In case of a tie, the first tiebreaker is the sum of the candidate's attributes, then just chosen randomly.\n" +
+						    "Good luck!",
+						    "Scoring",  // Title of the dialog
+						    new String[] { "Ok" },  // Single "Ok" button
+						    "help",  // Type indicating it's a help dialog
+						    "files/helpmenubig.PNG",  // Custom background image
+						    1.5,  // Height ratio
+						    1.5   // Width ratio
+						);
+
+
+
+
 				} else if (helpMode == 0) {
 					cardInfoMode = !cardInfoMode;
 					board.draw();
@@ -682,7 +725,7 @@ public class RunElectionGameCombined implements Runnable {
 					winPct = (int) (Math.round(((float) (cumulativeWins) * 100.0) / cumulativeGames));
 				}
 
-				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck Choice",
+				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck",
 						"Exit Game" };
 				int settingToChange = CustomDialog.showCustomDialog(
 					    frame,
@@ -695,6 +738,7 @@ public class RunElectionGameCombined implements Runnable {
 					    "settings"
 					);
 
+				printMemoryUsage();
 
 				// Change Name
 				if (settingToChange == 0) {
@@ -708,10 +752,14 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Change Difficulty
 				if (settingToChange == 1) {
-					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-					int diff = JOptionPane.showOptionDialog(frame, "What would you like to change the AI difficulty to?",
-							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
-							election.aiDifficulty);
+					String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+					int diff = CustomDialog.showCustomDialog(
+					    frame,
+					    "What would you like to change the AI difficulty to?",  // The message
+					    "Select Difficulty",  // Title of the dialog
+					    diffs,  // Options array for difficulty levels
+					    "settings"  // Type indicating it's a settings menu
+					);
 					String difficulty = "Medium";
 					switch (diff) {
 					case 0:
@@ -735,10 +783,14 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Change Deck
 				if (settingToChange == 2) {
-					// Add back memes?
-					Object[] cardDecks = {"Standard", "Expanded", "Full", "Custom" };
-					int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
-							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
+					String[] cardDecks = { "Standard", "Expanded", "Full", "Custom" };
+					int deck = CustomDialog.showCustomDialog(
+					    frame,
+					    "Choose the game deck:",  // The message
+					    "Select Deck",  // Title of the dialog
+					    cardDecks,  // Options array for deck selection
+					    "settings"  // Type indicating it's a settings menu
+					);
 
 					if (deck == 0) {
 						election.reset("standard", null, 0.0, 5);
@@ -953,12 +1005,27 @@ public class RunElectionGameCombined implements Runnable {
 				
 				// Exit Game
 				if (settingToChange == 3) {
-					frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+					// Show a confirm dialog before exiting the game
+					int exitChoice = CustomDialog.showCustomDialog(
+					    frame,
+					    "Are you sure you want to exit Campaign Clash?",  // The message
+					    "Exit Game",  // Title of the dialog
+					    new String[] { "Yes", "No" },  // Options for Yes and No
+					    "settings"  // Type indicating it's a settings menu
+					);
+
+					// Handle the user's choice
+					if (exitChoice == 0) {  // Yes was selected
+					    frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+					} else {
+					    // No was selected, just close the dialog and do nothing
+					}
+
 				}
 
-
+				
 				if (settingToChange == 2) {
-					// This is not WAI
+					// How to handle this right?
 					if (election.p2w > 0) {
 						cumulativeGames++;
 					}
@@ -969,6 +1036,7 @@ public class RunElectionGameCombined implements Runnable {
 					up.reset();
 					board.reset();
 				}
+				
 
 			}
 		});
@@ -1080,7 +1148,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		// User continues as active account
 		if (loginMode == 0) {
-			mode = false;
+			twoplayermode = false;
 			election.namePlayer(activeAccount);
 			election.namePlayer2("CPU");
 			election.setAIDifficulty(accountSettingsArray[1]);
@@ -1092,7 +1160,7 @@ public class RunElectionGameCombined implements Runnable {
 		// User changes account. The following functions can be heavily refactored, and
 		// needs to have way better error handling.
 		else if (loginMode == 1) {
-			mode = false;
+			twoplayermode = false;
 			// First, get a list of the account names.
 			BufferedReader reader3 = null;
 			String[] accountList = null;
@@ -1367,14 +1435,14 @@ public class RunElectionGameCombined implements Runnable {
 					options[0]);
 
 			if (gameMode == -1 || gameMode == 0 || gameMode == 2) {
-				mode = false;
+				twoplayermode = false;
 			} else {
-				mode = true;
+				twoplayermode = true;
 			}
 
 				// Name Player 1
 				String playername = "Player 1";
-				if (mode) {
+				if (twoplayermode) {
 					playername = JOptionPane.showInputDialog(frame,
 							"Hello and welcome to the Campaign Clash! Player 1, please enter your name: ");
 				} else {
@@ -1387,7 +1455,7 @@ public class RunElectionGameCombined implements Runnable {
 				status.repaint();
 
 				// Name Player 2 or set AI difficulty
-				if (mode) {
+				if (twoplayermode) {
 					String player2name = JOptionPane.showInputDialog(frame, "Player 2, please enter your name: ");
 					election.namePlayer2(player2name);
 					setLabel(status);
@@ -1907,7 +1975,7 @@ public class RunElectionGameCombined implements Runnable {
 
 			if (!electionCardZoomed) {
 			for (int i = 0; i < 2; i++) {
-				if (hideUsers && mode) {
+				if (hideUsers && twoplayermode) {
 					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
 							.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(usercard);
@@ -1943,7 +2011,7 @@ public class RunElectionGameCombined implements Runnable {
 			/*
 			 * Player 1 played president
 			 */
-			if (hideUsers && mode) {
+			if (hideUsers && twoplayermode) {
 				ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
 						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 				final JLabel label = new JLabel(aicard);
@@ -2020,7 +2088,7 @@ public class RunElectionGameCombined implements Runnable {
 				cpupin.setLayout(new GridLayout(2, 1));
 				this.add(cpupin);
 
-			} else if (!mode) {
+			} else if (!twoplayermode) {
 				/*
 				 * 1-Player Mode
 				 */

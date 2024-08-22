@@ -471,35 +471,37 @@ public class ElectionGame {
 		lastwinner = winner;
 		if (winner) {
 			message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName() + "'s " + c2.toString()
-					+ "! \n" + player1.getName() + " played the policies " + p1.get(0).toString() + " and " + p1.get(1)
+					+ "! \n\n" + player1.getName() + " played the policies " + p1.get(0).toString() + " and " + p1.get(1)
 					+ " while " + player2.getName() + " played " + p2.get(0) + " and " + p2.get(1) + "."
 					+ "\nRound score: " + current.getScore(c1, p1.get(0), p1.get(1)) + " to "
-					+ current.getScore(c2, p2.get(0), p2.get(1)) + "\nKey Attributes were: "
+					+ current.getScore(c2, p2.get(0), p2.get(1)) + "\n\nKey Attributes were: "
 					+ current.getAttrOne().toUpperCase() + ", " + current.getAttrTwo().toUpperCase() + "."
 					+ "\nKey Issues were: " + current.getMain() + " (Main), " + current.getSide1() + ", and "
-					+ current.getSide2() + ".\n" + "Final vote count: "
-					+ c1.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
-					+ " " + p1pct + "% to "
-					+ c2.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
-					+ " " + p2pct + "%.";
+					+ current.getSide2() + ".";
 			player1.winRound();
 		} else {
 			message = player2.getName() + "'s " + c2.toString() + " beat " + player1.getName() + "'s " + c1.toString()
-					+ "! \n" + player2.getName() + " played the policies " + p2.get(0).toString() + " and " + p2.get(1)
+					+ "! \n\n" + player2.getName() + " played the policies " + p2.get(0).toString() + " and " + p2.get(1)
 					+ " while " + player1.getName() + " played " + p1.get(0) + " and " + p1.get(1) + "."
 					+ "\nRound score: " + current.getScore(c2, p2.get(0), p2.get(1)) + " to "
-					+ current.getScore(c1, p1.get(0), p1.get(1)) + "\nKey Attributes were: "
+					+ current.getScore(c1, p1.get(0), p1.get(1)) + "\n\nKey Attributes were: "
 					+ current.getAttrOne().toUpperCase() + ", " + current.getAttrTwo().toUpperCase() + "."
 					+ "\nKey Issues were: " + current.getMain() + " (Main), " + current.getSide1() + ", and "
-					+ current.getSide2() + ".\n" + "Final vote count: "
-					+ c1.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
-					+ " " + p1pct + "% to "
-					+ c2.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
-					+ " " + p2pct + "%.";
+					+ current.getSide2() + ".";
 			;
 
 			player2.winRound();
 		}
+		
+		/*
+		 * Final vote count code if I want to bring it back:
+		  "\nFinal vote count: "
+					+ c1.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
+					+ " " + p1pct + "% to "
+					+ c2.toString().replaceAll("Jr.", "").replaceAll("\\d", "").replaceAll("^.*?(\\w+)\\W*$", "$1")
+					+ " " + p2pct + "%.";
+		 * 
+		 */
         
         if (winner&&c1.getName().equals("George W. Bush")&&c2.getName().equals("Al Gore")) {
             achievement = "ACHIEVEMENT: Win Florida (Defeat Al Gore with George W. Bush)";
