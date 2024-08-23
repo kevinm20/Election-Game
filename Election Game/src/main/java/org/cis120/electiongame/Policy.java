@@ -123,6 +123,7 @@ public class Policy extends Card {
         return ideologies.contains(idea);
     }
 
+    @Override
     public String getImageURL() {
         String target = super.getName().replaceAll("\\s", "").replace(".", "");
         target = target.toLowerCase();

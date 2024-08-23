@@ -42,6 +42,37 @@ public class ElectionGame {
     public String deckPreset = "standard";
     public String achievement = null;
     public String aiDifficulty = "";
+    
+    public String hint = "";
+    public int hintIndex = 1;
+    
+    public String getHint() {
+    	switch (hintIndex) {
+		case 1:
+			hint += "Hint 1: One attribute is " + current.getAttrOne().toUpperCase() + ".";
+			hintIndex++;
+			break;
+		case 2:
+			hint += "\nHint 2: One policy set is " + current.getSide1()+ ".";
+			hintIndex++;
+			break;
+		case 3:
+			hint += "\nHint 3: Another attribute is " + current.getAttrTwo().toUpperCase() + ".";
+			hintIndex++;
+			break;
+		case 4:
+			hint += "\nHint 4: Another policy set is " + current.getSide2()+ ".";
+			hintIndex++;
+			break;
+		case 5:
+			hint += "\nHint 5: The main policy is " + current.getMain()+ ".";
+			hintIndex++;
+			break;
+		default:
+			return hint;
+    	}
+    	return hint;
+    }
 
     public void flipPlayer() {
         if (turn) {
@@ -106,6 +137,9 @@ public class ElectionGame {
      * reset (re-)sets the game state to start a new game.
      */
     public void reset() {
+    	hint = "";
+    	hintIndex = 1;
+    	
         player1play = null;
         player2play = null;
 
@@ -155,6 +189,9 @@ public class ElectionGame {
      * This is the correct method to use
      */
     public void reset(String preset, String[] tags, double minRate, int presCount) {
+    	hint = "";
+    	hintIndex = 1;
+    	
         player1play = null;
         player2play = null;
 
@@ -419,7 +456,7 @@ public class ElectionGame {
     }
 
     // Even though you also have to play policies, I left this method in for easy
-    // testing.
+    // testing. THIS IS OLD VERSION IGNORE IT
     public void playRound(President c1, President c2) {
 
         if (c1 == null || c2 == null) {
@@ -458,6 +495,9 @@ public class ElectionGame {
                 || p2.get(1) == null || c2 == null) {
             throw new IllegalArgumentException();
         }
+        
+        hint = "";
+        hintIndex = 1;
         
         p1score += current.getScore(c1, p1.get(0), p1.get(1));
         p2score += current.getScore(c2, p2.get(0), p2.get(1));

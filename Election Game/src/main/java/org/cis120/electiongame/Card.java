@@ -23,6 +23,12 @@ public class Card implements Comparable<Card> {
         name = nm;
     }
 
+    public String getImageURL() {
+        String target = name.replaceAll("\\s", "").replace(".", "").replace("'", "");
+        target = target.toLowerCase();
+        return "files/" + target + ".PNG";
+    }
+    
     @Override
     public int compareTo(Card o) {
         return (this.name).compareTo(o.getName());

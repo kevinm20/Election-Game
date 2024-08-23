@@ -232,8 +232,18 @@ public class CustomDialog extends JDialog {
 
         pack();
         setSize((int) (900 * widthRatio), (int) (600 * heightRatio)); // Scaled size
-
-        setLocationRelativeTo(parent); // Center on parent
+        
+        // Check the type and adjust the position
+        if ("round".equalsIgnoreCase(type)) {
+            // Shift the dialog 200 pixels below the center
+            setLocationRelativeTo(parent);
+            Point location = getLocation();
+            setLocation(location.x, location.y + 275);
+        } else {
+            // Center on parent for other types
+            setLocationRelativeTo(parent);
+        }
+        
         setVisible(true); // Automatically show the dialog
     }
 
@@ -253,7 +263,8 @@ public class CustomDialog extends JDialog {
             if ("error".equalsIgnoreCase(type) || "resign".equalsIgnoreCase(type)) {
                 globalPlayer.playSoundEffect("files/error.MP3"); // Error sound
             } else if ("round".equalsIgnoreCase(type)) {
-                globalPlayer.playSoundEffect("files/error.MP3"); // Round win sound
+                //globalPlayer.playSoundEffect("files/roundwin.MP3"); // Round win sound
+            	//Fix this mess somehow
             } else {
                 globalPlayer.playSoundEffect("files/menu.MP3"); // Default menu sound
             }

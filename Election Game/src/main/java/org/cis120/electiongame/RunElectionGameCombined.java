@@ -121,13 +121,11 @@ public class RunElectionGameCombined implements Runnable {
 	    frame.setLayout(new BorderLayout());
 	    frame.add(loadingScreen, BorderLayout.CENTER);
 
-		// Add the logo to the top left
-		ImageIcon logoIcon = new ImageIcon(
-				new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG")).getImage()
-						.getScaledInstance((int) (cardSize / 225.0 * 100), (int) (cardSize / 225.0 * 100),
-								Image.SCALE_SMOOTH));
-		// Set the icon image for the frame
-		frame.setIconImage(logoIcon.getImage());
+	 // Load the original image for the application icon (without scaling)
+	    ImageIcon logoIconOriginal = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"));
+
+	    // Set the icon image for the frame
+	    frame.setIconImage(logoIconOriginal.getImage());
 		
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
@@ -247,7 +245,14 @@ public class RunElectionGameCombined implements Runnable {
 		BackgroundPanel decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 
-		JLabel logoLabel = new JLabel(logoIcon);
+		// Scale the image for use in the JLabel
+		ImageIcon logoIconScaled = new ImageIcon(
+		    new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG")).getImage()
+		        .getScaledInstance((int) (cardSize / 225.0 * 100), (int) (cardSize / 225.0 * 100), Image.SCALE_SMOOTH)
+		);
+
+		// Use the scaled image for the JLabel
+		JLabel logoLabel = new JLabel(logoIconScaled);
 		decks.add(logoLabel);
 
 		frame.add(decks, BorderLayout.WEST);
@@ -311,6 +316,7 @@ public class RunElectionGameCombined implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				// Play the button click sound
 		        player.playSoundEffect(prefix + "files/playbutton.MP3");
+		        board.unzoom();
 		        
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
 						|| election.getActivePinnedPolicies().get(1) == null) {
@@ -533,7 +539,7 @@ public class RunElectionGameCombined implements Runnable {
 					    frame,
 					    "What would you like help with?",  // The message
 					    "Help",  // Title of the dialog
-					    new String[] { "Card Info", "Instructions" },  // Options for Card Info and Instructions
+					    new String[] { "Hint", "Instructions" },  // Options for Card Info and Instructions
 					    "help",  // Type indicating it's a help menu
 					    "files/helpmenu.PNG",  // Custom background image
 					    1.0,  // Height ratio
@@ -611,13 +617,27 @@ public class RunElectionGameCombined implements Runnable {
 						);
 
 
+				} else if (helpMode == 0) {
+					String hint = election.getHint();
+					CustomDialog.showCustomDialog(
+					        frame,              // Parent frame
+					        hint,               // The hint message
+					        "Hint",             // Title of the dialog
+					        new String[] { "Ok" },  // Single "Ok" button
+					        "help",             // Type indicating it's a help menu
+					        "files/helpmenu.PNG",  // Background image
+					        1.0,                // Height ratio
+					        1.0                 // Width ratio
+					    );
+				}
 
-
+				/* Card info mode, needs work
 				} else if (helpMode == 0) {
 					cardInfoMode = !cardInfoMode;
 					board.draw();
 					user_cards.paintCards();
 				}
+				*/
 			}
 		});
 		gbc.gridy = 1;
@@ -737,8 +757,6 @@ public class RunElectionGameCombined implements Runnable {
 					    settingOptions,
 					    "settings"
 					);
-
-				printMemoryUsage();
 
 				// Change Name
 				if (settingToChange == 0) {
@@ -1651,14 +1669,20 @@ public class RunElectionGameCombined implements Runnable {
 	                    // This makes all of the cards buttons that play the card if clicked
 	                    usercd.addMouseListener(new MouseAdapter() {
 	                        public void mouseReleased(MouseEvent e) {
-	                            player.playSoundEffect(prefix + "files/cardplay.MP3");
-	                            if (election.getActivePinCard() != null) {
-	                                election.getActivePlayer().add(election.getActivePinCard());
+	                        	player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                        	if (SwingUtilities.isRightMouseButton(e)) {
+	                                // Pass the card to the GameBoard for zooming
+	                                board.zoomCard(curr);
+	                            } else {
+	                                // Normal click handling (as before)
+	                                if (election.getActivePinCard() != null) {
+	                                    election.getActivePlayer().add(election.getActivePinCard());
+	                                }
+	                                election.activePinCard(curr);
+	                                election.getActivePlayer().place(curr);
+	                                board.draw();
+	                                paintCards();
 	                            }
-	                            election.activePinCard(curr);
-	                            election.getActivePlayer().place(curr);
-	                            board.draw();
-	                            paintCards();
 	                        }
 	                    });
 	                }
@@ -1813,30 +1837,35 @@ public class RunElectionGameCombined implements Runnable {
 
 	                    usercd.addMouseListener(new MouseAdapter() {
 	                        public void mouseReleased(MouseEvent e) {
-	                            player.playSoundEffect(prefix + "files/cardplay.MP3");
-	                            if ((election.getActivePinnedPolicies().get(0) != null
-	                                    && election.getActivePinnedPolicies().get(0).sameCategory(curr))
-	                                    || election.getActivePinnedPolicies().get(0) == null
-	                                    && election.getActivePinnedPolicies().get(1) != null
-	                                    && election.getActivePinnedPolicies().get(1).sameCategory(curr)) {
-	                                JOptionPane.showMessageDialog(board,
-	                                        "Error: you can't play the same or opposite policy together!", "Error",
-	                                        JOptionPane.ERROR_MESSAGE);
-	                            } else if (election.getActivePinnedPolicies().get(0) == null) {
-	                                election.pinActivePolicy(election.getActivePlayer().place(curr), 0);
-	                                board.draw();
-	                                paintCards();
-	                            } else if (election.getActivePinnedPolicies().get(1) == null) {
-	                                election.pinActivePolicy(election.getActivePlayer().place(curr), 1);
-	                                board.draw();
-	                                paintCards();
+	                        	player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                        	if (SwingUtilities.isRightMouseButton(e)) {
+	                                board.zoomCard(curr);  // Zoom the card on the GameBoard
 	                            } else {
-	                                Policy pol = election.pinActivePolicy(election.getActivePlayer().place(curr));
-	                                if (pol != null) {
-	                                    election.getActivePlayer().add(pol);
+	                                // Normal click handling
+	                                if ((election.getActivePinnedPolicies().get(0) != null
+	                                        && election.getActivePinnedPolicies().get(0).sameCategory(curr))
+	                                        || election.getActivePinnedPolicies().get(0) == null
+	                                        && election.getActivePinnedPolicies().get(1) != null
+	                                        && election.getActivePinnedPolicies().get(1).sameCategory(curr)) {
+	                                    JOptionPane.showMessageDialog(board,
+	                                            "Error: you can't play the same or opposite policy together!", "Error",
+	                                            JOptionPane.ERROR_MESSAGE);
+	                                } else if (election.getActivePinnedPolicies().get(0) == null) {
+	                                    election.pinActivePolicy(election.getActivePlayer().place(curr), 0);
+	                                    board.draw();
+	                                    paintCards();
+	                                } else if (election.getActivePinnedPolicies().get(1) == null) {
+	                                    election.pinActivePolicy(election.getActivePlayer().place(curr), 1);
+	                                    board.draw();
+	                                    paintCards();
+	                                } else {
+	                                    Policy pol = election.pinActivePolicy(election.getActivePlayer().place(curr));
+	                                    if (pol != null) {
+	                                        election.getActivePlayer().add(pol);
+	                                    }
+	                                    board.draw();
+	                                    paintCards();
 	                                }
-	                                board.draw();
-	                                paintCards();
 	                            }
 	                        }
 	                    });
@@ -1909,12 +1938,12 @@ public class RunElectionGameCombined implements Runnable {
 	public class GameBoard extends JPanel {
 		private boolean cpuPlayed;
 		private boolean hideUsers;
-	    private boolean electionCardZoomed = false; // Track if the election card is zoomed in
 	    private Image backgroundImage; // To hold the background image
 	    private BufferedImage bufferedImage; // To hold buffered image of background image
 	    private SoundtrackPlayer player;
 	    private double xref;
 	    private double frameXRef;
+	    private Card zoomedCard = null;
 
 		// Game constants
 		public static final int BOARD_WIDTH = 600;
@@ -1958,13 +1987,46 @@ public class RunElectionGameCombined implements Runnable {
 		public void flipUser() {
 			hideUsers = !hideUsers;
 		}
+		
+		// Method to zoom in a card
+	    public void zoomCard(Card card) {
+	        this.zoomedCard = card;
+	        draw();  // Redraw the board to show the zoomed card
+	    }
 
+	    public void unzoom() {
+	    	if (this.zoomedCard != null) {
+		    	this.zoomedCard = null;
+		    	draw();
+	    	}
+	    }
 		// This method basically draws all the cards, the "pinned"
 		// cards that the player is about to play along with others
 		public void draw() {
 			this.removeAll();
 			this.updateUI();
 
+			if (zoomedCard != null) {
+				// Use the same dimensions as the zoomed election card
+	            final int zoomedCardWidth = (int) (0.888888889 * cardSize * 1.75);
+	            final int zoomedCardHeight = (int) (1.17777778 * cardSize * 1.75);
+
+	            ImageIcon zoomedIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + zoomedCard.getImageURL()))
+	                    .getImage().getScaledInstance(zoomedCardWidth, zoomedCardHeight, Image.SCALE_SMOOTH));
+	            JLabel zoomedLabel = new JLabel(zoomedIcon);
+	            zoomedLabel.setBounds((getWidth() - zoomedCardWidth) / 2, (getHeight() - zoomedCardHeight) / 2, zoomedCardWidth, zoomedCardHeight);
+	            this.add(zoomedLabel);
+
+	            // Add a click listener to unzoom the card
+	            zoomedLabel.addMouseListener(new MouseAdapter() {
+	                @Override
+	                public void mouseReleased(MouseEvent e) {
+	                    zoomedCard = null;  // Unzoom the card
+	                    player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                    draw();  // Redraw the board to restore the normal view
+	                }
+	            });
+	        } else {
 			// Player 1 played policies
 			JPanel userpin = new JPanel();
 		    userpin.setOpaque(false); // Make the userpin panel transparent
@@ -1973,7 +2035,6 @@ public class RunElectionGameCombined implements Runnable {
 				cardSize = 225;
 			}
 
-			if (!electionCardZoomed) {
 			for (int i = 0; i < 2; i++) {
 				if (hideUsers && twoplayermode) {
 					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
@@ -2037,12 +2098,12 @@ public class RunElectionGameCombined implements Runnable {
 				final JLabel label = new JLabel(usercard);
 				this.add(label);
 			}
-			}
+			
 			/*
 	         * Current Election Card
 	         */
-	        final int electionCardWidth = electionCardZoomed ? (int) (0.888888889 * cardSize * 1.75) : (int) (0.888888889 * cardSize);
-	        final int electionCardHeight = electionCardZoomed ? (int) (1.17777778 * cardSize * 1.75) : (int) (1.17777778 * cardSize);
+			final int electionCardWidth = (int) (0.888888889 * cardSize);
+			final int electionCardHeight = (int) (1.17777778 * cardSize);
 
 	        if (starting) {
 	            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
@@ -2059,13 +2120,12 @@ public class RunElectionGameCombined implements Runnable {
 	            elec.addMouseListener(new MouseAdapter() {
 	                @Override
 	                public void mouseReleased(MouseEvent e) {
-	                	player.playSoundEffect(prefix + "files/playbutton.MP3");
-	                    electionCardZoomed = !electionCardZoomed; // Toggle the zoom state
+	                	player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                    zoomedCard = election.getElection();
 	                    draw(); // Redraw the board to update the size of the election card
 	                }
 	            });
 	        }
-	        if (!electionCardZoomed) {
 			/*
 			 * CPU Pinned Cards
 			 */
@@ -2154,6 +2214,7 @@ public class RunElectionGameCombined implements Runnable {
 				cpupin.setLayout(new GridLayout(2, 1));
 				this.add(cpupin);
 			}
+	        
 	        }
 			repaint();
 		}
