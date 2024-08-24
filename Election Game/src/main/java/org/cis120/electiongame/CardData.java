@@ -339,7 +339,7 @@ public class CardData {
             new String[]{"President", "Jacksonian Era"}
     );
     static President jamesKPolk = new President(
-            "James K. Polk", "South", 6, 7, 4, 2, "Populist", "Imperialism",
+            "James K. Polk", "South", 6, 8, 5, 2, "Populist", "Imperialism",
             new String[]{"President", "Jacksonian Era"}
     );
     static President zacharyTaylor = new President(
@@ -1960,7 +1960,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President johnArmstrongJr = new President(
-            "John Armstrong Jr.", "Northeast", 3, 1, 1, 1, "Libertarian", "Imperialism",
+            "John Armstrong Jr.", "Northeast", 3, 1, 1, 1, "Libertarian", "Isolationism",
             new String[]{"Founding Era"}
     );
     static President williamLowndes = new President(
@@ -2200,7 +2200,7 @@ public class CardData {
             new String[]{"Jacksonian Era"}
     );
     static President thomasHartBenton = new President(
-            "Thomas Hart Benton", "South", 7, 5, 3, 3, "Libertarian", "Imperialism",
+            "Thomas Hart Benton", "South", 7, 5, 3, 4, "Libertarian", "Imperialism",
             new String[]{"Jacksonian Era"}
     );
     static President georgeWolf = new President(
