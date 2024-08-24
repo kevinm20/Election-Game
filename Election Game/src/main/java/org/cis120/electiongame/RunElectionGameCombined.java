@@ -320,8 +320,17 @@ public class RunElectionGameCombined implements Runnable {
 		        
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
 						|| election.getActivePinnedPolicies().get(1) == null) {
-					JOptionPane.showMessageDialog(frame, "Error: you haven't played all cards!", "Error",
-							JOptionPane.ERROR_MESSAGE);
+					CustomDialog.showCustomDialog(
+						    frame,
+						    "Error: You haven't played all cards!",  // The error message
+						    "Error",  // Title of the dialog
+						    new String[] { "Ok" },  // Single "Ok" button
+						    "error",  // Type indicating it's an error menu
+						    "files/errormenu.PNG",  // Custom background image
+						    0.5,  // Height ratio
+						    1  // Width ratio
+						);
+
 				} else {
 					if (!twoplayermode) {
 						// election.printGameState();
@@ -746,7 +755,7 @@ public class RunElectionGameCombined implements Runnable {
 				}
 
 				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck",
-						"Exit Game" };
+						"Exit Game", "Rig Deck" };
 				int settingToChange = CustomDialog.showCustomDialog(
 					    frame,
 					    "Stats for " + election.getPlayer1().getName() + " this session: \n" 
@@ -886,17 +895,31 @@ public class RunElectionGameCombined implements Runnable {
 							    deckSet = "custom";
 							    election.reset("custom", selectedTagsArray, minRating, 5);
 							} else {
-							    JOptionPane.showMessageDialog(board,
-							            "Error: One of your inputs was invalid. Standard deck will be used.", "Error",
-							            JOptionPane.ERROR_MESSAGE);
+								CustomDialog.showCustomDialog(
+									    frame,
+									    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+									    "Error",  // Title of the dialog
+									    new String[] { "Ok" },  // Single "Ok" button
+									    "error",  // Type indicating it's an error menu
+									    "files/errormenu.PNG",  // Custom background image
+									    0.5,  // Height ratio
+									    1.0  // Width ratio
+									);
 							    election.reset("standard", null, 0.0, 5);
 							    deckSet = "standard";
 							}
 
 						} catch (Exception ex) {
-							JOptionPane.showMessageDialog(board,
-									"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
-									JOptionPane.ERROR_MESSAGE);
+							CustomDialog.showCustomDialog(
+								    frame,
+								    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+								    "Error",  // Title of the dialog
+								    new String[] { "Ok" },  // Single "Ok" button
+								    "error",  // Type indicating it's an error menu
+								    "files/errormenu.PNG",  // Custom background image
+								    0.5,  // Height ratio
+								    1.0  // Width ratio
+								);
 							election.reset("standard", null, 0.0, 5);
 							deckSet = "standard";
 						}
@@ -1041,6 +1064,23 @@ public class RunElectionGameCombined implements Runnable {
 
 				}
 
+				// Rig deck (for testing)
+				if (settingToChange == 4) {
+					String cardtoget = JOptionPane.showInputDialog(frame, "Pick a president to add");
+					String electiontoset = JOptionPane.showInputDialog(frame, "Pick an election to set");
+					for (President p : CardData.getPresidents("full", null, 0.0)) {
+						if (p.getName().equals(cardtoget)) {
+							user_cards.rigDeck(p);
+						}
+					}
+					for (Election sampleelection : CardData.getElections()) {
+						if (sampleelection.getName().equals(electiontoset)) {
+							election.rigElection(sampleelection);
+						}
+					}
+					board.draw();
+					user_cards.paintCards();
+				}
 				
 				if (settingToChange == 2) {
 					// How to handle this right?
@@ -1568,16 +1608,30 @@ public class RunElectionGameCombined implements Runnable {
 							deckSet = "custom";
 							election.reset("custom", selectedTagsArray, minRating, 5);
 						} else {
-							JOptionPane.showMessageDialog(board,
-									"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
-									JOptionPane.ERROR_MESSAGE);
+							CustomDialog.showCustomDialog(
+								    frame,
+								    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+								    "Error",  // Title of the dialog
+								    new String[] { "Ok" },  // Single "Ok" button
+								    "error",  // Type indicating it's an error menu
+								    "files/errormenu.PNG",  // Custom background image
+								    0.5,  // Height ratio
+								    1.0  // Width ratio
+								);
 							election.reset("standard", null, 0.0, 5);
 							deckSet = "standard";
 						}
 					} catch (Exception ex) {
-						JOptionPane.showMessageDialog(board,
-								"Error: One of your inputs was invalid. Standard deck will be used.", "Error",
-								JOptionPane.ERROR_MESSAGE);
+						CustomDialog.showCustomDialog(
+							    frame,
+							    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+							    "Error",  // Title of the dialog
+							    new String[] { "Ok" },  // Single "Ok" button
+							    "error",  // Type indicating it's an error menu
+							    "files/errormenu.PNG",  // Custom background image
+							    0.5,  // Height ratio
+							    1.0  // Width ratio
+							);
 						election.reset("standard", null, 0.0, 5);
 						deckSet = "standard";
 					}
@@ -1736,6 +1790,13 @@ public class RunElectionGameCombined implements Runnable {
 	            usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
 	        }
 	    }
+	    
+	    // Used for testing or debugging
+	    public void rigDeck(President pres) {
+	    	hand.remove(0);
+	    	hand.add(pres);
+	    	paintCards();
+	    }
 
 		@Override
 		public void paintComponent(Graphics g) {
@@ -1847,9 +1908,18 @@ public class RunElectionGameCombined implements Runnable {
 	                                        || election.getActivePinnedPolicies().get(0) == null
 	                                        && election.getActivePinnedPolicies().get(1) != null
 	                                        && election.getActivePinnedPolicies().get(1).sameCategory(curr)) {
-	                                    JOptionPane.showMessageDialog(board,
-	                                            "Error: you can't play the same or opposite policy together!", "Error",
-	                                            JOptionPane.ERROR_MESSAGE);
+	                                	CustomDialog.showCustomDialog(
+	                                		    board.getParent(),
+	                                		    "Error: you can't play the same or opposite policy together!",  // The error message
+	                                		    "Error",  // Title of the dialog
+	                                		    new String[] { "Ok" },  // Single "Ok" button
+	                                		    "error",  // Type indicating it's an error menu
+	                                		    "files/errormenu.PNG",  // Custom background image
+	                                		    0.5,  // Height ratio
+	                                		    1.0  // Width ratio
+	                                		);
+
+
 	                                } else if (election.getActivePinnedPolicies().get(0) == null) {
 	                                    election.pinActivePolicy(election.getActivePlayer().place(curr), 0);
 	                                    board.draw();

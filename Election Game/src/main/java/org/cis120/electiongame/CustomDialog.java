@@ -9,7 +9,8 @@ import java.awt.event.KeyEvent;
 public class CustomDialog extends JDialog {
 
     private static SoundtrackPlayer globalPlayer; // Static reference to global SoundtrackPlayer
-    private static final Color FONT_COLOR = new Color(222, 162, 6); // Custom font color
+    private static final Color FONT_COLOR = new Color(0, 0, 0); // Custom font color
+    //private static final Color FONT_COLOR = new Color(222, 162, 6); // Gold
     private static int globalFontSize = 14; // Default font size
     private int selectedOption = -1; // Store the selected option
     
@@ -23,12 +24,12 @@ public class CustomDialog extends JDialog {
 
 
     // Constructor with optional parameters for custom background, height ratio, and width ratio
-    public CustomDialog(Frame parent, String message, String title, String[] options, String type) {
+    public CustomDialog(Container parent, String message, String title, String[] options, String type) {
         this(parent, message, title, options, type, null, 1.0, 1.0); // Call the main constructor with defaults
     }
 
-    public CustomDialog(Frame parent, String message, String title, String[] options, String type, String customBackground, double heightRatio, double widthRatio) {
-        super(parent, title, true);
+    public CustomDialog(Container parent, String message, String title, String[] options, String type, String customBackground, double heightRatio, double widthRatio) {
+        super(JOptionPane.getFrameForComponent(parent), title, true);
 
         setUndecorated(true); // Remove default decorations
 
@@ -122,7 +123,7 @@ public class CustomDialog extends JDialog {
 
             button.setIcon(buttonIcon);
             button.setFont(new Font("Dialog", Font.BOLD, globalFontSize));
-            button.setForeground(FONT_COLOR);
+            button.setForeground(new Color(222, 162, 6));
             button.setHorizontalTextPosition(SwingConstants.CENTER); // Center the text on the image
             button.setFocusPainted(false); // Remove focus border
             button.setContentAreaFilled(false); // Ensure only the image is shown
@@ -297,13 +298,13 @@ public class CustomDialog extends JDialog {
     }
 
     // Static method to easily create and show the dialog, and return the selected option
-    public static int showCustomDialog(Frame parent, String message, String title, String[] options, String type) {
+    public static int showCustomDialog(Container parent, String message, String title, String[] options, String type) {
         CustomDialog dialog = new CustomDialog(parent, message, title, options, type);
         return dialog.getSelectedOption();
     }
 
     // New static method to create and show the dialog with optional parameters
-    public static int showCustomDialog(Frame parent, String message, String title, String[] options, String type, String customBackground, double heightRatio, double widthRatio) {
+    public static int showCustomDialog(Container parent, String message, String title, String[] options, String type, String customBackground, double heightRatio, double widthRatio) {
         CustomDialog dialog = new CustomDialog(parent, message, title, options, type, customBackground, heightRatio, widthRatio);
         return dialog.getSelectedOption();
     }

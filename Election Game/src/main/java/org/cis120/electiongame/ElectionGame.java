@@ -454,6 +454,10 @@ public class ElectionGame {
     public String getMessage() {
         return message;
     }
+    
+    public void rigElection(Election year) {
+    	current = year;
+    }
 
     // Even though you also have to play policies, I left this method in for easy
     // testing. THIS IS OLD VERSION IGNORE IT
