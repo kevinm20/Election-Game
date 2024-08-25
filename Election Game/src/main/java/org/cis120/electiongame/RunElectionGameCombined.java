@@ -27,15 +27,12 @@ import javax.swing.*;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Window;
+
 import javazoom.jl.decoder.JavaLayerException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import javax.swing.border.LineBorder;
-import java.awt.Color;
 
 
 
@@ -114,31 +111,114 @@ public class RunElectionGameCombined implements Runnable {
 		// Top-level frame in which game components live
 	    final JFrame frame = new JFrame("Campaign Clash");
 	    
-	    // Create a loading screen panel with the desired background image
+	 // Create a loading screen panel with the desired background image
 	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
-	    	    
+
 	    // Set up the layout and add the loading screen to the frame
 	    frame.setLayout(new BorderLayout());
 	    frame.add(loadingScreen, BorderLayout.CENTER);
 
-	 // Load the original image for the application icon (without scaling)
+	    // Load the original image for the application icon (without scaling)
 	    ImageIcon logoIconOriginal = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"));
 
 	    // Set the icon image for the frame
 	    frame.setIconImage(logoIconOriginal.getImage());
-		
+
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
 
-		// Pack and set the frame to full-screen mode
-		frame.pack();
-		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setVisible(true);
-		frame.requestFocus();
-		
-		frame.revalidate();
-		frame.repaint();
+	    // Create a panel for buttons and set its layout
+	    JPanel buttonPanel = new JPanel();
+	    buttonPanel.setOpaque(false); // Make the button panel transparent
+	    buttonPanel.setLayout(new GridLayout(4, 1, 0, (int) (cardSize / 275.0 * 80))); // 4 rows, 1 column, 20px horizontal and vertical gaps
+
+	    // Define the button titles
+	    String[] buttonTitles = {"Continue", "Edit Account", "1-Player", "2-Players"};
+	    JButton[] buttons = new JButton[buttonTitles.length];
+
+	    // Define the preferred size for the buttons
+	    int loadingButtonWidth = 400;
+	    int loadingButtonHeight = 100;
+
+	    ImageIcon buttonIcon = new ImageIcon(
+	            new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/blankbutton.PNG")).getImage()
+	                    .getScaledInstance((int) (cardSize / 275.0 * loadingButtonWidth),
+	                            (int) (cardSize / 275.0 * loadingButtonHeight), Image.SCALE_SMOOTH));
+	    ImageIcon buttonHoverIcon = new ImageIcon(
+	            new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/blankbuttonhover.PNG")).getImage()
+	                    .getScaledInstance((int) (cardSize / 275.0 * loadingButtonWidth),
+	                            (int) (cardSize / 275.0 * loadingButtonHeight), Image.SCALE_SMOOTH));
+	    ImageIcon buttonClickedIcon = new ImageIcon(
+	            new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/blankbuttonclicked.PNG")).getImage()
+	                    .getScaledInstance((int) (cardSize / 275.0 * loadingButtonWidth),
+	                            (int) (cardSize / 275.0 * loadingButtonHeight), Image.SCALE_SMOOTH));
+
+	    // Loop through the titles to create buttons
+	    for (int i = 0; i < buttonTitles.length; i++) {
+	        final int index = i;  // Create a final variable to store the index
+
+	        buttons[index] = new JButton(buttonTitles[index]);
+	        buttons[index].setPreferredSize(new Dimension(loadingButtonWidth, loadingButtonHeight)); // Set the preferred size for each button
+
+	        // Set the button properties
+	        buttons[index].setIcon(buttonIcon);
+	        buttons[index].setFont(new Font("Dialog", Font.BOLD, 20));
+	        buttons[index].setForeground(new Color(222, 162, 6));
+	        buttons[index].setHorizontalTextPosition(SwingConstants.CENTER); // Center the text on the image
+	        buttons[index].setFocusPainted(false); // Remove focus border
+	        buttons[index].setContentAreaFilled(false); // Ensure only the image is shown
+	        buttons[index].setBorderPainted(false); // Remove button border
+	        buttons[index].setOpaque(false); // Make the button fully transparent except for the image
+
+	        // Add hover and click effects
+	        buttons[index].addMouseListener(new java.awt.event.MouseAdapter() {
+	            @Override
+	            public void mouseEntered(java.awt.event.MouseEvent evt) {
+	                buttons[index].setIcon(buttonHoverIcon);
+	            }
+
+	            @Override
+	            public void mouseExited(java.awt.event.MouseEvent evt) {
+	                buttons[index].setIcon(buttonIcon);
+	            }
+
+	            @Override
+	            public void mousePressed(java.awt.event.MouseEvent evt) {
+	                buttons[index].setIcon(buttonClickedIcon);
+	                buttons[index].setFont(new Font("Dialog", Font.BOLD, 18)); // Slightly smaller font on click
+	            }
+
+	            @Override
+	            public void mouseReleased(java.awt.event.MouseEvent evt) {
+	                buttons[index].setIcon(buttonHoverIcon);
+	                buttons[index].setFont(new Font("Dialog", Font.BOLD, 20)); // Restore font size
+	            }
+	        });
+
+	        // Add each button to the button panel
+	        buttonPanel.add(buttons[index]);
+	    }
+
+	    // Add the button panel to the loading screen (centered on the screen)
+	    loadingScreen.setLayout(new GridBagLayout());
+	    GridBagConstraints buttonConstraints = new GridBagConstraints();
+	    buttonConstraints.insets = new Insets(0, 0, (int) (cardSize / 275.0 * 150), 0); // Adds some vertical spacing at the bottom
+	    buttonConstraints.anchor = GridBagConstraints.SOUTH; // Anchor the buttons to the bottom of the screen
+	    buttonConstraints.weighty = 1.0; // Push the buttons down by using weight
+
+	    loadingScreen.add(buttonPanel, buttonConstraints);
+
+
+	    // Pack and set the frame to full-screen mode
+	    frame.pack();
+	    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	    frame.setVisible(true);
+	    frame.requestFocus();
+
+	    frame.revalidate();
+	    frame.repaint();
+
 		
 		// Get the frame stats
 	 	    
@@ -767,14 +847,19 @@ public class RunElectionGameCombined implements Runnable {
 					    "settings"
 					);
 
-				// Change Name
+				// Change name
 				if (settingToChange == 0) {
-					String playername = election.getActivePlayer().getName();
+				    String playername = election.getActivePlayer().getName();
 
-					playername = JOptionPane.showInputDialog(frame, "What would you like to change your name to?");
-					election.nameActivePlayer(playername);
-					setLabel(status);
-					status.repaint();
+				    playername = CustomDialog.showInputDialog(frame, "What would you like to change your name to?", "files/settingsmenuimage.PNG");
+				    
+				    // Check if playername is not empty before updating
+				    if (!playername.trim().isEmpty()) {
+				        election.nameActivePlayer(playername);
+				    }
+				    
+				    setLabel(status);
+				    status.repaint();
 				}
 
 				// Change Difficulty
@@ -839,76 +924,44 @@ public class RunElectionGameCombined implements Runnable {
 						try {
 							CardData.clearRemembered();
 
-							String[] customTags = { "President", "Generational", "Founding Era",
+							String[] customTags = { "President","Founding Era",
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
 							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
 
-							JPanel panel = new JPanel();
-							panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-							JLabel message = new JLabel("Select all tags you would like to include in the deck:");
-							panel.add(message);
+							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
 
-							// Create the "Select All" checkbox
-							JCheckBox selectAllCheckBox = new JCheckBox("Select All");
-							panel.add(selectAllCheckBox);
 
-							// Create the tag checkboxes
-							List<JCheckBox> checkBoxes = new ArrayList<>();
-							for (String tag : customTags) {
-							    JCheckBox checkBox = new JCheckBox(tag);
-							    checkBoxes.add(checkBox);
-							    panel.add(checkBox);
-							}
+								if (!selectedTags.isEmpty()) {
+								    String[] selectedTagsArray = selectedTags.toArray(new String[0]);
 
-							// Add an action listener to the "Select All" checkbox
-							selectAllCheckBox.addActionListener(new ActionListener() {
-							    @Override
-							    public void actionPerformed(ActionEvent e) {
-							        boolean selectAll = selectAllCheckBox.isSelected();
-							        for (JCheckBox checkBox : checkBoxes) {
-							            checkBox.setSelected(selectAll);
-							        }
-							    }
-							});
+								    double minRating = 0.0;
+								    try {
+								        String input = CustomDialog.showInputDialog(
+								            frame,
+								            "What would you like the minimum weighted average rating of a card to be?",
+								            "files/settingsmenuimage.PNG"
+								        );
+								        minRating = Double.parseDouble(input);
+								    } catch (NumberFormatException er) {
+								        minRating = 0.0;
+								    }
 
-							int result = JOptionPane.showConfirmDialog(frame, panel, "Select tags",
-							        JOptionPane.OK_CANCEL_OPTION);
-
-							if (result == JOptionPane.OK_OPTION) {
-							    ArrayList<String> tempSelectedTags = new ArrayList<>();
-							    for (JCheckBox checkBox : checkBoxes) {
-							        if (checkBox.isSelected()) {
-							            tempSelectedTags.add(checkBox.getText());
-							        }
-							    }
-							    String[] selectedTagsArray = new String[tempSelectedTags.size()];
-							    selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
-
-							    double minRating = 0.0;
-							    try {
-							        String input = JOptionPane.showInputDialog(frame, "What would you like the minimum weighted average rating of a card to be?");
-							        minRating = Double.parseDouble(input);
-							    } catch (NumberFormatException er) {
-							        minRating = 0.0;
-							    }
-
-							    deckSet = "custom";
-							    election.reset("custom", selectedTagsArray, minRating, 5);
-							} else {
-								CustomDialog.showCustomDialog(
-									    frame,
-									    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-									    "Error",  // Title of the dialog
-									    new String[] { "Ok" },  // Single "Ok" button
-									    "error",  // Type indicating it's an error menu
-									    "files/errormenu.PNG",  // Custom background image
-									    0.5,  // Height ratio
-									    1.0  // Width ratio
-									);
-							    election.reset("standard", null, 0.0, 5);
-							    deckSet = "standard";
-							}
-
+								    deckSet = "custom";
+								    election.reset("custom", selectedTagsArray, minRating, 5);
+								} else {
+								    CustomDialog.showCustomDialog(
+								        frame,
+								        "Error: One of your inputs was invalid. Standard deck will be used.",
+								        "Error",
+								        new String[] { "Ok" },
+								        "error",
+								        "files/errormenu.PNG",
+								        0.5,
+								        1.0
+								    );
+								    election.reset("standard", null, 0.0, 5);
+								    deckSet = "standard";
+								}
 						} catch (Exception ex) {
 							CustomDialog.showCustomDialog(
 								    frame,
@@ -1066,8 +1119,10 @@ public class RunElectionGameCombined implements Runnable {
 
 				// Rig deck (for testing)
 				if (settingToChange == 4) {
-					String cardtoget = JOptionPane.showInputDialog(frame, "Pick a president to add");
-					String electiontoset = JOptionPane.showInputDialog(frame, "Pick an election to set");
+					String cardtoget = CustomDialog.showInputDialog(frame, "Pick a president to add",
+							"files/settingsmenuimage.PNG");
+					String electiontoset = CustomDialog.showInputDialog(frame, "Pick an election to set",
+							"files/settingsmenuimage.PNG");
 					for (President p : CardData.getPresidents("full", null, 0.0)) {
 						if (p.getName().equals(cardtoget)) {
 							user_cards.rigDeck(p);

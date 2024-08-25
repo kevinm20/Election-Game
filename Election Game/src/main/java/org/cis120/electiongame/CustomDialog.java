@@ -2,33 +2,35 @@ package org.cis120.electiongame;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CustomDialog extends JDialog {
 
     private static SoundtrackPlayer globalPlayer; // Static reference to global SoundtrackPlayer
     private static final Color FONT_COLOR = new Color(0, 0, 0); // Custom font color
-    //private static final Color FONT_COLOR = new Color(222, 162, 6); // Gold
     private static int globalFontSize = 14; // Default font size
     private int selectedOption = -1; // Store the selected option
-    
+
     // Cache for the button images
     private ImageIcon buttonIcon;
     private ImageIcon buttonHoverIcon;
     private ImageIcon buttonClickedIcon;
-    
+
     private int mouseX;
     private int mouseY;
+    private String inputText = "";
+    private JTextField inputField; // Add this line at the beginning of your class
+    private List<JCheckBox> checkBoxes = new ArrayList<>(); // List to store checkboxes
+    private List<String> selectedTags = new ArrayList<>(); // List to store selected tags
 
-
-    // Constructor with optional parameters for custom background, height ratio, and width ratio
     public CustomDialog(Container parent, String message, String title, String[] options, String type) {
         this(parent, message, title, options, type, null, 1.0, 1.0); // Call the main constructor with defaults
     }
 
-    public CustomDialog(Container parent, String message, String title, String[] options, String type, String customBackground, double heightRatio, double widthRatio) {
+    public CustomDialog(Container parent, String message, String title, String[] options, String type,
+            String customBackground, double heightRatio, double widthRatio) {
         super(JOptionPane.getFrameForComponent(parent), title, true);
 
         setUndecorated(true); // Remove default decorations
@@ -47,9 +49,10 @@ public class CustomDialog extends JDialog {
         };
         panel.setLayout(null); // Use absolute layout to place components freely
         setContentPane(panel);
-        
+
         // Bind the ESC key to close the dialog
-        panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "closeDialog");
+        panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                "closeDialog");
         panel.getActionMap().put("closeDialog", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -86,10 +89,55 @@ public class CustomDialog extends JDialog {
         JLabel messageLabel = new JLabel("<html>" + message.replace("\n", "<br>") + "</html>");
         messageLabel.setFont(new Font("Dialog", Font.BOLD, globalFontSize));
         messageLabel.setForeground(FONT_COLOR);
-        messageLabel.setBounds((int) (75 * widthRatio), (int) (100 * heightRatio), (int) (750 * widthRatio), (int) (300 * heightRatio)); // Adjusted position and size
+        messageLabel.setBounds((int) (75 * widthRatio), (int) (100 * heightRatio), (int) (750 * widthRatio),
+                (int) (300 * heightRatio)); // Adjusted position and size
         panel.add(messageLabel);
 
-        // Determine the number of rows and columns based on the number of buttons
+        // Create the input field if necessary
+        if (type.equals("input")) {
+            inputField = new JTextField();
+            inputField.setFont(new Font("Dialog", Font.PLAIN, globalFontSize));
+            inputField.setBounds((int) (75 * widthRatio), (int) (300 * heightRatio), (int) (750 * widthRatio),
+                    (int) (50 * heightRatio)); // Adjusted position
+            panel.add(inputField);
+            SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
+        }
+
+     // Create checkboxes if the type is checkbox
+        if (type.equals("checkbox")) {
+            JPanel checkboxPanel = new JPanel();
+            checkboxPanel.setLayout(new GridLayout(0, 4, 5, 5)); // 3 columns, dynamic rows, with 5px gaps
+            checkboxPanel.setOpaque(false); // Make the checkbox panel transparent
+
+            for (String tag : options) {
+                JCheckBox checkBox = new JCheckBox(tag);
+                checkBox.setOpaque(false); // Make each checkbox transparent
+                checkBoxes.add(checkBox);
+                checkboxPanel.add(checkBox);
+            }
+
+            JCheckBox selectAllCheckBox = new JCheckBox("Select All");
+            selectAllCheckBox.setOpaque(false); // Make the "Select All" checkbox transparent
+            checkboxPanel.add(selectAllCheckBox);
+
+            selectAllCheckBox.addActionListener(e -> {
+                boolean selectAll = selectAllCheckBox.isSelected();
+                checkBoxes.forEach(checkBox -> checkBox.setSelected(selectAll));
+            });
+
+            checkboxPanel.setBounds((int) (75 * widthRatio), (int) (265 * heightRatio), (int) (750 * widthRatio), (int) (200 * heightRatio));
+            panel.add(checkboxPanel);
+
+            // Only add the "Ok" button
+            options = new String[] { "Ok" };
+        }
+
+        if (options==null) {
+        	// Only add the "Ok" button
+            options = new String[] { "Ok" };
+        }
+
+        // Existing button handling code...
         int buttonCount = options.length;
         int rows, cols;
 
@@ -107,7 +155,6 @@ public class CustomDialog extends JDialog {
             cols = (buttonCount + 1) / 2; // Distribute buttons evenly across two rows
         }
 
-        // Add option buttons with a dynamic GridLayout
         JPanel buttonPanel = new JPanel(new GridLayout(rows, cols, 30, 30)); // Dynamic rows and cols, 30px gaps
         buttonPanel.setOpaque(false); // Make the button area transparent
 
@@ -145,7 +192,7 @@ public class CustomDialog extends JDialog {
                 @Override
                 public void mousePressed(java.awt.event.MouseEvent evt) {
                     button.setIcon(buttonClickedIcon);
-                    button.setFont(new Font("Dialog", Font.BOLD, (int)((double)(globalFontSize) * 0.8)));
+                    button.setFont(new Font("Dialog", Font.BOLD, (int) ((double) (globalFontSize) * 0.8)));
                 }
 
                 @Override
@@ -159,15 +206,25 @@ public class CustomDialog extends JDialog {
             button.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    if (type.equals("input") && inputField != null) {
+                        inputText = inputField.getText(); // Capture the input text
+                    } else if (type.equals("checkbox")) {
+                        selectedTags.clear();
+                        for (JCheckBox checkBox : checkBoxes) {
+                            if (checkBox.isSelected()) {
+                                selectedTags.add(checkBox.getText());
+                            }
+                        }
+                    }
                     globalPlayer.playSoundEffect("files/playbutton.MP3");
                     selectedOption = optionIndex;
                     setVisible(false);
                 }
             });
 
-            // If there's only one button, bind the Enter key to this button's action
             if (options.length == 1) {
-                panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "pressButton");
+                panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+                        "pressButton");
                 panel.getActionMap().put("pressButton", new AbstractAction() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -178,13 +235,10 @@ public class CustomDialog extends JDialog {
 
             buttonPanel.add(button);
         }
-        
-        
-
 
         // Calculate the Y position for the buttons to be at the bottom
         int dialogHeight = (int) (600 * heightRatio); // Scaled dialog height
-        int buttonPanelHeight = buttonHeight * rows + (rows - 1) * 30; // Account for rows and gaps (buttons fixed size)
+        int buttonPanelHeight = buttonHeight * rows + (rows - 1) * 30; // Account for rows and gaps
 
         // Calculate the total width of the button panel (buttons + gaps)
         int totalButtonPanelWidth = buttonWidth * cols + (cols - 1) * 30;
@@ -193,14 +247,17 @@ public class CustomDialog extends JDialog {
         int buttonX = (int) ((900 * widthRatio - totalButtonPanelWidth) / 2);
 
         // Calculate Y position for buttons
-        int buttonY = dialogHeight - buttonPanelHeight - (int) (60 * heightRatio); 
+        int buttonY = dialogHeight - buttonPanelHeight - (int) (60 * heightRatio);
 
         buttonPanel.setBounds(buttonX, buttonY, totalButtonPanelWidth, buttonPanelHeight); // Adjust for GridLayout
         panel.add(buttonPanel);
 
         // Create the close ("X") button in the top right corner
         JButton closeButton = new JButton("X");
-        closeButton.setBounds((int) (825 * widthRatio), 0, (int) (75 * widthRatio), (int) (75 * heightRatio)); // Scaled position and size
+        closeButton.setBounds((int) (825 * widthRatio), 0, (int) (75 * widthRatio), (int) (75 * heightRatio)); // Scaled
+                                                                                                                // position
+                                                                                                                // and
+                                                                                                                // size
         closeButton.setForeground(Color.WHITE);
         closeButton.setBackground(new Color(212, 38, 38)); // Initial background color
         closeButton.setFocusPainted(false); // Remove the focus outline
@@ -233,18 +290,8 @@ public class CustomDialog extends JDialog {
 
         pack();
         setSize((int) (900 * widthRatio), (int) (600 * heightRatio)); // Scaled size
-        
-        // Check the type and adjust the position
-        if ("round".equalsIgnoreCase(type)) {
-            // Shift the dialog 200 pixels below the center
-            setLocationRelativeTo(parent);
-            Point location = getLocation();
-            setLocation(location.x, location.y + 275);
-        } else {
-            // Center on parent for other types
-            setLocationRelativeTo(parent);
-        }
-        
+
+        setLocationRelativeTo(parent); // Center on parent
         setVisible(true); // Automatically show the dialog
     }
 
@@ -265,9 +312,8 @@ public class CustomDialog extends JDialog {
                 globalPlayer.playSoundEffect("files/error.MP3"); // Error sound
             } else if ("round".equalsIgnoreCase(type)) {
                 //globalPlayer.playSoundEffect("files/roundwin.MP3"); // Round win sound
-            	//Fix this mess somehow
             } else {
-                globalPlayer.playSoundEffect("files/menu.MP3"); // Default menu sound
+                //globalPlayer.playSoundEffect("files/menu.MP3"); // Default menu sound
             }
         }
     }
@@ -297,18 +343,44 @@ public class CustomDialog extends JDialog {
         return selectedOption;
     }
 
-    // Static method to easily create and show the dialog, and return the selected option
+    // Method to return the input text
+    public String getInputText() {
+        return inputText;
+    }
+
+    // Method to return the selected tags
+    public List<String> getSelectedTags() {
+        return selectedTags;
+    }
+
+    // Static method to easily create and show the dialog, and return the selected
+    // option
     public static int showCustomDialog(Container parent, String message, String title, String[] options, String type) {
         CustomDialog dialog = new CustomDialog(parent, message, title, options, type);
         return dialog.getSelectedOption();
     }
 
     // New static method to create and show the dialog with optional parameters
-    public static int showCustomDialog(Container parent, String message, String title, String[] options, String type, String customBackground, double heightRatio, double widthRatio) {
-        CustomDialog dialog = new CustomDialog(parent, message, title, options, type, customBackground, heightRatio, widthRatio);
+    public static int showCustomDialog(Container parent, String message, String title, String[] options, String type,
+            String customBackground, double heightRatio, double widthRatio) {
+        CustomDialog dialog = new CustomDialog(parent, message, title, options, type, customBackground, heightRatio,
+                widthRatio);
         return dialog.getSelectedOption();
     }
-    
+
+    // Static method to create and show the input dialog, and return the input
+    // string
+    public static String showInputDialog(Container parent, String message, String backgroundImage) {
+        CustomDialog dialog = new CustomDialog(parent, message, "", null, "input", backgroundImage, 1.0, 1.0);
+        return dialog.getInputText();
+    }
+
+    // Static method to create and show the checkbox dialog, and return selected tags
+    public static List<String> showCheckboxDialog(Container parent, String message, String[] options, String backgroundImage) {
+        CustomDialog dialog = new CustomDialog(parent, message, "", options, "checkbox", backgroundImage, 1.0, 1.0);
+        return dialog.getSelectedTags();
+    }
+
     private ImageIcon resizeImageIcon(String imagePath, int width, int height) {
         ImageIcon icon = new ImageIcon(getClass().getClassLoader().getResource(imagePath));
         Image image = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
