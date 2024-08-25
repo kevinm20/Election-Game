@@ -111,7 +111,7 @@ public class RunElectionGameCombined implements Runnable {
 		// Top-level frame in which game components live
 	    final JFrame frame = new JFrame("Campaign Clash");
 	    
-	 // Create a loading screen panel with the desired background image
+	    // Create a loading screen panel with the desired background image
 	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
 
 	    // Set up the layout and add the loading screen to the frame
@@ -917,10 +917,6 @@ public class RunElectionGameCombined implements Runnable {
 						deckSet = "full";
 					}
 					if (deck == 3) {
-						// Find a way to screen this so it doesn't get broken. Also find ways to be more
-						// creative with this, maybe
-						// add generational cards, sort all presidents/nonpresidents and get the top 50
-						// from there, etc.
 						try {
 							CardData.clearRemembered();
 
@@ -1181,7 +1177,7 @@ public class RunElectionGameCombined implements Runnable {
 		UIManager.put("OptionPane.messageFont", initialFont);
 		UIManager.put("OptionPane.buttonFont", initialFont);
 
-	    user_cards.hideCards(5);
+	    //user_cards.hideCards(5);
 		
 	    /*
 	    System.out.println("AI Cards: " + ai_cards.getSize());
@@ -1201,8 +1197,6 @@ public class RunElectionGameCombined implements Runnable {
 		 * Login *
 		 **********/
 		
-		
-	    if (!jarmode) {
 		// First get the active account. Have a check for if activeAccount ends up being
 		// null.
 		BufferedReader reader = null;
@@ -1253,11 +1247,17 @@ public class RunElectionGameCombined implements Runnable {
 		}
 		String[] accountSettingsArray = accountSettings.split(",");
 
-		// Now, open up the login menu
-		Object[] loginOptions = { "Continue as " + activeAccount, "Change Account", "Continue as Guest" };
-		int loginMode = JOptionPane.showOptionDialog(frame,
-				"Welcome back to Campaign Clash " + activeAccount + "! Login below:", "Login",
-				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, loginOptions, loginOptions[2]);
+		String[] loginOptions = { "Continue as " + activeAccount, "Change Account", "1-Player", "2-Player" };
+		int loginMode = CustomDialog.showCustomDialog(
+		        frame, // The parent container
+		        "Welcome back to Campaign Clash " + activeAccount + "! Login below:", // The message
+		        "Login", // The title
+		        loginOptions, // The options
+		        "settings", // The type (you can customize this string if needed)
+		        prefix + "files/settingsmenuimage.PNG", // The background image
+		        1.0, // Height ratio (adjust if needed)
+		        1.0  // Width ratio (adjust if needed)
+		);
 
 		// User continues as active account
 		if (loginMode == 0) {
@@ -1267,8 +1267,8 @@ public class RunElectionGameCombined implements Runnable {
 			election.setAIDifficulty(accountSettingsArray[1]);
 			election.reset(accountSettingsArray[2], null, 0.0, 5);
 			deckSet = accountSettingsArray[2];
-			setLabel(status);
 		}
+		// End active account login
 
 		// User changes account. The following functions can be heavily refactored, and
 		// needs to have way better error handling.
@@ -1302,9 +1302,16 @@ public class RunElectionGameCombined implements Runnable {
 					e.printStackTrace();
 				}
 			}
-			int loginAccountOption = JOptionPane.showOptionDialog(frame,
-					"Welcome back to Campaign Clash " + activeAccount + "! Login below:", "Login",
-					JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList, accountList[0]);
+			int loginAccountOption = CustomDialog.showCustomDialog(
+			        frame, // The parent container
+			        "Welcome back to Campaign Clash! Login below:", // The message
+			        "Login", // The title
+			        accountList, // The options (array of account names)
+			        "settings", // The type (you can customize this string if needed)
+			        prefix + "files/settingsmenuimage.PNG", // The background image
+			        1.0, // Height ratio (adjust if needed)
+			        1.0  // Width ratio (adjust if needed)
+			);
 			// Continue as the selected account
 			if (loginAccountOption > 0) {
 				// First, pull the account settings.
@@ -1369,22 +1376,34 @@ public class RunElectionGameCombined implements Runnable {
 				election.setAIDifficulty(accountSettingsArray[1]);
 				election.reset(accountSettingsArray[2], null, 0.0, 5);
 				deckSet = accountSettingsArray[2];
-				setLabel(status);
 			}
 			// Edit the accounts
 			else {
 				// First find what choice the user wants to make
 				// WIP
-				Object[] editOptions = { "Delete Account", "Edit Account", "New Account" };
-				int editAccountOption = JOptionPane.showOptionDialog(frame, "How would you like to edit the accounts?",
-						"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, editOptions,
-						editOptions[2]);
+				int editAccountOption = CustomDialog.showCustomDialog(
+					    frame, 
+					    "How would you like to edit the accounts?", 
+					    "Login", 
+					    new String[] { "Delete Account", "Edit Account", "New Account" }, 
+					    "settings", 
+					    prefix + "files/settingsmenuimage.PNG", 
+					    1.0, 
+					    1.0
+					);
 				// Delete Account
 				if (editAccountOption == 0) {
 					// First, choose which account to delete
-					int deleteOption = JOptionPane.showOptionDialog(frame, "Which account would you like to delete?",
-							"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
-							accountList[0]);
+					int deleteOption = CustomDialog.showCustomDialog(
+						    frame, 
+						    "Which account would you like to delete?", 
+						    "Login", 
+						    accountList, 
+						    "settings", 
+						    prefix + "files/settingsmenuimage.PNG", 
+						    1.0, 
+						    1.0
+						);
 					String acctToDelete = accountList[deleteOption];
 					// Delete the account. This function doesn't work either, it deletes the first
 					// line
@@ -1426,28 +1445,135 @@ public class RunElectionGameCombined implements Runnable {
 					// Choose account to edit
 					String newAcctName = null;
 					if (editAccountOption == 1) {
-						int editOption = JOptionPane.showOptionDialog(frame, "Which account would you like to edit?",
-								"Login", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, accountList,
-								accountList[0]);
+						int editOption = CustomDialog.showCustomDialog(
+							    frame, 
+							    "Which account would you like to edit?", 
+							    "Login", 
+							    accountList, 
+							    "settings", 
+							    prefix + "files/settingsmenuimage.PNG", 
+							    1.0, 
+							    1.0
+							);
+
 						newAcctName = accountList[editOption];
 					} else {
 						// Choose new settings
 						// Name
-						newAcctName = JOptionPane.showInputDialog(frame, "What would you like the account name to be?");
+						newAcctName = CustomDialog.showInputDialog(
+							    frame, 
+							    "What would you like the account name to be?", 
+							    prefix + "files/settingsmenuimage.PNG"
+							);
 					}
-					// AI difficulty
-					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-					int diff = JOptionPane.showOptionDialog(frame, "Choose the difficulty of the AI:",
-							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
-							diffs[1]);
-					String aiDifficulty = (String) diffs[diff];
+					String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+					int diff = CustomDialog.showCustomDialog(
+					    frame,
+					    "Choose the difficulty of the AI:",  // The message
+					    "Select Difficulty",  // Title of the dialog
+					    diffs,  // Options array for difficulty levels
+					    "settings"  // Type indicating it's a settings menu
+					);
+					String difficulty = "Medium";
+					switch (diff) {
+					case 0:
+						difficulty = "Easy";
+						break;
+					case 1:
+						difficulty = "Medium";
+						break;
+					case 2:
+						difficulty = "Hard";
+						break;
+					case 3:
+						difficulty = "Impossible";
+						break;
+					default:
+						difficulty = election.aiDifficulty;
+						break;
+					}
+					election.setAIDifficulty(difficulty);
 					// Deck choice
-					Object[] cardDecks = { "Full", "Standard", "Expanded", "Memes", "Generational",
-							"Custom" };
-					int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
-							JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
+					String[] cardDecks = { "Standard", "Expanded", "Full", "Custom"};
+					int deck = CustomDialog.showCustomDialog(
+					    frame,
+					    "Choose the game deck:",  // The message
+					    "Select Deck",  // Title of the dialog
+					    cardDecks,  // Options array for deck selection
+					    "settings"  // Type indicating it's a settings menu
+					);
+
+					if (deck == 0) {
+						election.reset("standard", null, 0.0, 5);
+						deckSet = "standard";
+					}
+					if (deck == 1) {
+						election.reset("expanded", null, 0.0, 5);
+						deckSet = "expanded";
+					}
+					if (deck == 2) {
+						election.reset("full", null, 0.0, 5);
+						deckSet = "full";
+					}
+					if (deck == 3) {
+						try {
+							CardData.clearRemembered();
+
+							String[] customTags = { "President","Founding Era",
+							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
+							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+
+							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+
+
+								if (!selectedTags.isEmpty()) {
+								    String[] selectedTagsArray = selectedTags.toArray(new String[0]);
+
+								    double minRating = 0.0;
+								    try {
+								        String input = CustomDialog.showInputDialog(
+								            frame,
+								            "What would you like the minimum weighted average rating of a card to be?",
+								            "files/settingsmenuimage.PNG"
+								        );
+								        minRating = Double.parseDouble(input);
+								    } catch (NumberFormatException er) {
+								        minRating = 0.0;
+								    }
+
+								    deckSet = "custom";
+								    election.reset("custom", selectedTagsArray, minRating, 5);
+								} else {
+								    CustomDialog.showCustomDialog(
+								        frame,
+								        "Error: One of your inputs was invalid. Standard deck will be used.",
+								        "Error",
+								        new String[] { "Ok" },
+								        "error",
+								        "files/errormenu.PNG",
+								        0.5,
+								        1.0
+								    );
+								    election.reset("standard", null, 0.0, 5);
+								    deckSet = "standard";
+								}
+						} catch (Exception ex) {
+							CustomDialog.showCustomDialog(
+								    frame,
+								    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+								    "Error",  // Title of the dialog
+								    new String[] { "Ok" },  // Single "Ok" button
+								    "error",  // Type indicating it's an error menu
+								    "files/errormenu.PNG",  // Custom background image
+								    0.5,  // Height ratio
+								    1.0  // Width ratio
+								);
+							election.reset("standard", null, 0.0, 5);
+							deckSet = "standard";
+						}
+					}
 					String deckChoice = (String) cardDecks[deck];
-					String acctLine = newAcctName + "," + aiDifficulty + "," + deckChoice;
+					String acctLine = newAcctName + "," + difficulty + "," + deckChoice;
 					// Append the account to the file or edit the account. EDITING DOESNT WORK
 					reader = null;
 					BufferedWriter writer = null;
@@ -1489,8 +1615,16 @@ public class RunElectionGameCombined implements Runnable {
 						}
 					}
 					// Now, begin the game.
-					JOptionPane.showMessageDialog(frame,
-							"Account settings updated. You will now begin a new game with the updated account!");
+					CustomDialog.showCustomDialog(
+						    frame, 
+						    "Account settings updated. You will now begin a new game with the updated account!", 
+						    "Account Update", 
+						    new String[] { "Ok" }, 
+						    "info", 
+						    prefix + "files/settingsmenuimage.PNG", 
+						    1.0, 
+						    1.0
+					);
 					// First, change the active account.
 					BufferedReader reader4 = null;
 					writer = null;
@@ -1525,176 +1659,164 @@ public class RunElectionGameCombined implements Runnable {
 					// Finally, start the game.
 					election.namePlayer(newAcctName);
 					election.namePlayer2("CPU");
-					election.setAIDifficulty(aiDifficulty);
+					election.setAIDifficulty(difficulty);
 					election.reset(deckChoice, null, 0.0, 5);
 					deckSet = deckChoice;
-					setLabel(status);
 				}
 			}
+		}
+		//End edit account
+		
+		
+		/*********************
+		 * Normal Guest Login *
+		 **********************/
+
+		else if (loginMode == 2 || loginMode == 3 || loginMode == -1 ) {
 			
-		
-		
-			
-		
-		}} else {
+		if (loginMode == 3) {
+			twoplayermode = true;
+		}
 
-			/*********************
-			 * Normal Guest Login *
-			 **********************/
+		// Name Player 1
+		String playername = "Player 1";
+		if (twoplayermode) {
+		    playername = CustomDialog.showInputDialog(
+		        frame,
+		        "Hello and welcome to the Campaign Clash! Player 1, please enter your name: ",
+		        prefix + "files/settingsmenuimage.PNG"
+		    );
+		} else {
+		    playername = CustomDialog.showInputDialog(
+		        frame,
+		        "Hello and welcome to the Campaign Clash! Please enter your name: ",
+		        prefix + "files/settingsmenuimage.PNG"
+		    );
+		    election.namePlayer2("CPU");
+		}
+		election.namePlayer(playername);
 
-			Object[] options = { "1-Player", "2-Player"};
-			int gameMode = JOptionPane.showOptionDialog(frame, "Welcome to Campaign Clash! Please select your game mode:",
-					"Select Game Mode", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options,
-					options[0]);
-
-			if (gameMode == -1 || gameMode == 0 || gameMode == 2) {
-				twoplayermode = false;
-			} else {
-				twoplayermode = true;
+		// Name Player 2 or set AI difficulty
+		if (twoplayermode) {
+			String player2name = CustomDialog.showInputDialog(
+				    frame,
+				    "Player 2, please enter your name: ",
+				    prefix + "files/settingsmenuimage.PNG"
+				);
+			election.namePlayer2(player2name);
+		} else {
+			String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+			int diff = CustomDialog.showCustomDialog(
+			    frame,
+			    "Choose the difficulty of the AI:",  // The message
+			    "Select Difficulty",  // Title of the dialog
+			    diffs,  // Options array for difficulty levels
+			    "settings"  // Type indicating it's a settings menu
+			);
+			String difficulty = "Medium";
+			switch (diff) {
+			case 0:
+				difficulty = "Easy";
+				break;
+			case 1:
+				difficulty = "Medium";
+				break;
+			case 2:
+				difficulty = "Hard";
+				break;
+			case 3:
+				difficulty = "Impossible";
+				break;
+			default:
+				difficulty = election.aiDifficulty;
+				break;
 			}
+			election.setAIDifficulty(difficulty);
+		}
 
-				// Name Player 1
-				String playername = "Player 1";
-				if (twoplayermode) {
-					playername = JOptionPane.showInputDialog(frame,
-							"Hello and welcome to the Campaign Clash! Player 1, please enter your name: ");
-				} else {
-					playername = JOptionPane.showInputDialog(frame,
-							"Hello and welcome to the Campaign Clash! Please enter your name: ");
-					election.namePlayer2("CPU");
-				}
-				election.namePlayer(playername);
-				setLabel(status);
-				status.repaint();
+		String[] cardDecks = { "Standard", "Expanded", "Full", "Custom" };
+		int deck = CustomDialog.showCustomDialog(
+		    frame,
+		    "Choose the game deck:",  // The message
+		    "Select Deck",  // Title of the dialog
+		    cardDecks,  // Options array for deck selection
+		    "settings"  // Type indicating it's a settings menu
+		);
 
-				// Name Player 2 or set AI difficulty
-				if (twoplayermode) {
-					String player2name = JOptionPane.showInputDialog(frame, "Player 2, please enter your name: ");
-					election.namePlayer2(player2name);
-					setLabel(status);
-					status.repaint();
-				} else {
-					Object[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-					int diff = JOptionPane.showOptionDialog(frame, "Choose the difficulty of the AI:",
-							"Select Difficulty", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, diffs,
-							diffs[1]);
-					String difficulty = "Medium";
-					switch (diff) {
-					case 0:
-						difficulty = "Easy";
-						break;
-					case 1:
-						difficulty = "Medium";
-						break;
-					case 2:
-						difficulty = "Hard";
-						break;
-					case 3:
-						difficulty = "Impossible";
-						break;
-					default:
-						break;
+		if (deck == 0) {
+			election.reset("standard", null, 0.0, 5);
+			deckSet = "standard";
+		}
+		if (deck == 1) {
+			election.reset("expanded", null, 0.0, 5);
+			deckSet = "expanded";
+		}
+		if (deck == 2) {
+			election.reset("full", null, 0.0, 5);
+			deckSet = "full";
+		}
+		if (deck == 3) {
+			try {
+				CardData.clearRemembered();
+
+				String[] customTags = { "President","Founding Era",
+				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
+				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+
+				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+
+
+					if (!selectedTags.isEmpty()) {
+					    String[] selectedTagsArray = selectedTags.toArray(new String[0]);
+
+					    double minRating = 0.0;
+					    try {
+					        String input = CustomDialog.showInputDialog(
+					            frame,
+					            "What would you like the minimum weighted average rating of a card to be?",
+					            "files/settingsmenuimage.PNG"
+					        );
+					        minRating = Double.parseDouble(input);
+					    } catch (NumberFormatException er) {
+					        minRating = 0.0;
+					    }
+
+					    deckSet = "custom";
+					    election.reset("custom", selectedTagsArray, minRating, 5);
+					} else {
+					    CustomDialog.showCustomDialog(
+					        frame,
+					        "Error: One of your inputs was invalid. Standard deck will be used.",
+					        "Error",
+					        new String[] { "Ok" },
+					        "error",
+					        "files/errormenu.PNG",
+					        0.5,
+					        1.0
+					    );
+					    election.reset("standard", null, 0.0, 5);
+					    deckSet = "standard";
 					}
-					election.setAIDifficulty(difficulty);
-				}
-
-				// Add back "memes"?
-				Object[] cardDecks = { "Presidents Only", "Standard", "Expanded", "Generational", "Custom" };
-				int deck = JOptionPane.showOptionDialog(frame, "Choose the game deck:", "Select Deck",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, cardDecks, cardDecks[1]);
-
-				if (deck == 0) {
-					election.reset("presidentsonly", null, 0.0, 5);
-					deckSet = "presidentsonly";
-				}
-				if (deck == 1) {
-					election.reset("standard", null, 0.0, 5);
-					deckSet = "standard";
-				}
-				if (deck == 2) {
-					election.reset("expanded", null, 0.0, 5);
-					deckSet = "expanded";
-				}
-				if (deck == 3) {
-					election.reset("generational", null, 0.0, 5);
-					deckSet = "generational";
-				}
-				if (deck == 4) {
-					// Find a way to screen this so it doesn't get broken. Also find ways to be more
-					// creative with this, maybe
-					// add generational cards, sort all presidents/nonpresidents and get the top 50
-					// from there, etc.
-					try {
-						// Add back Meme for non-JAR?
-						String[] customTags = { "President", "Generational", "Founding Era", "Jacksonian Era",
-								"Civil War Era", "Reconstruction Era", "Progressive Era", "New Deal Era",
-								"Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
-
-						JPanel panel = new JPanel();
-						panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-						JLabel message = new JLabel("Select the all tags you would like to include in the deck:");
-						panel.add(message);
-
-						for (String tag : customTags) {
-							JCheckBox checkBox = new JCheckBox(tag);
-							panel.add(checkBox);
-						}
-
-						int result = JOptionPane.showConfirmDialog(frame, panel, "Select tags",
-								JOptionPane.OK_CANCEL_OPTION);
-
-						if (result == JOptionPane.OK_OPTION) {
-							ArrayList<String> tempSelectedTags = new ArrayList<String>();
-							for (Component component : panel.getComponents()) {
-								if (component instanceof JCheckBox) {
-									JCheckBox checkBox = (JCheckBox) component;
-									if (checkBox.isSelected()) {
-										tempSelectedTags.add(checkBox.getText());
-									}
-								}
-							}
-							String[] selectedTagsArray = new String[tempSelectedTags.size()];
-							selectedTagsArray = tempSelectedTags.toArray(selectedTagsArray);
-
-							// This might crash stuff
-							double minRating = Double.parseDouble(JOptionPane.showInputDialog(frame,
-									"What would you like the minimum weighted average rating of a card to be?"));
-
-							deckSet = "custom";
-							election.reset("custom", selectedTagsArray, minRating, 5);
-						} else {
-							CustomDialog.showCustomDialog(
-								    frame,
-								    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-								    "Error",  // Title of the dialog
-								    new String[] { "Ok" },  // Single "Ok" button
-								    "error",  // Type indicating it's an error menu
-								    "files/errormenu.PNG",  // Custom background image
-								    0.5,  // Height ratio
-								    1.0  // Width ratio
-								);
-							election.reset("standard", null, 0.0, 5);
-							deckSet = "standard";
-						}
-					} catch (Exception ex) {
-						CustomDialog.showCustomDialog(
-							    frame,
-							    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-							    "Error",  // Title of the dialog
-							    new String[] { "Ok" },  // Single "Ok" button
-							    "error",  // Type indicating it's an error menu
-							    "files/errormenu.PNG",  // Custom background image
-							    0.5,  // Height ratio
-							    1.0  // Width ratio
-							);
-						election.reset("standard", null, 0.0, 5);
-						deckSet = "standard";
-					}
+			} catch (Exception ex) {
+				CustomDialog.showCustomDialog(
+					    frame,
+					    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+					    "Error",  // Title of the dialog
+					    new String[] { "Ok" },  // Single "Ok" button
+					    "error",  // Type indicating it's an error menu
+					    "files/errormenu.PNG",  // Custom background image
+					    0.5,  // Height ratio
+					    1.0  // Width ratio
+					);
+				election.reset("standard", null, 0.0, 5);
+				deckSet = "standard";
 			}
+		}
 		}
 		user_cards.paintCards();
 		starting = false;
 		board.draw();
+		setLabel(status);
 				
 		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
 		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
