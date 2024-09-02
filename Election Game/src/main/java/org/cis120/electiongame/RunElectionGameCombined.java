@@ -27,7 +27,11 @@ import javax.swing.*;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
-
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.awt.dnd.*;
+import java.awt.datatransfer.*;
 import javazoom.jl.decoder.JavaLayerException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,8 +48,9 @@ public class RunElectionGameCombined implements Runnable {
 	private ElectionGame election = new ElectionGame();
 	private boolean starting = true;
 	GameBoard board = null;
-	private UserDeck user_cards;
-	private UserPolicies up;
+	UserDeck user_cards;
+	UserPolicies up;
+	BackgroundPanel decks;
 	private boolean twoplayermode = false;
 	private boolean swapmode = false;
 	private String deckSet = "standard";
@@ -53,6 +58,20 @@ public class RunElectionGameCombined implements Runnable {
 	private int cumulativeGames = 0;
 	private boolean cardInfoMode = false;
 	private boolean askToResign = true;
+	
+	// Login settings
+	private int loginMode = -1;
+	private String activeAccount = null;
+	private String[] accountSettingsArray = null;
+	private BufferedReader reader = null;
+	private BufferedReader reader2 = null;
+	private String accountSettings = null;
+	private double deckWidthRatio = 215.0 / 1920.0;
+	private double controlPanelHeightRatio = 697.0 / 1200.0; // Same height ratio as decks
+	private double controlPanelWidthRatio = 215.0 / 1920.0; // Width ratio for the control panel
+	private double controlPanelStartYRatio = 106.0 / 1200.0; // Start after AI cards area (same as decks)
+	private double controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+	
 
 	// Turn this to TRUE if trying to export to JAR file, FALSE otherwise. Make prefix "resources/" if exporting to JAR.
 
@@ -127,6 +146,7 @@ public class RunElectionGameCombined implements Runnable {
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
 
+	    
 	    // Create a panel for buttons and set its layout
 	    JPanel buttonPanel = new JPanel();
 	    buttonPanel.setOpaque(false); // Make the button panel transparent
@@ -271,9 +291,27 @@ public class RunElectionGameCombined implements Runnable {
 	    CustomDialog.setGlobalPlayer(player);
 	    CustomDialog.setGlobalFontSize((int)(16.0 * (cardSize / 225.0)));
 	    
-	    board = new GameBoard(player);
-	    // User Policy Deck, I added a scrollbar since you get 18 policies
-	    up = new UserPolicies(player);
+	    JComponent glassPane = new JComponent() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (user_cards != null) {
+                    user_cards.drawOnGlassPane(g);
+                }
+                if (up != null) {
+                    up.drawOnGlassPane(g);
+                }
+            }
+        };
+        frame.setGlassPane(glassPane);
+        glassPane.setVisible(true); // Make the glass pane visible
+        
+        board = new GameBoard(player);
+        
+	    // User Policy Deck, I added a scrollbar since you get 15 policies
+	    up = new UserPolicies(player, glassPane);
+	    
+	    up.preloadPolicyImages();
 
 	    JScrollPane userPolicies = new JScrollPane(up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
 	            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -289,8 +327,10 @@ public class RunElectionGameCombined implements Runnable {
 	    userPolicies.setPreferredSize(new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325)));
 
 		
-		// User Card Deck
-		user_cards = new UserDeck(player);
+	    
+
+        // Initialize user_cards with the glass pane
+        user_cards = new UserDeck(player, glassPane);
 		user_cards.setPreferredSize(new Dimension((int)(cardSize/225.0*600), (int)(cardSize/225.0*325)));
 
 		
@@ -317,12 +357,12 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Height and width ratios for the decks area
 		double deckHeightRatio = 697.0 / 1200.0;
-		double deckWidthRatio = 215.0 / 1920.0;
+		deckWidthRatio = 215.0 / 1920.0;
 		double deckStartYRatio = 106.0 / 1200.0;
 		double deckStartXRatio = 0.0; // Start cropping from the left side of the image
 
 		// Using the new constructor with cropping starting from a specific position
-		BackgroundPanel decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
+		decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 
 		// Scale the image for use in the JLabel
@@ -345,10 +385,10 @@ public class RunElectionGameCombined implements Runnable {
 
 
 		// Control panel with custom background
-		double controlPanelHeightRatio = 697.0 / 1200.0; // Same height ratio as decks
-		double controlPanelWidthRatio = 215.0 / 1920.0; // Width ratio for the control panel
-		double controlPanelStartYRatio = 106.0 / 1200.0; // Start after AI cards area (same as decks)
-		double controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+		controlPanelHeightRatio = 697.0 / 1200.0; // Same height ratio as decks
+		controlPanelWidthRatio = 215.0 / 1920.0; // Width ratio for the control panel
+		controlPanelStartYRatio = 106.0 / 1200.0; // Start after AI cards area (same as decks)
+		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
 
 		BackgroundPanel control_panel = new BackgroundPanel(
 		    prefix + "files/backgroundfull.PNG", 
@@ -761,8 +801,6 @@ public class RunElectionGameCombined implements Runnable {
 		swap.setRolloverIcon(policiesHoverIconScaled);
 		swap.setPressedIcon(policiesClickIconScaled);
 
-
-		// Initially display the president deck at the bottom
 		frame.add(user_cards, BorderLayout.SOUTH);
 
 		swap.addActionListener(new ActionListener() {
@@ -776,6 +814,7 @@ public class RunElectionGameCombined implements Runnable {
 		            swap.setPressedIcon(presidentsClickIconScaled);
 					frame.add(userPolicies, BorderLayout.SOUTH);
 					frame.remove(user_cards);
+					
 					swapmode = true;
 				} else {
 					// Switch to presidents view
@@ -835,7 +874,7 @@ public class RunElectionGameCombined implements Runnable {
 				}
 
 				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck",
-						"Exit Game", "Rig Deck" };
+						"Exit Game", "Rig Deck", "Home Screen" };
 				int settingToChange = CustomDialog.showCustomDialog(
 					    frame,
 					    "Stats for " + election.getPlayer1().getName() + " this session: \n" 
@@ -1133,6 +1172,37 @@ public class RunElectionGameCombined implements Runnable {
 					user_cards.paintCards();
 				}
 				
+				// Back to Loading Screen
+				if (settingToChange == 5) {
+				    // Show confirmation dialog
+				    int confirmation = CustomDialog.showCustomDialog(
+				        frame, 
+				        "Are you sure you'd like to return to the Home Screen?\nCurrent progress will be lost!", 
+				        "Confirm Return", 
+				        new String[] { "Yes", "No" }, 
+				        "settings", 
+				        prefix + "files/settingsmenuimage.PNG", 
+				        1.0, 
+				        1.0
+				    );
+
+				    if (confirmation == 0) { // "Yes" was selected
+				        // Clear the current game state and components
+				        frame.getContentPane().removeAll();
+
+				        // Re-add the loading screen
+				        frame.add(loadingScreen, BorderLayout.CENTER);
+				        loadingScreen.add(buttonPanel, buttonConstraints);
+
+				        // Revalidate and repaint the frame to reflect the changes
+				        frame.revalidate();
+				        frame.repaint();
+				    } else {
+				        // "No" was selected, do nothing and return to the game
+				    }
+				}
+
+				
 				if (settingToChange == 2) {
 					// How to handle this right?
 					if (election.p2w > 0) {
@@ -1199,8 +1269,7 @@ public class RunElectionGameCombined implements Runnable {
 		
 		// First get the active account. Have a check for if activeAccount ends up being
 		// null.
-		BufferedReader reader = null;
-		String activeAccount = null;
+		
 		try {
 			reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 
@@ -1223,8 +1292,8 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Next, get the settings for the active account. Include some sort of check for
 		// if the account isn't found.
-		BufferedReader reader2 = null;
-		String accountSettings = null;
+		reader2 = null;
+		accountSettings = null;
 		try {
 			reader2 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
 			String line;
@@ -1245,34 +1314,54 @@ public class RunElectionGameCombined implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		String[] accountSettingsArray = accountSettings.split(",");
+		accountSettingsArray = accountSettings.split(",");
 
-		String[] loginOptions = { "Continue as " + activeAccount, "Change Account", "1-Player", "2-Player" };
-		int loginMode = CustomDialog.showCustomDialog(
-		        frame, // The parent container
-		        "Welcome back to Campaign Clash " + activeAccount + "! Login below:", // The message
-		        "Login", // The title
-		        loginOptions, // The options
-		        "settings", // The type (you can customize this string if needed)
-		        prefix + "files/settingsmenuimage.PNG", // The background image
-		        1.0, // Height ratio (adjust if needed)
-		        1.0  // Width ratio (adjust if needed)
-		);
+		// Continue as active account
+		buttons[0].addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+				// User continues as active account
+					twoplayermode = false;
+					election.namePlayer(activeAccount);
+					election.namePlayer2("CPU");
+					election.setAIDifficulty(accountSettingsArray[1]);
+					election.reset(accountSettingsArray[2], null, 0.0, 5);
+					deckSet = accountSettingsArray[2];
+					// End active account login
+					if (starting == false) {
+						frame.add(user_cards, BorderLayout.SOUTH);
+						frame.add(ai_cards, BorderLayout.NORTH);
+						frame.add(decks, BorderLayout.WEST);
+						frame.add(control_panel, BorderLayout.EAST);
+						frame.add(board, BorderLayout.CENTER);
+					}
+		    		starting = false;
+		    		user_cards.paintCards();
+		    		board.draw();
+		    		setLabel(status);
+		    				
+		    		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+		    		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 
-		// User continues as active account
-		if (loginMode == 0) {
-			twoplayermode = false;
-			election.namePlayer(activeAccount);
-			election.namePlayer2("CPU");
-			election.setAIDifficulty(accountSettingsArray[1]);
-			election.reset(accountSettingsArray[2], null, 0.0, 5);
-			deckSet = accountSettingsArray[2];
-		}
-		// End active account login
+		    		controlPanelWidthRatio = (double) control_panel.getWidth()/(double) frameWidth;
+		    		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+		    		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
+		    		
+		    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
+		    		
+		    		frame.remove(loadingScreen);
+		    		frame.revalidate();
+		    	    frame.repaint();
+		    }
+		});
 
-		// User changes account. The following functions can be heavily refactored, and
-		// needs to have way better error handling.
-		else if (loginMode == 1) {
+
+		// Edit account
+		buttons[1].addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		    	// User changes account. The following functions can be heavily refactored, and
+		    	// needs to have way better error handling.
 			twoplayermode = false;
 			// First, get a list of the account names.
 			BufferedReader reader3 = null;
@@ -1291,15 +1380,15 @@ public class RunElectionGameCombined implements Runnable {
 				}
 				entries.add(0, "Edit Accounts");
 				accountList = entries.toArray(new String[0]);
-			} catch (IOException e) {
-				e.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			} finally {
 				try {
 					if (reader3 != null) {
 						reader3.close();
 					}
-				} catch (IOException e) {
-					e.printStackTrace();
+				} catch (IOException e1) {
+					e1.printStackTrace();
 				}
 			}
 			int loginAccountOption = CustomDialog.showCustomDialog(
@@ -1326,16 +1415,16 @@ public class RunElectionGameCombined implements Runnable {
 							accountSettings = line;
 						}
 					}
-				} catch (IOException e) {
-					e.printStackTrace();
+				} catch (IOException e1) {
+					e1.printStackTrace();
 					accountSettings = null;
 				} finally {
 					try {
 						if (reader2 != null) {
 							reader2.close();
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
 					}
 				}
 				accountSettingsArray = accountSettings.split(",");
@@ -1356,8 +1445,8 @@ public class RunElectionGameCombined implements Runnable {
 						writer.write(modifiedLine);
 						writer.newLine();
 					}
-				} catch (IOException e) {
-					e.printStackTrace();
+				} catch (IOException e1) {
+					e1.printStackTrace();
 				} finally {
 					try {
 						if (reader4 != null) {
@@ -1366,8 +1455,8 @@ public class RunElectionGameCombined implements Runnable {
 						if (writer != null) {
 							writer.close();
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
 					}
 				}
 				// Finally, start the game.
@@ -1427,8 +1516,8 @@ public class RunElectionGameCombined implements Runnable {
 							writer.write(modifiedLine);
 							writer.newLine();
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
 					} finally {
 						try {
 							if (reader != null) {
@@ -1437,8 +1526,8 @@ public class RunElectionGameCombined implements Runnable {
 							if (writer != null) {
 								writer.close();
 							}
-						} catch (IOException e) {
-							e.printStackTrace();
+						} catch (IOException e1) {
+							e1.printStackTrace();
 						}
 					}
 				} else if (editAccountOption == 1 || editAccountOption == 2) {
@@ -1600,8 +1689,8 @@ public class RunElectionGameCombined implements Runnable {
 							writer.write(modifiedLine);
 							writer.newLine();
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
 					} finally {
 						try {
 							if (reader != null) {
@@ -1610,8 +1699,8 @@ public class RunElectionGameCombined implements Runnable {
 							if (writer != null) {
 								writer.close();
 							}
-						} catch (IOException e) {
-							e.printStackTrace();
+						} catch (IOException e1) {
+							e1.printStackTrace();
 						}
 					}
 					// Now, begin the game.
@@ -1642,8 +1731,8 @@ public class RunElectionGameCombined implements Runnable {
 							writer.write(modifiedLine);
 							writer.newLine();
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
 					} finally {
 						try {
 							if (reader4 != null) {
@@ -1652,8 +1741,8 @@ public class RunElectionGameCombined implements Runnable {
 							if (writer != null) {
 								writer.close();
 							}
-						} catch (IOException e) {
-							e.printStackTrace();
+						} catch (IOException e1) {
+							e1.printStackTrace();
 						}
 					}
 					// Finally, start the game.
@@ -1664,172 +1753,376 @@ public class RunElectionGameCombined implements Runnable {
 					deckSet = deckChoice;
 				}
 			}
+			if (starting == false) {
+				frame.add(user_cards, BorderLayout.SOUTH);
+				frame.add(ai_cards, BorderLayout.NORTH);
+				frame.add(decks, BorderLayout.WEST);
+				frame.add(control_panel, BorderLayout.EAST);
+				frame.add(board, BorderLayout.CENTER);
+			}
+			starting = false;
+    		user_cards.paintCards();
+    		board.draw();
+    		setLabel(status);
+    				
+    		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+    		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
+
+    		controlPanelWidthRatio = (double) control_panel.getWidth()/(double) frameWidth;
+    		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+    		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
+    		
+    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
+    		
+    		frame.remove(loadingScreen);
+    		frame.revalidate();
+    	    frame.repaint();
 		}
+		    });
 		//End edit account
 		
 		
 		/*********************
 		 * Normal Guest Login *
 		 **********************/
+		
+		// 1-player mode
+		buttons[2].addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {					
+		    		if (loginMode == 3) {
+		    			twoplayermode = true;
+		    		}
 
-		else if (loginMode == 2 || loginMode == 3 || loginMode == -1 ) {
-			
-		if (loginMode == 3) {
-			twoplayermode = true;
-		}
+		    		// Name Player 1
+		    		String playername = "Player 1";
+		    		if (twoplayermode) {
+		    		    playername = CustomDialog.showInputDialog(
+		    		        frame,
+		    		        "Hello and welcome to the Campaign Clash! Player 1, please enter your name: ",
+		    		        prefix + "files/settingsmenuimage.PNG"
+		    		    );
+		    		} else {
+		    		    playername = CustomDialog.showInputDialog(
+		    		        frame,
+		    		        "Hello and welcome to the Campaign Clash! Please enter your name: ",
+		    		        prefix + "files/settingsmenuimage.PNG"
+		    		    );
+		    		    election.namePlayer2("CPU");
+		    		}
+		    		election.namePlayer(playername);
 
-		// Name Player 1
-		String playername = "Player 1";
-		if (twoplayermode) {
-		    playername = CustomDialog.showInputDialog(
-		        frame,
-		        "Hello and welcome to the Campaign Clash! Player 1, please enter your name: ",
-		        prefix + "files/settingsmenuimage.PNG"
-		    );
-		} else {
-		    playername = CustomDialog.showInputDialog(
-		        frame,
-		        "Hello and welcome to the Campaign Clash! Please enter your name: ",
-		        prefix + "files/settingsmenuimage.PNG"
-		    );
-		    election.namePlayer2("CPU");
-		}
-		election.namePlayer(playername);
+		    		// Name Player 2 or set AI difficulty
+		    		if (twoplayermode) {
+		    			String player2name = CustomDialog.showInputDialog(
+		    				    frame,
+		    				    "Player 2, please enter your name: ",
+		    				    prefix + "files/settingsmenuimage.PNG"
+		    				);
+		    			election.namePlayer2(player2name);
+		    		} else {
+		    			String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+		    			int diff = CustomDialog.showCustomDialog(
+		    			    frame,
+		    			    "Choose the difficulty of the AI:",  // The message
+		    			    "Select Difficulty",  // Title of the dialog
+		    			    diffs,  // Options array for difficulty levels
+		    			    "settings"  // Type indicating it's a settings menu
+		    			);
+		    			String difficulty = "Medium";
+		    			switch (diff) {
+		    			case 0:
+		    				difficulty = "Easy";
+		    				break;
+		    			case 1:
+		    				difficulty = "Medium";
+		    				break;
+		    			case 2:
+		    				difficulty = "Hard";
+		    				break;
+		    			case 3:
+		    				difficulty = "Impossible";
+		    				break;
+		    			default:
+		    				difficulty = election.aiDifficulty;
+		    				break;
+		    			}
+		    			election.setAIDifficulty(difficulty);
+		    		}
 
-		// Name Player 2 or set AI difficulty
-		if (twoplayermode) {
-			String player2name = CustomDialog.showInputDialog(
-				    frame,
-				    "Player 2, please enter your name: ",
-				    prefix + "files/settingsmenuimage.PNG"
-				);
-			election.namePlayer2(player2name);
-		} else {
-			String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
-			int diff = CustomDialog.showCustomDialog(
-			    frame,
-			    "Choose the difficulty of the AI:",  // The message
-			    "Select Difficulty",  // Title of the dialog
-			    diffs,  // Options array for difficulty levels
-			    "settings"  // Type indicating it's a settings menu
-			);
-			String difficulty = "Medium";
-			switch (diff) {
-			case 0:
-				difficulty = "Easy";
-				break;
-			case 1:
-				difficulty = "Medium";
-				break;
-			case 2:
-				difficulty = "Hard";
-				break;
-			case 3:
-				difficulty = "Impossible";
-				break;
-			default:
-				difficulty = election.aiDifficulty;
-				break;
-			}
-			election.setAIDifficulty(difficulty);
-		}
+		    		String[] cardDecks = { "Standard", "Expanded", "Full", "Custom" };
+		    		int deck = CustomDialog.showCustomDialog(
+		    		    frame,
+		    		    "Choose the game deck:",  // The message
+		    		    "Select Deck",  // Title of the dialog
+		    		    cardDecks,  // Options array for deck selection
+		    		    "settings"  // Type indicating it's a settings menu
+		    		);
 
-		String[] cardDecks = { "Standard", "Expanded", "Full", "Custom" };
-		int deck = CustomDialog.showCustomDialog(
-		    frame,
-		    "Choose the game deck:",  // The message
-		    "Select Deck",  // Title of the dialog
-		    cardDecks,  // Options array for deck selection
-		    "settings"  // Type indicating it's a settings menu
-		);
+		    		if (deck == 0) {
+		    			election.reset("standard", null, 0.0, 5);
+		    			deckSet = "standard";
+		    		}
+		    		if (deck == 1) {
+		    			election.reset("expanded", null, 0.0, 5);
+		    			deckSet = "expanded";
+		    		}
+		    		if (deck == 2) {
+		    			election.reset("full", null, 0.0, 5);
+		    			deckSet = "full";
+		    		}
+		    		if (deck == 3) {
+		    			try {
+		    				CardData.clearRemembered();
 
-		if (deck == 0) {
-			election.reset("standard", null, 0.0, 5);
-			deckSet = "standard";
-		}
-		if (deck == 1) {
-			election.reset("expanded", null, 0.0, 5);
-			deckSet = "expanded";
-		}
-		if (deck == 2) {
-			election.reset("full", null, 0.0, 5);
-			deckSet = "full";
-		}
-		if (deck == 3) {
-			try {
-				CardData.clearRemembered();
+		    				String[] customTags = { "President","Founding Era",
+		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
+		    				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
 
-				String[] customTags = { "President","Founding Era",
-				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
-
-				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
 
 
-					if (!selectedTags.isEmpty()) {
-					    String[] selectedTagsArray = selectedTags.toArray(new String[0]);
+		    					if (!selectedTags.isEmpty()) {
+		    					    String[] selectedTagsArray = selectedTags.toArray(new String[0]);
 
-					    double minRating = 0.0;
-					    try {
-					        String input = CustomDialog.showInputDialog(
-					            frame,
-					            "What would you like the minimum weighted average rating of a card to be?",
-					            "files/settingsmenuimage.PNG"
-					        );
-					        minRating = Double.parseDouble(input);
-					    } catch (NumberFormatException er) {
-					        minRating = 0.0;
-					    }
+		    					    double minRating = 0.0;
+		    					    try {
+		    					        String input = CustomDialog.showInputDialog(
+		    					            frame,
+		    					            "What would you like the minimum weighted average rating of a card to be?",
+		    					            "files/settingsmenuimage.PNG"
+		    					        );
+		    					        minRating = Double.parseDouble(input);
+		    					    } catch (NumberFormatException er) {
+		    					        minRating = 0.0;
+		    					    }
 
-					    deckSet = "custom";
-					    election.reset("custom", selectedTagsArray, minRating, 5);
-					} else {
-					    CustomDialog.showCustomDialog(
-					        frame,
-					        "Error: One of your inputs was invalid. Standard deck will be used.",
-					        "Error",
-					        new String[] { "Ok" },
-					        "error",
-					        "files/errormenu.PNG",
-					        0.5,
-					        1.0
-					    );
-					    election.reset("standard", null, 0.0, 5);
-					    deckSet = "standard";
+		    					    deckSet = "custom";
+		    					    election.reset("custom", selectedTagsArray, minRating, 5);
+		    					} else {
+		    					    CustomDialog.showCustomDialog(
+		    					        frame,
+		    					        "Error: One of your inputs was invalid. Standard deck will be used.",
+		    					        "Error",
+		    					        new String[] { "Ok" },
+		    					        "error",
+		    					        "files/errormenu.PNG",
+		    					        0.5,
+		    					        1.0
+		    					    );
+		    					    election.reset("standard", null, 0.0, 5);
+		    					    deckSet = "standard";
+		    					}
+		    			} catch (Exception ex) {
+		    				CustomDialog.showCustomDialog(
+		    					    frame,
+		    					    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+		    					    "Error",  // Title of the dialog
+		    					    new String[] { "Ok" },  // Single "Ok" button
+		    					    "error",  // Type indicating it's an error menu
+		    					    "files/errormenu.PNG",  // Custom background image
+		    					    0.5,  // Height ratio
+		    					    1.0  // Width ratio
+		    					);
+		    				election.reset("standard", null, 0.0, 5);
+		    				deckSet = "standard";
+		    			}
+		    		}
+		    		if (starting == false) {
+						frame.add(user_cards, BorderLayout.SOUTH);
+						frame.add(ai_cards, BorderLayout.NORTH);
+						frame.add(decks, BorderLayout.WEST);
+						frame.add(control_panel, BorderLayout.EAST);
+						frame.add(board, BorderLayout.CENTER);
 					}
-			} catch (Exception ex) {
-				CustomDialog.showCustomDialog(
-					    frame,
-					    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-					    "Error",  // Title of the dialog
-					    new String[] { "Ok" },  // Single "Ok" button
-					    "error",  // Type indicating it's an error menu
-					    "files/errormenu.PNG",  // Custom background image
-					    0.5,  // Height ratio
-					    1.0  // Width ratio
-					);
-				election.reset("standard", null, 0.0, 5);
-				deckSet = "standard";
-			}
-		}
-		}
-		user_cards.paintCards();
-		starting = false;
-		board.draw();
-		setLabel(status);
-				
-		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
-		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
+		    		starting = false;
+		    		user_cards.paintCards();
+		    		board.draw();
+		    		setLabel(status);
+		    				
+		    		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+		    		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
 
-		controlPanelWidthRatio = (double) control_panel.getWidth()/(double) frameWidth;
-		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
-		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
+		    		controlPanelWidthRatio = (double) control_panel.getWidth()/(double) frameWidth;
+		    		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+		    		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
+		    		
+		    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
+		    		
+		    		frame.remove(loadingScreen);
+		    		frame.revalidate();
+		    	    frame.repaint();
+		    }
+		});
 		
-		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
+		// Start 2-player mode
+		buttons[3].addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        twoplayermode = true;
+		        // Trigger the dialog or logic for 2-player mode
+
+		    		// Name Player 1
+		    		String playername = "Player 1";
+		    		if (twoplayermode) {
+		    		    playername = CustomDialog.showInputDialog(
+		    		        frame,
+		    		        "Hello and welcome to the Campaign Clash! Player 1, please enter your name: ",
+		    		        prefix + "files/settingsmenuimage.PNG"
+		    		    );
+		    		} else {
+		    		    playername = CustomDialog.showInputDialog(
+		    		        frame,
+		    		        "Hello and welcome to the Campaign Clash! Please enter your name: ",
+		    		        prefix + "files/settingsmenuimage.PNG"
+		    		    );
+		    		    election.namePlayer2("CPU");
+		    		}
+		    		election.namePlayer(playername);
+
+		    		// Name Player 2 or set AI difficulty
+		    		if (twoplayermode) {
+		    			String player2name = CustomDialog.showInputDialog(
+		    				    frame,
+		    				    "Player 2, please enter your name: ",
+		    				    prefix + "files/settingsmenuimage.PNG"
+		    				);
+		    			election.namePlayer2(player2name);
+		    		} else {
+		    			String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
+		    			int diff = CustomDialog.showCustomDialog(
+		    			    frame,
+		    			    "Choose the difficulty of the AI:",  // The message
+		    			    "Select Difficulty",  // Title of the dialog
+		    			    diffs,  // Options array for difficulty levels
+		    			    "settings"  // Type indicating it's a settings menu
+		    			);
+		    			String difficulty = "Medium";
+		    			switch (diff) {
+		    			case 0:
+		    				difficulty = "Easy";
+		    				break;
+		    			case 1:
+		    				difficulty = "Medium";
+		    				break;
+		    			case 2:
+		    				difficulty = "Hard";
+		    				break;
+		    			case 3:
+		    				difficulty = "Impossible";
+		    				break;
+		    			default:
+		    				difficulty = election.aiDifficulty;
+		    				break;
+		    			}
+		    			election.setAIDifficulty(difficulty);
+		    		}
+
+		    		String[] cardDecks = { "Standard", "Expanded", "Full", "Custom" };
+		    		int deck = CustomDialog.showCustomDialog(
+		    		    frame,
+		    		    "Choose the game deck:",  // The message
+		    		    "Select Deck",  // Title of the dialog
+		    		    cardDecks,  // Options array for deck selection
+		    		    "settings"  // Type indicating it's a settings menu
+		    		);
+
+		    		if (deck == 0) {
+		    			election.reset("standard", null, 0.0, 5);
+		    			deckSet = "standard";
+		    		}
+		    		if (deck == 1) {
+		    			election.reset("expanded", null, 0.0, 5);
+		    			deckSet = "expanded";
+		    		}
+		    		if (deck == 2) {
+		    			election.reset("full", null, 0.0, 5);
+		    			deckSet = "full";
+		    		}
+		    		if (deck == 3) {
+		    			try {
+		    				CardData.clearRemembered();
+
+		    				String[] customTags = { "President","Founding Era",
+		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
+		    				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+
+		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+
+
+		    					if (!selectedTags.isEmpty()) {
+		    					    String[] selectedTagsArray = selectedTags.toArray(new String[0]);
+
+		    					    double minRating = 0.0;
+		    					    try {
+		    					        String input = CustomDialog.showInputDialog(
+		    					            frame,
+		    					            "What would you like the minimum weighted average rating of a card to be?",
+		    					            "files/settingsmenuimage.PNG"
+		    					        );
+		    					        minRating = Double.parseDouble(input);
+		    					    } catch (NumberFormatException er) {
+		    					        minRating = 0.0;
+		    					    }
+
+		    					    deckSet = "custom";
+		    					    election.reset("custom", selectedTagsArray, minRating, 5);
+		    					} else {
+		    					    CustomDialog.showCustomDialog(
+		    					        frame,
+		    					        "Error: One of your inputs was invalid. Standard deck will be used.",
+		    					        "Error",
+		    					        new String[] { "Ok" },
+		    					        "error",
+		    					        "files/errormenu.PNG",
+		    					        0.5,
+		    					        1.0
+		    					    );
+		    					    election.reset("standard", null, 0.0, 5);
+		    					    deckSet = "standard";
+		    					}
+		    			} catch (Exception ex) {
+		    				CustomDialog.showCustomDialog(
+		    					    frame,
+		    					    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
+		    					    "Error",  // Title of the dialog
+		    					    new String[] { "Ok" },  // Single "Ok" button
+		    					    "error",  // Type indicating it's an error menu
+		    					    "files/errormenu.PNG",  // Custom background image
+		    					    0.5,  // Height ratio
+		    					    1.0  // Width ratio
+		    					);
+		    				election.reset("standard", null, 0.0, 5);
+		    				deckSet = "standard";
+		    			}
+		    		}
+		    		if (starting == false) {
+						frame.add(user_cards, BorderLayout.SOUTH);
+						frame.add(ai_cards, BorderLayout.NORTH);
+						frame.add(decks, BorderLayout.WEST);
+						frame.add(control_panel, BorderLayout.EAST);
+						frame.add(board, BorderLayout.CENTER);
+					}
+		    		starting = false;
+		    		user_cards.paintCards();
+		    		board.draw();
+		    		setLabel(status);
+		    				
+		    		deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+		    		decks.setBackgroundImage(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
+
+		    		controlPanelWidthRatio = (double) control_panel.getWidth()/(double) frameWidth;
+		    		controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
+		    		control_panel.setBackgroundImage(prefix + "files/backgroundfull.PNG", controlPanelHeightRatio, controlPanelStartYRatio, controlPanelWidthRatio, controlPanelStartXRatio);
+		    		
+		    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
+		    		
+		    		frame.remove(loadingScreen);
+		    		frame.revalidate();
+		    	    frame.repaint();
+		    }
+		});
 		
-		frame.remove(loadingScreen);
-		frame.revalidate();
-	    frame.repaint();
 	}
 
 	/*
@@ -1841,84 +2134,165 @@ public class RunElectionGameCombined implements Runnable {
 	public class UserDeck extends JPanel {
 
 	    private List<President> hand;
-	    private Image backgroundImage; // To hold the background image
-	    private BufferedImage bufferedImage; // To hold buffered image of background image
-	    
+	    private Image backgroundImage;
+	    private BufferedImage bufferedImage;
+
 	    private int scaledCardWidth;
 	    private int scaledCardHeight;
-	    private Map<String, ImageIcon> imageCache; // Move the cache outside of paintCards()
+	    private Map<String, ImageIcon> imageCache;
 
 	    private SoundtrackPlayer player;
 
-	    public int BOARD_WIDTH = 600;
-	    public int BOARD_HEIGHT = (int)(cardSize/225.0*325);
+	    private President draggedCard;
+	    private Point dragLocation;
+	    private Point dragOffset; // Offset between the mouse click and the card's top-left corner
 
-	    public UserDeck(SoundtrackPlayer player) {
+	    public int BOARD_WIDTH = 600;
+	    public int BOARD_HEIGHT = (int) (cardSize / 225.0 * 325);
+
+	    private JComponent glassPane;
+	    private Timer dragTimer;
+	    private boolean isDragging;
+
+	    public UserDeck(SoundtrackPlayer player, JComponent glassPane) {
 	        setFocusable(true);
 	        this.hand = election.getActivePlayer().getHand();
 	        this.player = player;
 	        this.scaledCardWidth = cardSize;
 	        this.scaledCardHeight = (int) Math.round(1.32713755 * cardSize);
-	        this.imageCache = new HashMap<>(); // Initialize the cache
+	        this.imageCache = new HashMap<>();
+	        this.glassPane = glassPane;
+
 	        paintCards();
 
 	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
+	            public void mousePressed(MouseEvent e) {
+	                Point initialClick = e.getPoint();
+	                for (Component component : getComponents()) {
+	                    Rectangle bounds = component.getBounds();
+	                    if (bounds.contains(initialClick)) {
+	                        draggedCard = hand.get(getComponentZOrder(component));
+	                        dragOffset = new Point(initialClick.x - bounds.x, initialClick.y - bounds.y); // Calculate the offset
+	                        dragLocation = SwingUtilities.convertPoint(UserDeck.this, e.getPoint(), glassPane);
+	                        isDragging = false;
+
+	                        dragTimer = new Timer(200, ae -> {
+	                            isDragging = true;
+	                            hand.remove(draggedCard); // Remove the card from the hand when dragging starts
+	                            revalidate();
+	                            repaint();
+	                            glassPane.setVisible(true); // Show glass pane when dragging starts
+	                            glassPane.repaint();
+	                            remove(component); // Remove the card from the deck view immediately
+	                        });
+	                        dragTimer.setRepeats(false);
+	                        dragTimer.start();
+	                        break;
+	                    }
+	                }
+	            }
+
+	            @Override
 	            public void mouseReleased(MouseEvent e) {
-	                board.draw();
-	                paintCards();
-	                repaint();
+	                if (dragTimer != null && dragTimer.isRunning()) {
+	                    dragTimer.stop();
+	                }
+
+	                if (isDragging && draggedCard != null) {
+	                    Point dropPoint = SwingUtilities.convertPoint(UserDeck.this, e.getPoint(), board);
+	                    if (board.getBounds().contains(dropPoint)) {
+	                        player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                        if (election.getActivePinCard() != null) {
+	                            election.getActivePlayer().add(election.getActivePinCard());
+	                        }
+	                        election.activePinCard(draggedCard);
+	                        election.getActivePlayer().place(draggedCard);
+	                        board.draw();
+	                    } else {
+	                        int dropIndex = calculateDropIndex(e.getPoint());
+	                        player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                        hand.add(dropIndex, draggedCard);
+	                    }
+	                    draggedCard = null;
+	                    dragLocation = null;
+	                    glassPane.setVisible(false); // Hide glass pane when not dragging
+	                    repaint();
+	                    paintCards();
+	                } else if (!isDragging && draggedCard != null) {
+	                    // Handle normal click functionality here
+	                    if (SwingUtilities.isRightMouseButton(e)) {
+	                        board.zoomCard(draggedCard); // Right-click for zooming
+	                        player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                    } else {
+	                        if (election.getActivePinCard() != null) {
+	                            election.getActivePlayer().add(election.getActivePinCard());
+	                        }
+	                        election.activePinCard(draggedCard);
+	                        election.getActivePlayer().place(draggedCard);
+	                        player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                        board.draw();
+	                        paintCards();
+	                    }
+	                }
+	                draggedCard = null;
+	                isDragging = false;
+	            }
+	        });
+
+	        addMouseMotionListener(new MouseMotionAdapter() {
+	            @Override
+	            public void mouseDragged(MouseEvent e) {
+	                if (isDragging && draggedCard != null) {
+	                    dragLocation = SwingUtilities.convertPoint(UserDeck.this, e.getPoint(), glassPane);
+	                    glassPane.repaint();
+	                }
 	            }
 	        });
 	    }
 
-	    // This is the most important method. Loop through the hand, draw all the cards
+	    private int calculateDropIndex(Point dropPoint) {
+	        int dropX = dropPoint.x;
+	        int index = 0;
+
+	        for (Component component : getComponents()) {
+	            Rectangle bounds = component.getBounds();
+	            int cardMidpoint = bounds.x + bounds.width / 2;
+
+	            if (dropX < cardMidpoint) {
+	                return index;
+	            }
+
+	            index++;
+	        }
+
+	        return index; // If not to the left of any midpoint, add to the end
+	    }
+
 	    public void paintCards() {
+	        if (!starting) {
 	            try {
-	                // Remove only if necessary, and update the UI at the end
 	                if (this.getComponentCount() > 0) {
 	                    this.removeAll();
 	                }
 
 	                this.hand = election.getActivePlayer().getHand();
 
-	                // Update the cache with any new cards
 	                updateImageCache();
 
 	                for (President curr : hand) {
 	                    ImageIcon img = imageCache.get(curr.getImageURL());
-	                    final JButton usercd = new JButton(img);
+	                    JLabel userCardLabel = new JLabel(img);
 	                    if (cardInfoMode) {
-	                        usercd.setIcon(null);
-	                        usercd.setText("<html>" + curr.getCardInfo() + "</html>");
+	                        userCardLabel.setText("<html>" + curr.getCardInfo() + "</html>");
 	                    }
-	                    this.add(usercd);
-	                    usercd.setPreferredSize(new Dimension(scaledCardWidth, scaledCardHeight));
-
-	                    // This makes all of the cards buttons that play the card if clicked
-	                    usercd.addMouseListener(new MouseAdapter() {
-	                        public void mouseReleased(MouseEvent e) {
-	                        	player.playSoundEffect(prefix + "files/cardplay.MP3");
-	                        	if (SwingUtilities.isRightMouseButton(e)) {
-	                                // Pass the card to the GameBoard for zooming
-	                                board.zoomCard(curr);
-	                            } else {
-	                                // Normal click handling (as before)
-	                                if (election.getActivePinCard() != null) {
-	                                    election.getActivePlayer().add(election.getActivePinCard());
-	                                }
-	                                election.activePinCard(curr);
-	                                election.getActivePlayer().place(curr);
-	                                board.draw();
-	                                paintCards();
-	                            }
-	                        }
-	                    });
+	                    userCardLabel.setPreferredSize(new Dimension(scaledCardWidth, scaledCardHeight));
+	                    this.add(userCardLabel);
 	                }
 
-	                this.updateUI();  // Call updateUI only once at the end
+	                this.updateUI();
 
 	            } catch (NullPointerException e) {
 	                StringBuilder message = new StringBuilder("One of the cards has an error, please exit the game. Here is the hand:");
@@ -1927,33 +2301,31 @@ public class RunElectionGameCombined implements Runnable {
 	                }
 	                JOptionPane.showMessageDialog(this, message.toString(), "Error", JOptionPane.ERROR_MESSAGE);
 	            }
-	        
+	        }
 	    }
 
-	    // Method to update the image cache
 	    private void updateImageCache() {
-	    	List<String> currentImages = new ArrayList<>();
-	    	for (President curr : hand) {
-	    	    currentImages.add(curr.getImageURL());
-	    	    if (!imageCache.containsKey(curr.getImageURL())) {
-	    	        ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-	    	                .getImage().getScaledInstance(scaledCardWidth, scaledCardHeight, Image.SCALE_SMOOTH));
-	    	        imageCache.put(curr.getImageURL(), img);
-	    	    }
-	    	}
-	    	// Remove images that are no longer in use from the cache
-	    	imageCache.keySet().retainAll(new HashSet<>(currentImages));
+	        List<String> currentImages = new ArrayList<>();
+	        for (President curr : hand) {
+	            currentImages.add(curr.getImageURL());
+	            if (!imageCache.containsKey(curr.getImageURL())) {
+	                ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+	                        .getImage().getScaledInstance(scaledCardWidth, scaledCardHeight, Image.SCALE_SMOOTH));
+	                imageCache.put(curr.getImageURL(), img);
+	            }
+	        }
+	        imageCache.keySet().retainAll(new HashSet<>(currentImages));
 	    }
 
 	    public void reset() {
-	    	this.removeAll();
-			this.updateUI();
-			hand = election.userHand();
-			paintCards();
+	        this.removeAll();
+	        this.updateUI();
+	        imageCache.clear();
+	        hand = election.userHand();
+	        paintCards();
 
-			requestFocusInWindow();
+	        requestFocusInWindow();
 	    }
-
 
 	    public void hideCards(int cds) {
 	        this.removeAll();
@@ -1962,58 +2334,59 @@ public class RunElectionGameCombined implements Runnable {
 	        for (int i = 0; i < cds; i++) {
 	            ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
 	                    .getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
-	            final JButton usercd = new JButton(img);
+	            final JLabel usercd = new JLabel(img);
 	            this.add(usercd);
 	            usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
 	        }
 	    }
-	    
-	    // Used for testing or debugging
+
 	    public void rigDeck(President pres) {
-	    	hand.remove(0);
-	    	hand.add(pres);
-	    	paintCards();
+	        hand.remove(0);
+	        hand.add(pres);
+	        paintCards();
 	    }
 
-		@Override
-		public void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			if (backgroundImage != null) {
-				// Convert Image to BufferedImage
-				if (bufferedImage == null) {
-					bufferedImage = new BufferedImage(backgroundImage.getWidth(null), backgroundImage.getHeight(null),
-							BufferedImage.TYPE_INT_ARGB);
+	    @Override
+	    public void paintComponent(Graphics g) {
+	        super.paintComponent(g);
+	        if (backgroundImage != null) {
+	            if (bufferedImage == null) {
+	                bufferedImage = new BufferedImage(backgroundImage.getWidth(null), backgroundImage.getHeight(null),
+	                        BufferedImage.TYPE_INT_ARGB);
 
-					Graphics2D bGr = bufferedImage.createGraphics();
-					bGr.drawImage(backgroundImage, 0, 0, null);
-					bGr.dispose();
-				}
+	                Graphics2D bGr = bufferedImage.createGraphics();
+	                bGr.drawImage(backgroundImage, 0, 0, null);
+	                bGr.dispose();
+	            }
 
-				// Get the size of the original background image
-				int imageWidth = bufferedImage.getWidth();
-				int imageHeight = bufferedImage.getHeight();
+	            int imageWidth = bufferedImage.getWidth();
+	            int imageHeight = bufferedImage.getHeight();
 
-				// Calculate the cropping parameters for the UserDeck
-				int cropStartX = 0; // Start X at 0 (full width)
-				int cropStartY = (int) (785.0 / 1200.0 * imageHeight); // Start Y at 803/1200 from the top
-				int cropWidth = imageWidth; // Full width
-				int cropHeight = (int) (415.0 / 1200.0 * imageHeight); // Height of 397/1200 of the image
+	            int cropStartX = 0;
+	            int cropStartY = (int) (785.0 / 1200.0 * imageHeight);
+	            int cropWidth = imageWidth;
+	            int cropHeight = (int) (415.0 / 1200.0 * imageHeight);
 
-				// Crop the BufferedImage
-				BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+	            BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
 
-				// Draw the cropped image scaled to the UserDeck's size
-				g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
-			}
-		}
-
+	            g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
+	        }
+	    }
 
 	    @Override
 	    public Dimension getPreferredSize() {
-	        return new Dimension(BOARD_WIDTH, (int)(cardSize/225.0*325));
+	        return new Dimension(BOARD_WIDTH, (int) (cardSize / 225.0 * 325));
+	    }
+
+	    public void drawOnGlassPane(Graphics g) {
+	        if (draggedCard != null && dragLocation != null) {
+	            ImageIcon img = imageCache.get(draggedCard.getImageURL());
+	            int x = dragLocation.x - dragOffset.x; // Apply the offset here
+	            int y = dragLocation.y - dragOffset.y;
+	            g.drawImage(img.getImage(), x, y, scaledCardWidth, scaledCardHeight, glassPane);
+	        }
 	    }
 	}
-
 
 	// This is very similar to the UserDeck, but with some changes geared towards
 	// policies
@@ -2021,116 +2394,249 @@ public class RunElectionGameCombined implements Runnable {
 	public class UserPolicies extends JPanel {
 
 	    private List<Policy> hand;
-	    private Image backgroundImage; // To hold the background image
-	    
+	    private Image backgroundImage;
+	    private BufferedImage bufferedImage;
+
 	    private int scaledCardWidth;
 	    private int scaledCardHeight;
-	    private Map<String, ImageIcon> imageCache; // Move the cache outside of paintCards()
+	    private Map<String, ImageIcon> imageCache;
 
 	    private SoundtrackPlayer player;
+
+	    private Policy draggedPolicy;
+	    private Point dragLocation;
+	    private Point dragOffset;
 
 	    public int BOARD_WIDTH = 3600;
 	    public int BOARD_HEIGHT = (int)(cardSize/225.0*325);
 
-	    public UserPolicies(SoundtrackPlayer player) {
+	    private JComponent glassPane;
+	    private Timer dragTimer;
+	    private boolean isDragging;
+
+	    public UserPolicies(SoundtrackPlayer player, JComponent glassPane) {
 	        setFocusable(true);
 	        this.hand = election.getActivePlayer().getPolicies();
 	        this.player = player;
 	        this.scaledCardWidth = cardSize;
 	        this.scaledCardHeight = (int) Math.round(1.32713755 * cardSize);
-	        this.imageCache = new HashMap<>(); // Initialize the cache
+	        this.imageCache = new HashMap<>();
+	        this.glassPane = glassPane;
+
 	        paintCards();
 
 	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
+	            public void mousePressed(MouseEvent e) {
+	                Point initialClick = e.getPoint();
+	                for (Component component : getComponents()) {
+	                    Rectangle bounds = component.getBounds();
+	                    if (bounds.contains(initialClick)) {
+	                        draggedPolicy = hand.get(getComponentZOrder(component));
+	                        dragOffset = new Point(initialClick.x - bounds.x, initialClick.y - bounds.y);
+	                        dragLocation = SwingUtilities.convertPoint(UserPolicies.this, e.getPoint(), glassPane);
+	                        isDragging = false;
+
+	                        dragTimer = new Timer(200, ae -> {
+	                            isDragging = true;
+	                            hand.remove(draggedPolicy);
+	                            revalidate();
+	                            repaint();
+	                            glassPane.setVisible(true);
+	                            glassPane.repaint();
+	                            remove(component);
+	                        });
+	                        dragTimer.setRepeats(false);
+	                        dragTimer.start();
+	                        break;
+	                    }
+	                }
+	            }
+
+	            @Override
 	            public void mouseReleased(MouseEvent e) {
-	                board.draw();
-	                paintCards();
-	                repaint();
+	                if (dragTimer != null && dragTimer.isRunning()) {
+	                    dragTimer.stop();
+	                }
+
+	                if (isDragging && draggedPolicy != null) {
+	                    // Get the bounds for both board and decks panels
+	                    Rectangle boardBounds = board.getBounds();
+	                    Rectangle decksBounds = decks.getBounds();
+
+	                    // Convert the dropPoint to the parent container's coordinate space
+	                    Point boardDropPoint = SwingUtilities.convertPoint(UserPolicies.this, e.getPoint(), board.getParent());
+	                    Point decksDropPoint = SwingUtilities.convertPoint(UserPolicies.this, e.getPoint(), decks.getParent());
+
+	                    if (boardBounds.contains(boardDropPoint) || decksBounds.contains(decksDropPoint)) {
+	                    	// Get the drop point's Y-coordinate relative to the GameBoard
+	                    	Point dropPoint = SwingUtilities.convertPoint(UserPolicies.this, e.getPoint(), board);
+	                    	int boardMidpointY = board.getHeight() / 2;
+
+	                    	// Determine which slot (0 or 1) is closer to the drop point
+	                    	int slot = (dropPoint.y < boardMidpointY) ? 0 : 1;
+
+	                    	// Check if the opposite slot contains a policy that is the same or opposite
+	                    	int oppositeSlot = (slot == 0) ? 1 : 0;
+	                    	Policy currentSlotPolicy = election.getActivePinnedPolicies().get(slot);
+	                    	Policy oppositeSlotPolicy = election.getActivePinnedPolicies().get(oppositeSlot);
+
+	                    	if ((currentSlotPolicy != null && currentSlotPolicy.sameCategory(draggedPolicy) && oppositeSlotPolicy == null) || 
+	                    	    (oppositeSlotPolicy != null && oppositeSlotPolicy.sameCategory(draggedPolicy))) {
+
+	                    	    CustomDialog.showCustomDialog(
+	                    	        board.getParent(),
+	                    	        "Error: you can't play the same or opposite policy together!",
+	                    	        "Error",
+	                    	        new String[]{"Ok"},
+	                    	        "error",
+	                    	        "files/errormenu.PNG",
+	                    	        0.5,
+	                    	        1.0
+	                    	    );
+
+	                    	    // Return the dragged policy to the player's hand
+	                    	    player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                    	    hand.add(draggedPolicy);
+	                    	    draggedPolicy = null;
+	                    	    dragLocation = null;
+	                    	    glassPane.setVisible(false);
+	                    	    repaint();
+	                    	    paintCards();
+	                    	    return;
+	                    	}
+
+	                    	// Check if both slots are occupied
+	                    	if (election.getActivePinnedPolicies().get(0) != null 
+	                    	    && election.getActivePinnedPolicies().get(1) != null) {
+
+	                    	    // Remove the policy in the target slot and return it to the player's hand
+	                    	    Policy removedPolicy = election.pinActivePolicy(null, slot);
+	                    	    election.getActivePlayer().add(removedPolicy);
+
+	                    	} else if (election.getActivePinnedPolicies().get(slot) != null) {
+	                    	    // If the chosen slot is occupied and the opposite slot is empty, move the current policy there
+	                    	    if (election.getActivePinnedPolicies().get(oppositeSlot) == null) {
+	                    	        election.pinActivePolicy(election.getActivePlayer().place(election.getActivePinnedPolicies().get(slot)), oppositeSlot);
+	                    	        //board.draw();
+	                    	    }
+	                    	}
+	                    	player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                    	// Place the dragged policy in the chosen slot
+	                    	election.pinActivePolicy(election.getActivePlayer().place(draggedPolicy), slot);
+	                    	board.draw();
+
+
+	                    } else {
+	                        int dropIndex = calculateDropIndex(e.getPoint());
+	                        player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                        hand.add(dropIndex, draggedPolicy);
+	                    }
+	                    draggedPolicy = null;
+	                    dragLocation = null;
+	                    glassPane.setVisible(false);
+	                    repaint();
+	                    paintCards();
+	                } else if (!isDragging && draggedPolicy != null) {
+	                    if (SwingUtilities.isRightMouseButton(e)) {
+	                        board.zoomCard(draggedPolicy);
+	                        player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                    } else {
+	                        if ((election.getActivePinnedPolicies().get(0) != null 
+	                                && election.getActivePinnedPolicies().get(0).sameCategory(draggedPolicy)) 
+	                                || (election.getActivePinnedPolicies().get(1) != null 
+	                                && election.getActivePinnedPolicies().get(1).sameCategory(draggedPolicy))) {
+	                            CustomDialog.showCustomDialog(
+	                                    board.getParent(),
+	                                    "Error: you can't play the same or opposite policy together!",
+	                                    "Error",
+	                                    new String[]{"Ok"},
+	                                    "error",
+	                                    "files/errormenu.PNG",
+	                                    0.5,
+	                                    1.0
+	                            );
+	                        } else {
+	                            if (election.getActivePinnedPolicies().get(0) == null) {
+	                                election.pinActivePolicy(election.getActivePlayer().place(draggedPolicy), 0);
+	                            } else if (election.getActivePinnedPolicies().get(1) == null) {
+	                                election.pinActivePolicy(election.getActivePlayer().place(draggedPolicy), 1);
+	                            } else {
+	                                Policy pol = election.pinActivePolicy(election.getActivePlayer().place(draggedPolicy));
+	                                if (pol != null) {
+	                                    election.getActivePlayer().add(pol);
+	                                }
+	                            }
+	                            player.playSoundEffect(prefix + "files/cardplay.MP3");
+	                            board.draw();
+	                            paintCards();
+	                        }
+	                    }
+	                }
+	                draggedPolicy = null;
+	                isDragging = false;
+	            }
+	        });
+
+	        addMouseMotionListener(new MouseMotionAdapter() {
+	            @Override
+	            public void mouseDragged(MouseEvent e) {
+	                if (isDragging && draggedPolicy != null) {
+	                    dragLocation = SwingUtilities.convertPoint(UserPolicies.this, e.getPoint(), glassPane);
+	                    glassPane.repaint();
+	                }
 	            }
 	        });
 	    }
 
-	    // This is the most important method. Loop through the hand, draw all the cards
-	    public void paintCards() {
-	        // Compare current hand with previous hand
-	            try {
-	                // Remove only if necessary, and update the UI at the end
-	                if (this.getComponentCount() > 0) {
-	                    this.removeAll();
-	                }
+	    private int calculateDropIndex(Point dropPoint) {
+	        int dropX = dropPoint.x;
+	        int index = 0;
 
-	                this.hand = election.getActivePlayer().getPolicies();
+	        for (Component component : getComponents()) {
+	            Rectangle bounds = component.getBounds();
+	            int cardMidpoint = bounds.x + bounds.width / 2;
 
-	                // Update the cache with any new cards
-	                updateImageCache();
-
-	                for (Policy curr : hand) {
-	                    ImageIcon img = imageCache.get(curr.getImageURL());
-	                    final JButton usercd = new JButton(img);
-	                    this.add(usercd);
-	                    usercd.setPreferredSize(new Dimension(scaledCardWidth, scaledCardHeight));
-
-	                    usercd.addMouseListener(new MouseAdapter() {
-	                        public void mouseReleased(MouseEvent e) {
-	                        	player.playSoundEffect(prefix + "files/cardplay.MP3");
-	                        	if (SwingUtilities.isRightMouseButton(e)) {
-	                                board.zoomCard(curr);  // Zoom the card on the GameBoard
-	                            } else {
-	                                // Normal click handling
-	                                if ((election.getActivePinnedPolicies().get(0) != null
-	                                        && election.getActivePinnedPolicies().get(0).sameCategory(curr))
-	                                        || election.getActivePinnedPolicies().get(0) == null
-	                                        && election.getActivePinnedPolicies().get(1) != null
-	                                        && election.getActivePinnedPolicies().get(1).sameCategory(curr)) {
-	                                	CustomDialog.showCustomDialog(
-	                                		    board.getParent(),
-	                                		    "Error: you can't play the same or opposite policy together!",  // The error message
-	                                		    "Error",  // Title of the dialog
-	                                		    new String[] { "Ok" },  // Single "Ok" button
-	                                		    "error",  // Type indicating it's an error menu
-	                                		    "files/errormenu.PNG",  // Custom background image
-	                                		    0.5,  // Height ratio
-	                                		    1.0  // Width ratio
-	                                		);
-
-
-	                                } else if (election.getActivePinnedPolicies().get(0) == null) {
-	                                    election.pinActivePolicy(election.getActivePlayer().place(curr), 0);
-	                                    board.draw();
-	                                    paintCards();
-	                                } else if (election.getActivePinnedPolicies().get(1) == null) {
-	                                    election.pinActivePolicy(election.getActivePlayer().place(curr), 1);
-	                                    board.draw();
-	                                    paintCards();
-	                                } else {
-	                                    Policy pol = election.pinActivePolicy(election.getActivePlayer().place(curr));
-	                                    if (pol != null) {
-	                                        election.getActivePlayer().add(pol);
-	                                    }
-	                                    board.draw();
-	                                    paintCards();
-	                                }
-	                            }
-	                        }
-	                    });
-	                }
-
-	                this.updateUI();  // Call updateUI only once at the end
-
-	            } catch (NullPointerException e) {
-	                StringBuilder message = new StringBuilder("One of the policies has an error, please exit the game. Here is the hand:");
-	                for (Policy policy : hand) {
-	                    message.append("\n").append(policy.toString());
-	                }
-	                JOptionPane.showMessageDialog(this, message.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+	            if (dropX < cardMidpoint) {
+	                return index;
 	            }
-	        
+
+	            index++;
+	        }
+
+	        return index;
 	    }
 
-	    // Method to update the image cache
+	    public void paintCards() {
+	        try {
+	            if (this.getComponentCount() > 0) {
+	                this.removeAll();
+	            }
+
+	            this.hand = election.getActivePlayer().getPolicies();
+
+	            updateImageCache();
+
+	            for (Policy curr : hand) {
+	                ImageIcon img = imageCache.get(curr.getImageURL());
+	                JLabel userPolicyLabel = new JLabel(img);
+	                userPolicyLabel.setPreferredSize(new Dimension(scaledCardWidth, scaledCardHeight));
+	                this.add(userPolicyLabel);
+	            }
+
+	            this.updateUI();
+
+	        } catch (NullPointerException e) {
+	            StringBuilder message = new StringBuilder("One of the policies has an error, please exit the game. Here is the hand:");
+	            for (Policy policy : hand) {
+	                message.append("\n").append(policy.toString());
+	            }
+	            JOptionPane.showMessageDialog(this, message.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+	        }
+	    }
+
 	    private void updateImageCache() {
 	        List<String> currentImages = new ArrayList<>();
 	        for (Policy curr : hand) {
@@ -2141,13 +2647,25 @@ public class RunElectionGameCombined implements Runnable {
 	                imageCache.put(curr.getImageURL(), img);
 	            }
 	        }
-	        // Remove images that are no longer in use from the cache
 	        imageCache.keySet().retainAll(new HashSet<>(currentImages));
+	    }
+
+	    private void preloadPolicyImages() {
+	        List<Policy> allPolicies = CardData.getPolicies();
+	        for (Policy policy : allPolicies) {
+	            String imageUrl = policy.getImageURL();
+	            if (!imageCache.containsKey(imageUrl)) {
+	                ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + imageUrl))
+	                    .getImage().getScaledInstance(scaledCardWidth, scaledCardHeight, Image.SCALE_SMOOTH));
+	                imageCache.put(imageUrl, img);
+	            }
+	        }
 	    }
 
 	    public void reset() {
 	        this.removeAll();
 	        this.updateUI();
+	        imageCache.clear();
 	        hand = election.getPlayer1().getPolicies();
 	        paintCards();
 
@@ -2161,7 +2679,7 @@ public class RunElectionGameCombined implements Runnable {
 	        for (int i = 0; i < 13; i++) {
 	            ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
 	                    .getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
-	            final JButton usercd = new JButton(img);
+	            final JLabel usercd = new JLabel(img);
 	            this.add(usercd);
 	            usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
 	        }
@@ -2172,12 +2690,22 @@ public class RunElectionGameCombined implements Runnable {
 	        super.paintComponent(g);
 	    }
 
-
 	    @Override
 	    public Dimension getPreferredSize() {
 	        return new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325));
 	    }
+
+	    public void drawOnGlassPane(Graphics g) {
+	        if (draggedPolicy != null && dragLocation != null) {
+	            ImageIcon img = imageCache.get(draggedPolicy.getImageURL());
+	            int x = dragLocation.x - dragOffset.x;
+	            int y = dragLocation.y - dragOffset.y;
+	            g.drawImage(img.getImage(), x, y, scaledCardWidth, scaledCardHeight, glassPane);
+	        }
+	    }
 	}
+
+
 
 
 	/// This class represents the main game board in the center of the screen.
