@@ -40,6 +40,7 @@ import javax.swing.border.LineBorder;
 
 
 
+
 /**
  * This class sets up the top-level frame and widgets for the GUI.
  */
@@ -137,16 +138,30 @@ public class RunElectionGameCombined implements Runnable {
 	    frame.setLayout(new BorderLayout());
 	    frame.add(loadingScreen, BorderLayout.CENTER);
 
-	    // Load the original image for the application icon (without scaling)
+	 // Load the original image for the application icon (without scaling)
 	    ImageIcon logoIconOriginal = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"));
 
-	    // Set the icon image for the frame
+	    // Set the icon image for the frame (works on Windows)
 	    frame.setIconImage(logoIconOriginal.getImage());
+
+	    // macOS-specific workaround
+	    if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+	        try {
+	            // Use reflection to access Apple's application-specific API if available
+	            Class<?> appClass = Class.forName("com.apple.eawt.Application");
+	            Object application = appClass.getDeclaredMethod("getApplication").invoke(null);
+	            appClass.getDeclaredMethod("setDockIconImage", Image.class).invoke(application, logoIconOriginal.getImage());
+	        } catch (Exception e) {
+	            System.err.println("Unable to set macOS dock icon: " + e.getMessage());
+	        }
+	    }
 
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
 
-	    
+	    System.setProperty("sun.java2d.uiScale", "1.0");
+	    System.out.println("Java version: " + System.getProperty("java.version"));
+
 	    // Create a panel for buttons and set its layout
 	    JPanel buttonPanel = new JPanel();
 	    buttonPanel.setOpaque(false); // Make the button panel transparent
@@ -290,6 +305,7 @@ public class RunElectionGameCombined implements Runnable {
 	    
 	    CustomDialog.setGlobalPlayer(player);
 	    CustomDialog.setGlobalFontSize((int)(16.0 * (cardSize / 225.0)));
+	    CustomDialog.preloadImages();
 	    
 	    JComponent glassPane = new JComponent() {
             @Override
@@ -443,10 +459,9 @@ public class RunElectionGameCombined implements Runnable {
 					CustomDialog.showCustomDialog(
 						    frame,
 						    "Error: You haven't played all cards!",  // The error message
-						    "Error",  // Title of the dialog
+						    "files/errortitle.PNG",  // Title of the dialog
 						    new String[] { "Ok" },  // Single "Ok" button
 						    "error",  // Type indicating it's an error menu
-						    "files/errormenu.PNG",  // Custom background image
 						    0.5,  // Height ratio
 						    1  // Width ratio
 						);
@@ -477,7 +492,15 @@ public class RunElectionGameCombined implements Runnable {
 							user_cards.hideCards(4);
 							up.hideCards();
 							board.draw();
-							JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 2.");
+							CustomDialog.showCustomDialog(
+								    frame,
+								    "Please pass the computer to Player 2.",  // The message
+								    "files/roundtitle.PNG",  // Title of the dialog
+								    new String[] { "Ok" },  // The three options
+								    "settings",  // Type indicating it's a resign menu
+								    0.5,  // Height ratio
+								    1  // Width ratio
+								);
 							user_cards.paintCards();
 							up.paintCards();
 							board.draw();
@@ -486,7 +509,15 @@ public class RunElectionGameCombined implements Runnable {
 							up.hideCards();
 							board.flipUser();
 							board.draw();
-							JOptionPane.showMessageDialog(frame, "Click 'OK' when both players are ready!");
+							CustomDialog.showCustomDialog(
+								    frame,
+								    "Click 'OK' when both players are ready!",  // The message
+								    "files/roundtitle.PNG",  // Title of the dialog
+								    new String[] { "Ok" },  // The three options
+								    "settings",  // Type indicating it's a resign menu
+								    0.5,  // Height ratio
+								    1  // Width ratio
+								);
 							board.flipUser();
 
 							election.getPlayer2().draw(election.getPres());
@@ -510,7 +541,7 @@ public class RunElectionGameCombined implements Runnable {
 						CustomDialog.showCustomDialog(
 							    frame,
 							    election.getMessage(),  // The message from the election object
-							    "Election",  // Title of the dialog
+							    null,  // Title of the dialog
 							    new String[] { "Ok" },  // Single "Ok" button directly in the method call
 							    "round"  // Dialog type indicating it's a round result
 							);
@@ -519,10 +550,23 @@ public class RunElectionGameCombined implements Runnable {
 						}
 
 						if (election.checkWinner() == 1) {
-							JOptionPane.showMessageDialog(frame,
-									election.getPlayer1().getName() + " has won!!! " + election.finalScore(true));
+							CustomDialog.showCustomDialog(
+								    frame,
+								    election.getPlayer1().getName() + " has won!!! " + election.finalScore(true),  // The message from the election object
+								    null,  // Title of the dialog
+								    new String[] { "Ok" },  // Single "Ok" button directly in the method call
+								    "round"  // Dialog type indicating it's a round result
+								);
 							if (twoplayermode) {
-								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
+								CustomDialog.showCustomDialog(
+									    frame,
+									    "Please pass the computer to Player 1.",  // The message
+									    "files/roundtitle.PNG",  // Title of the dialog
+									    new String[] { "Ok" },  // The three options
+									    "settings",  // Type indicating it's a resign menu
+									    0.5,  // Height ratio
+									    1  // Width ratio
+									);
 							}
 							cumulativeWins++;
 							cumulativeGames++;
@@ -533,10 +577,23 @@ public class RunElectionGameCombined implements Runnable {
 							setLabel(status);
 							status.repaint();
 						} else if (election.checkWinner() == 2) {
-							JOptionPane.showMessageDialog(frame,
-									election.getPlayer2().getName() + " has won!!! " + election.finalScore(false));
+							CustomDialog.showCustomDialog(
+								    frame,
+								    election.getPlayer2().getName() + " has won!!! " + election.finalScore(false),  // The message from the election object
+								    null,  // Title of the dialog
+								    new String[] { "Ok" },  // Single "Ok" button directly in the method call
+								    "round"  // Dialog type indicating it's a round result
+								);
 							if (twoplayermode) {
-								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
+								CustomDialog.showCustomDialog(
+									    frame,
+									    "Please pass the computer to Player 1.",  // The message
+									    "files/roundtitle.PNG",  // Title of the dialog
+									    new String[] { "Ok" },  // The three options
+									    "settings",  // Type indicating it's a resign menu
+									    0.5,  // Height ratio
+									    1  // Width ratio
+									);
 							}
 							cumulativeGames++;
 							election.reset(deckSet, null, 0.0, 5);
@@ -551,7 +608,15 @@ public class RunElectionGameCombined implements Runnable {
 							board.flipCPU();
 							board.draw();
 							if (twoplayermode) {
-								JOptionPane.showMessageDialog(frame, "Please pass the computer to Player 1.");
+								CustomDialog.showCustomDialog(
+									    frame,
+									    "Please pass the computer to Player 1.",  // The message
+									    "files/roundtitle.PNG",  // Title of the dialog
+									    new String[] { "Ok" },  // The three options
+									    "settings",  // Type indicating it's a resign menu
+									    0.5,  // Height ratio
+									    1  // Width ratio
+									);
 							}
 							user_cards.paintCards();
 							up.paintCards();
@@ -605,10 +670,9 @@ public class RunElectionGameCombined implements Runnable {
 					int resignChoice = CustomDialog.showCustomDialog(
 						    frame,
 						    "Are you sure you would like to resign?",  // The message
-						    "Resign",  // Title of the dialog
+						    "files/resigntitle.PNG",  // Title of the dialog
 						    new String[] { "Yes (don't ask)", "Yes", "No" },  // The three options
 						    "resign",  // Type indicating it's a resign menu
-						    "files/resignmenu.PNG",  // Custom background image
 						    0.75,  // Height ratio
 						    1  // Width ratio
 						);
@@ -616,10 +680,9 @@ public class RunElectionGameCombined implements Runnable {
 						CustomDialog.showCustomDialog(
 							    frame,
 							    "You have resigned. " + election.finalScore(false),  // The message
-							    "Resign",  // Title of the dialog
+							    "files/resigntitle.PNG",  // Title of the dialog
 							    new String[] { "Ok" },  // Single "Ok" button directly in the method call
 							    "resign",  // Type indicating it's a resign menu
-							    "files/resignmenu.PNG",  // Custom background image
 							    0.75,  // Height ratio
 							    1  // Width ratio
 							);
@@ -667,10 +730,9 @@ public class RunElectionGameCombined implements Runnable {
 				int helpMode = CustomDialog.showCustomDialog(
 					    frame,
 					    "What would you like help with?",  // The message
-					    "Help",  // Title of the dialog
+					    "files/helptitle.PNG",  // Title of the dialog
 					    new String[] { "Hint", "Instructions" },  // Options for Card Info and Instructions
 					    "help",  // Type indicating it's a help menu
-					    "files/helpmenu.PNG",  // Custom background image
 					    1.0,  // Height ratio
 					    1.0   // Width ratio
 					);
@@ -684,10 +746,9 @@ public class RunElectionGameCombined implements Runnable {
 						    "and based on traits or policies desired by the election, you have to play your best combo of these cards. A new election is chosen each round\n" +
 						    "and the game is best-of-five.\n" +
 						    "Now, we'll look at each type of card.",
-						    "Welcome",  // Title of the dialog
+						    "files/helptitle.PNG",  // Title of the dialog
 						    new String[] { "Ok" },  // Single "Ok" button
 						    "help",  // Type indicating it's a help dialog
-						    "files/helpmenubig.PNG",  // Custom background image
 						    1.5,  // Height ratio
 						    1.5   // Width ratio
 						);
@@ -698,10 +759,9 @@ public class RunElectionGameCombined implements Runnable {
 						    "to focus on, or what policies are important that year. Each election has 2 'desired attributes' from the President cards,\n" +
 						    "1 'main' policy issue, and two 'side' policy issues. The details of scoring will be explained last.\n" +
 						    "Finally, each election has a 'swing region', and if your President is from the same region, you receive a bonus.",
-						    "Election Card",  // Title of the dialog
+						    "files/helptitle.PNG",  // Title of the dialog
 						    new String[] { "Ok" },  // Single "Ok" button
 						    "help",  // Type indicating it's a help dialog
-						    "files/helpmenubig.PNG",  // Custom background image
 						    1.5,  // Height ratio
 						    1.5   // Width ratio
 						);
@@ -718,10 +778,9 @@ public class RunElectionGameCombined implements Runnable {
 						    "The cards have a little more information. One of them is their home region, giving a bonus if this matches the election's swing region.\n" +
 						    "Also, the cards show the candidate's ideology. These are used to get bonuses if the policies played 'match' the candidate's ideology.\n" +
 						    "Finally, each candidate also has a 'Marquee Policy', which always gives them a bonus if paired with the candidate.",
-						    "President Card",  // Title of the dialog
+						    "files/helptitle.PNG",  // Title of the dialog
 						    new String[] { "Ok" },  // Single "Ok" button
 						    "help",  // Type indicating it's a help dialog
-						    "files/helpmenubig.PNG",  // Custom background image
 						    1.5,  // Height ratio
 						    1.5   // Width ratio
 						);
@@ -737,10 +796,9 @@ public class RunElectionGameCombined implements Runnable {
 						    "Whichever player has the highest round score wins, and best-of-five wins it all.\n" +
 						    "In case of a tie, the first tiebreaker is the sum of the candidate's attributes, then just chosen randomly.\n" +
 						    "Good luck!",
-						    "Scoring",  // Title of the dialog
+						    "files/helptitle.PNG",  // Title of the dialog
 						    new String[] { "Ok" },  // Single "Ok" button
 						    "help",  // Type indicating it's a help dialog
-						    "files/helpmenubig.PNG",  // Custom background image
 						    1.5,  // Height ratio
 						    1.5   // Width ratio
 						);
@@ -751,10 +809,9 @@ public class RunElectionGameCombined implements Runnable {
 					CustomDialog.showCustomDialog(
 					        frame,              // Parent frame
 					        hint,               // The hint message
-					        "Hint",             // Title of the dialog
+					        "files/helptitle.PNG",             // Title of the dialog
 					        new String[] { "Ok" },  // Single "Ok" button
 					        "help",             // Type indicating it's a help menu
-					        "files/helpmenu.PNG",  // Background image
 					        1.0,                // Height ratio
 					        1.0                 // Width ratio
 					    );
@@ -881,7 +938,7 @@ public class RunElectionGameCombined implements Runnable {
 					    + "Total play time: " + totalTimeMinutes + " minutes, " + totalTimeSeconds + " seconds. \n" 
 					    + "Total wins: " + cumulativeWins + " wins out of " + cumulativeGames + " (" + winPct + "%). \n \n"
 					    + "Select one of the settings below to change (may reset game):",
-					    "Settings",
+					    prefix + "files/settingstitle.PNG",
 					    settingOptions,
 					    "settings"
 					);
@@ -890,7 +947,7 @@ public class RunElectionGameCombined implements Runnable {
 				if (settingToChange == 0) {
 				    String playername = election.getActivePlayer().getName();
 
-				    playername = CustomDialog.showInputDialog(frame, "What would you like to change your name to?", "files/settingsmenuimage.PNG");
+				    playername = CustomDialog.showInputDialog(frame, "What would you like to change your name to?", "files/settingstitle.PNG");
 				    
 				    // Check if playername is not empty before updating
 				    if (!playername.trim().isEmpty()) {
@@ -907,7 +964,7 @@ public class RunElectionGameCombined implements Runnable {
 					int diff = CustomDialog.showCustomDialog(
 					    frame,
 					    "What would you like to change the AI difficulty to?",  // The message
-					    "Select Difficulty",  // Title of the dialog
+					    prefix + "files/settingstitle.PNG",
 					    diffs,  // Options array for difficulty levels
 					    "settings"  // Type indicating it's a settings menu
 					);
@@ -938,7 +995,7 @@ public class RunElectionGameCombined implements Runnable {
 					int deck = CustomDialog.showCustomDialog(
 					    frame,
 					    "Choose the game deck:",  // The message
-					    "Select Deck",  // Title of the dialog
+					    prefix + "files/settingstitle.PNG",
 					    cardDecks,  // Options array for deck selection
 					    "settings"  // Type indicating it's a settings menu
 					);
@@ -963,7 +1020,7 @@ public class RunElectionGameCombined implements Runnable {
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
 							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
 
-							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
 
 								if (!selectedTags.isEmpty()) {
@@ -974,7 +1031,7 @@ public class RunElectionGameCombined implements Runnable {
 								        String input = CustomDialog.showInputDialog(
 								            frame,
 								            "What would you like the minimum weighted average rating of a card to be?",
-								            "files/settingsmenuimage.PNG"
+								            "files/settingstitle.PNG"
 								        );
 								        minRating = Double.parseDouble(input);
 								    } catch (NumberFormatException er) {
@@ -987,10 +1044,9 @@ public class RunElectionGameCombined implements Runnable {
 								    CustomDialog.showCustomDialog(
 								        frame,
 								        "Error: One of your inputs was invalid. Standard deck will be used.",
-								        "Error",
+								        "files/errortitle.PNG",
 								        new String[] { "Ok" },
 								        "error",
-								        "files/errormenu.PNG",
 								        0.5,
 								        1.0
 								    );
@@ -1001,10 +1057,9 @@ public class RunElectionGameCombined implements Runnable {
 							CustomDialog.showCustomDialog(
 								    frame,
 								    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-								    "Error",  // Title of the dialog
+								    "files/errortitle.PNG",  // Title of the dialog
 								    new String[] { "Ok" },  // Single "Ok" button
 								    "error",  // Type indicating it's an error menu
-								    "files/errormenu.PNG",  // Custom background image
 								    0.5,  // Height ratio
 								    1.0  // Width ratio
 								);
@@ -1138,7 +1193,7 @@ public class RunElectionGameCombined implements Runnable {
 					int exitChoice = CustomDialog.showCustomDialog(
 					    frame,
 					    "Are you sure you want to exit Campaign Clash?",  // The message
-					    "Exit Game",  // Title of the dialog
+					    prefix + "files/settingstitle.PNG",
 					    new String[] { "Yes", "No" },  // Options for Yes and No
 					    "settings"  // Type indicating it's a settings menu
 					);
@@ -1155,9 +1210,9 @@ public class RunElectionGameCombined implements Runnable {
 				// Rig deck (for testing)
 				if (settingToChange == 4) {
 					String cardtoget = CustomDialog.showInputDialog(frame, "Pick a president to add",
-							"files/settingsmenuimage.PNG");
+							"files/settingstitle.PNG");
 					String electiontoset = CustomDialog.showInputDialog(frame, "Pick an election to set",
-							"files/settingsmenuimage.PNG");
+							"files/settingstitle.PNG");
 					for (President p : CardData.getPresidents("full", null, 0.0)) {
 						if (p.getName().equals(cardtoget)) {
 							user_cards.rigDeck(p);
@@ -1178,10 +1233,9 @@ public class RunElectionGameCombined implements Runnable {
 				    int confirmation = CustomDialog.showCustomDialog(
 				        frame, 
 				        "Are you sure you'd like to return to the Home Screen?\nCurrent progress will be lost!", 
-				        "Confirm Return", 
+				        "files/settingstitle.PNG", 
 				        new String[] { "Yes", "No" }, 
 				        "settings", 
-				        prefix + "files/settingsmenuimage.PNG", 
 				        1.0, 
 				        1.0
 				    );
@@ -1394,10 +1448,9 @@ public class RunElectionGameCombined implements Runnable {
 			int loginAccountOption = CustomDialog.showCustomDialog(
 			        frame, // The parent container
 			        "Welcome back to Campaign Clash! Login below:", // The message
-			        "Login", // The title
+			        prefix + "files/setuptitle.PNG", // The title
 			        accountList, // The options (array of account names)
 			        "settings", // The type (you can customize this string if needed)
-			        prefix + "files/settingsmenuimage.PNG", // The background image
 			        1.0, // Height ratio (adjust if needed)
 			        1.0  // Width ratio (adjust if needed)
 			);
@@ -1473,10 +1526,9 @@ public class RunElectionGameCombined implements Runnable {
 				int editAccountOption = CustomDialog.showCustomDialog(
 					    frame, 
 					    "How would you like to edit the accounts?", 
-					    "Login", 
+					    prefix + "files/setuptitle.PNG", 
 					    new String[] { "Delete Account", "Edit Account", "New Account" }, 
 					    "settings", 
-					    prefix + "files/settingsmenuimage.PNG", 
 					    1.0, 
 					    1.0
 					);
@@ -1486,10 +1538,9 @@ public class RunElectionGameCombined implements Runnable {
 					int deleteOption = CustomDialog.showCustomDialog(
 						    frame, 
 						    "Which account would you like to delete?", 
-						    "Login", 
+						    prefix + "files/setuptitle.PNG", 
 						    accountList, 
 						    "settings", 
-						    prefix + "files/settingsmenuimage.PNG", 
 						    1.0, 
 						    1.0
 						);
@@ -1537,10 +1588,9 @@ public class RunElectionGameCombined implements Runnable {
 						int editOption = CustomDialog.showCustomDialog(
 							    frame, 
 							    "Which account would you like to edit?", 
-							    "Login", 
+							    prefix + "files/setuptitle.PNG", 
 							    accountList, 
 							    "settings", 
-							    prefix + "files/settingsmenuimage.PNG", 
 							    1.0, 
 							    1.0
 							);
@@ -1552,14 +1602,14 @@ public class RunElectionGameCombined implements Runnable {
 						newAcctName = CustomDialog.showInputDialog(
 							    frame, 
 							    "What would you like the account name to be?", 
-							    prefix + "files/settingsmenuimage.PNG"
+							    prefix + "files/settingstitle.PNG"
 							);
 					}
 					String[] diffs = { "Easy", "Medium", "Hard", "Impossible" };
 					int diff = CustomDialog.showCustomDialog(
 					    frame,
 					    "Choose the difficulty of the AI:",  // The message
-					    "Select Difficulty",  // Title of the dialog
+					    prefix + "files/setuptitle.PNG",
 					    diffs,  // Options array for difficulty levels
 					    "settings"  // Type indicating it's a settings menu
 					);
@@ -1587,7 +1637,7 @@ public class RunElectionGameCombined implements Runnable {
 					int deck = CustomDialog.showCustomDialog(
 					    frame,
 					    "Choose the game deck:",  // The message
-					    "Select Deck",  // Title of the dialog
+					    prefix + "files/setuptitle.PNG",
 					    cardDecks,  // Options array for deck selection
 					    "settings"  // Type indicating it's a settings menu
 					);
@@ -1612,7 +1662,7 @@ public class RunElectionGameCombined implements Runnable {
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
 							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
 
-							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
 
 								if (!selectedTags.isEmpty()) {
@@ -1623,7 +1673,7 @@ public class RunElectionGameCombined implements Runnable {
 								        String input = CustomDialog.showInputDialog(
 								            frame,
 								            "What would you like the minimum weighted average rating of a card to be?",
-								            "files/settingsmenuimage.PNG"
+								            "files/settingstitle.PNG"
 								        );
 								        minRating = Double.parseDouble(input);
 								    } catch (NumberFormatException er) {
@@ -1636,10 +1686,9 @@ public class RunElectionGameCombined implements Runnable {
 								    CustomDialog.showCustomDialog(
 								        frame,
 								        "Error: One of your inputs was invalid. Standard deck will be used.",
-								        "Error",
+								        "files/errortitle.PNG",
 								        new String[] { "Ok" },
 								        "error",
-								        "files/errormenu.PNG",
 								        0.5,
 								        1.0
 								    );
@@ -1650,10 +1699,9 @@ public class RunElectionGameCombined implements Runnable {
 							CustomDialog.showCustomDialog(
 								    frame,
 								    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-								    "Error",  // Title of the dialog
+								    "files/errortitle.PNG",  // Title of the dialog
 								    new String[] { "Ok" },  // Single "Ok" button
 								    "error",  // Type indicating it's an error menu
-								    "files/errormenu.PNG",  // Custom background image
 								    0.5,  // Height ratio
 								    1.0  // Width ratio
 								);
@@ -1707,10 +1755,9 @@ public class RunElectionGameCombined implements Runnable {
 					CustomDialog.showCustomDialog(
 						    frame, 
 						    "Account settings updated. You will now begin a new game with the updated account!", 
-						    "Account Update", 
+						    prefix + "files/setuptitle.PNG",
 						    new String[] { "Ok" }, 
 						    "info", 
-						    prefix + "files/settingsmenuimage.PNG", 
 						    1.0, 
 						    1.0
 					);
@@ -1800,13 +1847,13 @@ public class RunElectionGameCombined implements Runnable {
 		    		    playername = CustomDialog.showInputDialog(
 		    		        frame,
 		    		        "Hello and welcome to the Campaign Clash! Player 1, please enter your name: ",
-		    		        prefix + "files/settingsmenuimage.PNG"
+		    		        prefix + "files/setuptitle.PNG"
 		    		    );
 		    		} else {
 		    		    playername = CustomDialog.showInputDialog(
 		    		        frame,
 		    		        "Hello and welcome to the Campaign Clash! Please enter your name: ",
-		    		        prefix + "files/settingsmenuimage.PNG"
+		    		        prefix + "files/setuptitle.PNG"
 		    		    );
 		    		    election.namePlayer2("CPU");
 		    		}
@@ -1817,7 +1864,7 @@ public class RunElectionGameCombined implements Runnable {
 		    			String player2name = CustomDialog.showInputDialog(
 		    				    frame,
 		    				    "Player 2, please enter your name: ",
-		    				    prefix + "files/settingsmenuimage.PNG"
+		    				    prefix + "files/setuptitle.PNG"
 		    				);
 		    			election.namePlayer2(player2name);
 		    		} else {
@@ -1825,7 +1872,7 @@ public class RunElectionGameCombined implements Runnable {
 		    			int diff = CustomDialog.showCustomDialog(
 		    			    frame,
 		    			    "Choose the difficulty of the AI:",  // The message
-		    			    "Select Difficulty",  // Title of the dialog
+		    			    prefix + "files/setuptitle.PNG",
 		    			    diffs,  // Options array for difficulty levels
 		    			    "settings"  // Type indicating it's a settings menu
 		    			);
@@ -1854,7 +1901,7 @@ public class RunElectionGameCombined implements Runnable {
 		    		int deck = CustomDialog.showCustomDialog(
 		    		    frame,
 		    		    "Choose the game deck:",  // The message
-		    		    "Select Deck",  // Title of the dialog
+		    		    prefix + "files/setuptitle.PNG",
 		    		    cardDecks,  // Options array for deck selection
 		    		    "settings"  // Type indicating it's a settings menu
 		    		);
@@ -1879,7 +1926,7 @@ public class RunElectionGameCombined implements Runnable {
 		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
 		    				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
 
-		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
 
 		    					if (!selectedTags.isEmpty()) {
@@ -1890,7 +1937,7 @@ public class RunElectionGameCombined implements Runnable {
 		    					        String input = CustomDialog.showInputDialog(
 		    					            frame,
 		    					            "What would you like the minimum weighted average rating of a card to be?",
-		    					            "files/settingsmenuimage.PNG"
+		    					            "files/settingstitle.PNG"
 		    					        );
 		    					        minRating = Double.parseDouble(input);
 		    					    } catch (NumberFormatException er) {
@@ -1903,10 +1950,9 @@ public class RunElectionGameCombined implements Runnable {
 		    					    CustomDialog.showCustomDialog(
 		    					        frame,
 		    					        "Error: One of your inputs was invalid. Standard deck will be used.",
-		    					        "Error",
+		    					        prefix + "files/errortitle.PNG",
 		    					        new String[] { "Ok" },
 		    					        "error",
-		    					        "files/errormenu.PNG",
 		    					        0.5,
 		    					        1.0
 		    					    );
@@ -1917,10 +1963,9 @@ public class RunElectionGameCombined implements Runnable {
 		    				CustomDialog.showCustomDialog(
 		    					    frame,
 		    					    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-		    					    "Error",  // Title of the dialog
+		    					    "files/errortitle.PNG",  // Title of the dialog
 		    					    new String[] { "Ok" },  // Single "Ok" button
 		    					    "error",  // Type indicating it's an error menu
-		    					    "files/errormenu.PNG",  // Custom background image
 		    					    0.5,  // Height ratio
 		    					    1.0  // Width ratio
 		    					);
@@ -1968,13 +2013,13 @@ public class RunElectionGameCombined implements Runnable {
 		    		    playername = CustomDialog.showInputDialog(
 		    		        frame,
 		    		        "Hello and welcome to the Campaign Clash! Player 1, please enter your name: ",
-		    		        prefix + "files/settingsmenuimage.PNG"
+		    		        prefix + "files/setuptitle.PNG"
 		    		    );
 		    		} else {
 		    		    playername = CustomDialog.showInputDialog(
 		    		        frame,
 		    		        "Hello and welcome to the Campaign Clash! Please enter your name: ",
-		    		        prefix + "files/settingsmenuimage.PNG"
+		    		        prefix + "files/setuptitle.PNG"
 		    		    );
 		    		    election.namePlayer2("CPU");
 		    		}
@@ -1985,7 +2030,7 @@ public class RunElectionGameCombined implements Runnable {
 		    			String player2name = CustomDialog.showInputDialog(
 		    				    frame,
 		    				    "Player 2, please enter your name: ",
-		    				    prefix + "files/settingsmenuimage.PNG"
+		    				    prefix + "files/setuptitle.PNG"
 		    				);
 		    			election.namePlayer2(player2name);
 		    		} else {
@@ -1993,7 +2038,7 @@ public class RunElectionGameCombined implements Runnable {
 		    			int diff = CustomDialog.showCustomDialog(
 		    			    frame,
 		    			    "Choose the difficulty of the AI:",  // The message
-		    			    "Select Difficulty",  // Title of the dialog
+		    			    prefix + "files/setuptitle.PNG",
 		    			    diffs,  // Options array for difficulty levels
 		    			    "settings"  // Type indicating it's a settings menu
 		    			);
@@ -2022,7 +2067,7 @@ public class RunElectionGameCombined implements Runnable {
 		    		int deck = CustomDialog.showCustomDialog(
 		    		    frame,
 		    		    "Choose the game deck:",  // The message
-		    		    "Select Deck",  // Title of the dialog
+		    		    prefix + "files/setuptitle.PNG",
 		    		    cardDecks,  // Options array for deck selection
 		    		    "settings"  // Type indicating it's a settings menu
 		    		);
@@ -2047,7 +2092,7 @@ public class RunElectionGameCombined implements Runnable {
 		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
 		    				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
 
-		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingsmenuimage.PNG");
+		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/setuptitle.PNG");
 
 
 		    					if (!selectedTags.isEmpty()) {
@@ -2058,7 +2103,7 @@ public class RunElectionGameCombined implements Runnable {
 		    					        String input = CustomDialog.showInputDialog(
 		    					            frame,
 		    					            "What would you like the minimum weighted average rating of a card to be?",
-		    					            "files/settingsmenuimage.PNG"
+		    					            "files/setuptitle.PNG"
 		    					        );
 		    					        minRating = Double.parseDouble(input);
 		    					    } catch (NumberFormatException er) {
@@ -2071,10 +2116,9 @@ public class RunElectionGameCombined implements Runnable {
 		    					    CustomDialog.showCustomDialog(
 		    					        frame,
 		    					        "Error: One of your inputs was invalid. Standard deck will be used.",
-		    					        "Error",
+		    					        "files/errortitle.PNG",
 		    					        new String[] { "Ok" },
 		    					        "error",
-		    					        "files/errormenu.PNG",
 		    					        0.5,
 		    					        1.0
 		    					    );
@@ -2085,10 +2129,9 @@ public class RunElectionGameCombined implements Runnable {
 		    				CustomDialog.showCustomDialog(
 		    					    frame,
 		    					    "Error: One of your inputs was invalid. Standard deck will be used.",  // The error message
-		    					    "Error",  // Title of the dialog
+		    					    prefix + "files/errortitle.PNG",  // Title of the dialog
 		    					    new String[] { "Ok" },  // Single "Ok" button
 		    					    "error",  // Type indicating it's an error menu
-		    					    "files/errormenu.PNG",  // Custom background image
 		    					    0.5,  // Height ratio
 		    					    1.0  // Width ratio
 		    					);
@@ -2489,10 +2532,9 @@ public class RunElectionGameCombined implements Runnable {
 	                    	    CustomDialog.showCustomDialog(
 	                    	        board.getParent(),
 	                    	        "Error: you can't play the same or opposite policy together!",
-	                    	        "Error",
+	                    	        prefix + "files/errortitle.PNG",
 	                    	        new String[]{"Ok"},
 	                    	        "error",
-	                    	        "files/errormenu.PNG",
 	                    	        0.5,
 	                    	        1.0
 	                    	    );
@@ -2551,10 +2593,9 @@ public class RunElectionGameCombined implements Runnable {
 	                            CustomDialog.showCustomDialog(
 	                                    board.getParent(),
 	                                    "Error: you can't play the same or opposite policy together!",
-	                                    "Error",
+	                                    prefix + "files/errortitle.PNG",
 	                                    new String[]{"Ok"},
 	                                    "error",
-	                                    "files/errormenu.PNG",
 	                                    0.5,
 	                                    1.0
 	                            );

@@ -6731,7 +6731,6 @@ public class CardData {
         if (memes) {
             presidents.add(millFill);
             presidents.add(jebBush);
-            presidents.add(dababy);
             presidents.add(emperorpalpatine);
             presidents.add(odysseus);
             presidents.add(napoleon);

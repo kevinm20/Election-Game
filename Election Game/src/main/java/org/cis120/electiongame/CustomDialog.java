@@ -4,7 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CustomDialog extends JDialog {
 
@@ -13,10 +15,12 @@ public class CustomDialog extends JDialog {
     private static int globalFontSize = 14; // Default font size
     private int selectedOption = -1; // Store the selected option
 
-    // Cache for the button images
+    // Cache for the button and background images
     private ImageIcon buttonIcon;
     private ImageIcon buttonHoverIcon;
     private ImageIcon buttonClickedIcon;
+    
+    private static Map<String, ImageIcon> imageCache = new HashMap<>();
 
     private int mouseX;
     private int mouseY;
@@ -24,31 +28,43 @@ public class CustomDialog extends JDialog {
     private JTextField inputField; // Add this line at the beginning of your class
     private List<JCheckBox> checkBoxes = new ArrayList<>(); // List to store checkboxes
     private List<String> selectedTags = new ArrayList<>(); // List to store selected tags
-
+    
     public CustomDialog(Container parent, String message, String title, String[] options, String type) {
-        this(parent, message, title, options, type, null, 1.0, 1.0); // Call the main constructor with defaults
+        this(parent, message, title, options, type, 1.0, 1.0); // Call the main constructor with defaults
     }
 
     public CustomDialog(Container parent, String message, String title, String[] options, String type,
-            String customBackground, double heightRatio, double widthRatio) {
+                        double heightRatio, double widthRatio) {
         super(JOptionPane.getFrameForComponent(parent), title, true);
 
         setUndecorated(true); // Remove default decorations
 
-        // Determine the background image
-        String backgroundImage = (customBackground != null) ? customBackground : getBackgroundImagePath(type);
+        // Determine the background image path
+        String backgroundImage = getBackgroundImagePath(type, widthRatio, heightRatio);
+
+        // Fetch the cached image
+        ImageIcon backgroundIcon = getCachedImage(backgroundImage);
 
         // Create a panel to hold the background image
         JPanel panel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                Image background = new ImageIcon(getClass().getClassLoader().getResource(backgroundImage)).getImage();
+                Image background = backgroundIcon.getImage();
                 g.drawImage(background, 0, 0, getWidth(), getHeight(), this);
             }
         };
         panel.setLayout(null); // Use absolute layout to place components freely
         setContentPane(panel);
+
+        // Add the title image
+        if (title != null && !title.isEmpty()) {
+            ImageIcon titleIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(title))
+                    .getImage().getScaledInstance(400, 100, Image.SCALE_SMOOTH));
+            JLabel titleLabel = new JLabel(titleIcon);
+            titleLabel.setBounds((int) ((900 * widthRatio - 400) / 2), 0, 400, 100); // Center the title horizontally and place it at the top
+            panel.add(titleLabel);
+        }
 
         // Bind the ESC key to close the dialog
         panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
@@ -89,7 +105,7 @@ public class CustomDialog extends JDialog {
         JLabel messageLabel = new JLabel("<html>" + message.replace("\n", "<br>") + "</html>");
         messageLabel.setFont(new Font("Dialog", Font.BOLD, globalFontSize));
         messageLabel.setForeground(FONT_COLOR);
-        messageLabel.setBounds((int) (75 * widthRatio), (int) (100 * heightRatio), (int) (750 * widthRatio),
+        messageLabel.setBounds((int) (75 * widthRatio), (int) (120 * heightRatio), (int) (750 * widthRatio),
                 (int) (300 * heightRatio)); // Adjusted position and size
         panel.add(messageLabel);
 
@@ -103,7 +119,7 @@ public class CustomDialog extends JDialog {
             SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
         }
 
-     // Create checkboxes if the type is checkbox
+        // Create checkboxes if the type is checkbox
         if (type.equals("checkbox")) {
             JPanel checkboxPanel = new JPanel();
             checkboxPanel.setLayout(new GridLayout(0, 4, 5, 5)); // 3 columns, dynamic rows, with 5px gaps
@@ -129,12 +145,12 @@ public class CustomDialog extends JDialog {
             panel.add(checkboxPanel);
 
             // Only add the "Ok" button
-            options = new String[] { "Ok" };
+            options = new String[]{"Ok"};
         }
 
-        if (options==null) {
-        	// Only add the "Ok" button
-            options = new String[] { "Ok" };
+        if (options == null) {
+            // Only add the "Ok" button
+            options = new String[]{"Ok"};
         }
 
         // Existing button handling code...
@@ -160,9 +176,9 @@ public class CustomDialog extends JDialog {
 
         int buttonWidth = 225; // Fixed button width
         int buttonHeight = 75; // Fixed button height
-        buttonIcon = resizeImageIcon("files/blankbutton.PNG", buttonWidth, buttonHeight);
-        buttonHoverIcon = resizeImageIcon("files/blankbuttonhover.PNG", buttonWidth, buttonHeight);
-        buttonClickedIcon = resizeImageIcon("files/blankbuttonclicked.PNG", buttonWidth, buttonHeight);
+        buttonIcon = getCachedImage("files/blankbutton.PNG");
+        buttonHoverIcon = getCachedImage("files/blankbuttonhover.PNG");
+        buttonClickedIcon = getCachedImage("files/blankbuttonclicked.PNG");
 
         for (int i = 0; i < options.length; i++) {
             String option = options[i];
@@ -254,10 +270,7 @@ public class CustomDialog extends JDialog {
 
         // Create the close ("X") button in the top right corner
         JButton closeButton = new JButton("X");
-        closeButton.setBounds((int) (825 * widthRatio), 0, (int) (75 * widthRatio), (int) (75 * heightRatio)); // Scaled
-                                                                                                                // position
-                                                                                                                // and
-                                                                                                                // size
+        closeButton.setBounds((int) (825 * widthRatio), 0, (int) (75 * widthRatio), (int) (75 * heightRatio)); // Scaled position and size
         closeButton.setForeground(Color.WHITE);
         closeButton.setBackground(new Color(212, 38, 38)); // Initial background color
         closeButton.setFocusPainted(false); // Remove the focus outline
@@ -291,7 +304,16 @@ public class CustomDialog extends JDialog {
         pack();
         setSize((int) (900 * widthRatio), (int) (600 * heightRatio)); // Scaled size
 
-        setLocationRelativeTo(parent); // Center on parent
+        // Set the location relative to the parent container (centered)
+        setLocationRelativeTo(parent);
+
+        // If the type is "round", apply the vertical offset
+        if ("round".equalsIgnoreCase(type)) {
+            Point location = getLocation();
+            location.y += 275;
+            setLocation(location);
+        }
+
         setVisible(true); // Automatically show the dialog
     }
 
@@ -311,31 +333,68 @@ public class CustomDialog extends JDialog {
             if ("error".equalsIgnoreCase(type) || "resign".equalsIgnoreCase(type)) {
                 globalPlayer.playSoundEffect("files/error.MP3"); // Error sound
             } else if ("round".equalsIgnoreCase(type)) {
-                //globalPlayer.playSoundEffect("files/roundwin.MP3"); // Round win sound
+                //globalPlayer.playSoundEffect("files/electionwin.MP3"); // Round win sound
             } else {
-                //globalPlayer.playSoundEffect("files/menu.MP3"); // Default menu sound
+                globalPlayer.playSoundEffect("files/menu.MP3"); // Default menu sound
             }
         }
     }
 
-    // Get background image path based on dialog type
-    private String getBackgroundImagePath(String type) {
-        switch (type.toLowerCase()) {
-            case "settings":
-                return "files/settingsmenuimage.PNG";
-            case "help":
-                return "files/helpmenuimage.PNG";
-            case "resign":
-                return "files/resignmenuimage.PNG";
-            case "round":
-                return "files/electionmenuimage.PNG";
-            case "setup":
-                return "files/setupmenuimage.PNG";
-            case "error":
-                return "files/errormenuimage.PNG";
-            default:
-                return "files/menuimage.PNG";
+ // Preload background and button images with proper scaling
+    public static void preloadImages() {
+        String[] backgroundImagePaths = {
+            "files/electionmenubackground.PNG",
+            "files/menubackgroundwide.PNG",
+            "files/menubackground.PNG"
+        };
+
+        // Preload background images
+        for (String path : backgroundImagePaths) {
+            if (!imageCache.containsKey(path)) {
+                ImageIcon imageIcon = new ImageIcon(
+                    CustomDialog.class.getClassLoader().getResource(path)
+                );
+                imageCache.put(path, imageIcon);
+            }
         }
+
+        // Preload and scale button images
+        int buttonWidth = 225; // Fixed button width
+        int buttonHeight = 75; // Fixed button height
+        String[] buttonImagePaths = {
+            "files/blankbutton.PNG",
+            "files/blankbuttonhover.PNG",
+            "files/blankbuttonclicked.PNG"
+        };
+
+        for (String path : buttonImagePaths) {
+            if (!imageCache.containsKey(path)) {
+                ImageIcon originalIcon = new ImageIcon(
+                    CustomDialog.class.getClassLoader().getResource(path)
+                );
+                Image scaledImage = originalIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH);
+                ImageIcon scaledIcon = new ImageIcon(scaledImage);
+                imageCache.put(path, scaledIcon);
+            }
+        }
+    }
+
+    private static ImageIcon getCachedImage(String path) {
+        return imageCache.getOrDefault(path, null);
+    }
+
+    // Existing methods...
+
+    private String getBackgroundImagePath(String type, double widthRatio, double heightRatio) {
+        String path;
+        if ("round".equalsIgnoreCase(type)) {
+            path = "files/electionmenubackground.PNG";
+        } else if (widthRatio >= 2 * heightRatio) {
+            path = "files/menubackgroundwide.PNG";
+        } else {
+            path = "files/menubackground.PNG";
+        }
+        return path;
     }
 
     // Method to return the selected option
@@ -353,31 +412,28 @@ public class CustomDialog extends JDialog {
         return selectedTags;
     }
 
-    // Static method to easily create and show the dialog, and return the selected
-    // option
+    // Static method to easily create and show the dialog, and return the selected option
     public static int showCustomDialog(Container parent, String message, String title, String[] options, String type) {
-        CustomDialog dialog = new CustomDialog(parent, message, title, options, type);
+        CustomDialog dialog = new CustomDialog(parent, message, title, options, type, 1.0, 1.0);
         return dialog.getSelectedOption();
     }
 
     // New static method to create and show the dialog with optional parameters
     public static int showCustomDialog(Container parent, String message, String title, String[] options, String type,
-            String customBackground, double heightRatio, double widthRatio) {
-        CustomDialog dialog = new CustomDialog(parent, message, title, options, type, customBackground, heightRatio,
-                widthRatio);
+                                       double heightRatio, double widthRatio) {
+        CustomDialog dialog = new CustomDialog(parent, message, title, options, type, heightRatio, widthRatio);
         return dialog.getSelectedOption();
     }
 
-    // Static method to create and show the input dialog, and return the input
-    // string
-    public static String showInputDialog(Container parent, String message, String backgroundImage) {
-        CustomDialog dialog = new CustomDialog(parent, message, "", null, "input", backgroundImage, 1.0, 1.0);
+    // Static method to create and show the input dialog, and return the input string
+    public static String showInputDialog(Container parent, String message, String title) {
+        CustomDialog dialog = new CustomDialog(parent, message, title, null, "input", 1.0, 1.0);
         return dialog.getInputText();
     }
 
     // Static method to create and show the checkbox dialog, and return selected tags
-    public static List<String> showCheckboxDialog(Container parent, String message, String[] options, String backgroundImage) {
-        CustomDialog dialog = new CustomDialog(parent, message, "", options, "checkbox", backgroundImage, 1.0, 1.0);
+    public static List<String> showCheckboxDialog(Container parent, String message, String[] options, String title) {
+        CustomDialog dialog = new CustomDialog(parent, message, title, options, "checkbox", 1.0, 1.0);
         return dialog.getSelectedTags();
     }
 
