@@ -159,8 +159,7 @@ public class RunElectionGameCombined implements Runnable {
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
 
-	    System.setProperty("sun.java2d.uiScale", "1.0");
-	    System.out.println("Java version: " + System.getProperty("java.version"));
+	    //System.setProperty("sun.java2d.uiScale", "1.0");
 
 	    // Create a panel for buttons and set its layout
 	    JPanel buttonPanel = new JPanel();
@@ -1290,6 +1289,11 @@ public class RunElectionGameCombined implements Runnable {
 		//control_panel.setLayout(new GridLayout(5, 1));
 		frame.add(control_panel, BorderLayout.EAST);
 		
+		System.out.println("Initial CP Size: " + control_panel.getSize());
+		System.out.println("Initial Pref. Button Size: " + play.getPreferredSize().width);
+		System.out.println("Initial Actual Button Size: " + play.getSize());
+
+		
 		// Calculate initial font size based on the initial card size
 		int initialFontSize = (int)(16 * (cardSize / 225.0));
 		Font initialFont = new Font("Dialog", Font.PLAIN, initialFontSize);
@@ -1406,6 +1410,10 @@ public class RunElectionGameCombined implements Runnable {
 		    		frame.remove(loadingScreen);
 		    		frame.revalidate();
 		    	    frame.repaint();
+		    	    
+		    	    System.out.println("New CP Size: " + control_panel.getSize());
+		    		System.out.println("New Pref. Button Size: " + play.getPreferredSize().width);
+		    		System.out.println("New Actual Button Size: " + play.getSize());
 		    }
 		});
 
