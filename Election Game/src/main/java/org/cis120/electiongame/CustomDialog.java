@@ -39,6 +39,11 @@ public class CustomDialog extends JDialog {
 
         setUndecorated(true); // Remove default decorations
 
+        // Check if the system is macOS
+        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+            setModalityType(ModalityType.APPLICATION_MODAL);  // Set modality for macOS
+        }
+        
         // Determine the background image path
         String backgroundImage = getBackgroundImagePath(type, widthRatio, heightRatio);
 

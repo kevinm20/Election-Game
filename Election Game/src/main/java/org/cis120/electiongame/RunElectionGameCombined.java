@@ -138,7 +138,7 @@ public class RunElectionGameCombined implements Runnable {
 	    frame.setLayout(new BorderLayout());
 	    frame.add(loadingScreen, BorderLayout.CENTER);
 
-	 // Load the original image for the application icon (without scaling)
+	    // Load the original image for the application icon (without scaling)
 	    ImageIcon logoIconOriginal = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG"));
 
 	    // Set the icon image for the frame (works on Windows)
@@ -245,7 +245,19 @@ public class RunElectionGameCombined implements Runnable {
 
 	    // Pack and set the frame to full-screen mode
 	    frame.pack();
-	    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+	    // Check if the system is macOS
+	    if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+	    	// Set the size to the full screen size before toggling fullscreen mode
+	        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	        frame.setSize(screenSize.width, screenSize.height);  // Make sure the frame is sized correctly
+
+	        // Enable full-screen capabilities and toggle full-screen mode
+	        com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true);
+	        com.apple.eawt.Application.getApplication().requestToggleFullScreen(frame);
+	    } else {
+	        // For non-macOS systems (e.g., Windows), use the regular full-screen method
+	        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+	    }
 	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    frame.setVisible(true);
 	    frame.requestFocus();
@@ -421,22 +433,32 @@ public class RunElectionGameCombined implements Runnable {
 		int insetSize = (int) (cardSize/275.0 * 10.0);
 		gbc.insets = new Insets(insetSize, insetSize, insetSize, insetSize); // Padding around buttons
 
+		
+		user_cards.setPreferredSize(new Dimension((int)(cardSize/225.0*600), (int)(cardSize/225.0*325)));
+		aiCardHeightRatio = 106.0 / 1200.0; // Proportionate height for the AI Cards section
+		
+		// Control Panel Height (to scale buttons)
+		int userCardHeight = (int)(cardSize/225.0*325);
+		int aiCardHeight = (int) ai_cards.getPreferredSize().getHeight();
+		int control_panel_height = frameHeight - userCardHeight - aiCardHeight;
+		
+		
+		// Get the exact dimensions of the button
+		int buttonWidth = (int)(193.0/275.0*cardSize);
+		int buttonHeight = (int)(119.0/697.0*control_panel_height);
+				
 		// Play button: Where most of the real action happens
 		final JButton play = new JButton();
 
 		// Set the button preferences
 		play.setContentAreaFilled(false);
-		play.setPreferredSize(new Dimension((int)(cardSize / 275.0 * 193), (int)(cardSize / 275.0 * 110)));
+		play.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
 		play.setBorderPainted(false);
 
 		// Load the initial icons
 		ImageIcon playIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/play.PNG"));
 		ImageIcon playHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/playhover.PNG"));
 		ImageIcon playClickIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/playclicked.PNG"));
-
-		// Get the exact dimensions of the button
-		int buttonWidth = play.getPreferredSize().width;
-		int buttonHeight = play.getPreferredSize().height;
 		
 		// Scale the icons to fit exactly within the button dimensions
 		play.setIcon(new ImageIcon(playIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
@@ -1288,10 +1310,6 @@ public class RunElectionGameCombined implements Runnable {
 		control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 		//control_panel.setLayout(new GridLayout(5, 1));
 		frame.add(control_panel, BorderLayout.EAST);
-		
-		System.out.println("Initial CP Size: " + control_panel.getSize());
-		System.out.println("Initial Pref. Button Size: " + play.getPreferredSize().width);
-		System.out.println("Initial Actual Button Size: " + play.getSize());
 
 		
 		// Calculate initial font size based on the initial card size
@@ -1307,14 +1325,9 @@ public class RunElectionGameCombined implements Runnable {
 
 	    //user_cards.hideCards(5);
 		
-	    /*
-	    System.out.println("AI Cards: " + ai_cards.getSize());
-	    System.out.println("Decks : " + decks.getSize());
-	    System.out.println("Board: " + board.getSize());
-	    System.out.println("Control Panel: " + control_panel.getSize());
-	    System.out.println("User Cards: " + user_cards.getSize());
-	    System.out.println("Total Frame: " + frame.getSize());
-	    */
+	    
+	   
+	    
 
 		/******************************************************
 		 ********************** START GAME**********************
@@ -1411,9 +1424,14 @@ public class RunElectionGameCombined implements Runnable {
 		    		frame.revalidate();
 		    	    frame.repaint();
 		    	    
-		    	    System.out.println("New CP Size: " + control_panel.getSize());
-		    		System.out.println("New Pref. Button Size: " + play.getPreferredSize().width);
-		    		System.out.println("New Actual Button Size: " + play.getSize());
+		    		/*
+		    		 System.out.println("AI Cards: " + ai_cards.getSize());
+		    		    System.out.println("Decks : " + decks.getSize());
+		    		    System.out.println("Board: " + board.getSize());
+		    		    System.out.println("Control Panel: " + control_panel.getSize());
+		    		    System.out.println("User Cards: " + user_cards.getSize());
+		    		    System.out.println("Total Frame: " + frame.getSize());
+		    		    */
 		    }
 		});
 
