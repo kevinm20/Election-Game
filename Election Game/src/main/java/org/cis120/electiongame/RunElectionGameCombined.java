@@ -131,6 +131,14 @@ public class RunElectionGameCombined implements Runnable {
 		// Top-level frame in which game components live
 	    final JFrame frame = new JFrame("Campaign Clash");
 	    
+	    // Get the screen size
+	    Dimension fullScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	    int screenWidth = fullScreenSize.width;
+	    int screenHeight = fullScreenSize.height;
+
+	    // Calculate cardSize based on screen width
+	    cardSize = (int)(screenWidth / 1920.0 * 275.0);
+
 	    // Create a loading screen panel with the desired background image
 	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
 
@@ -155,6 +163,47 @@ public class RunElectionGameCombined implements Runnable {
 	            System.err.println("Unable to set macOS dock icon: " + e.getMessage());
 	        }
 	    }
+	    
+	    // Initialize soundtrack with prefix
+	 		List<String> tracks = Arrays.asList(
+	 		    prefix + "files/americathebeautiful.MP3",
+	 		    prefix + "files/battlehymnoftherepublic.MP3",
+	 		    prefix + "files/columbiathegemoftheocean.MP3",
+	 		    prefix + "files/dixie.MP3",
+	 		    prefix + "files/mycountrytisofthee.MP3",
+	 		    prefix + "files/starsandstripesforever.MP3",
+	 		    prefix + "files/starspangledbanner.MP3",
+	 		    prefix + "files/whenjohnnycomesmarchinghome.MP3",
+	 		    prefix + "files/yankeedoodle.MP3",
+	 		    prefix + "files/youreagrandoldflag.MP3",
+	 		    prefix + "files/camptownraces.MP3",
+	 		    prefix + "files/itsalonglongwaytotipperary.MP3",
+	 		    prefix + "files/justlikewashingtoncrossedthedelawaregeneralpershingwillcrosstherhine.MP3",
+	 		    prefix + "files/myoldkentuckyhome.MP3",
+	 		    prefix + "files/onthealamo.MP3",
+	 		    prefix + "files/onthemississippi.MP3",
+	 		    prefix + "files/packupyourtroublesinyouroldkitbagandsmilesmilesmile.MP3",
+	 		    prefix + "files/ragtimecowboyjoe.MP3",
+	 		    prefix + "files/swanee.MP3",
+	 		    prefix + "files/temptationrag.MP3",
+	 		    prefix + "files/thebattlecryoffreedom.MP3",
+	 		    prefix + "files/tramptramptramp.MP3"
+	 		);
+
+
+	 	    // Create the SoundtrackPlayer instance
+	 	    SoundtrackPlayer player = new SoundtrackPlayer(tracks);
+
+	 	    // Start playing the soundtrack in a new thread
+	 	    new Thread(new Runnable() {
+	 	        public void run() {
+	 	            while (true) {
+	 	                player.play();
+	 	                // Since `play()` plays one track and then returns,
+	 	                // we just loop and wait for it to return before playing the next track.
+	 	            }
+	 	        }
+	 	    }).start();
 
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
@@ -194,9 +243,10 @@ public class RunElectionGameCombined implements Runnable {
 	        buttons[index] = new JButton(buttonTitles[index]);
 	        buttons[index].setPreferredSize(new Dimension(loadingButtonWidth, loadingButtonHeight)); // Set the preferred size for each button
 
+	        int loadingFontSize = (int)(cardSize/275.0*40);
 	        // Set the button properties
 	        buttons[index].setIcon(buttonIcon);
-	        buttons[index].setFont(new Font("Dialog", Font.BOLD, 20));
+	        buttons[index].setFont(new Font("Dialog", Font.BOLD, loadingFontSize));
 	        buttons[index].setForeground(new Color(222, 162, 6));
 	        buttons[index].setHorizontalTextPosition(SwingConstants.CENTER); // Center the text on the image
 	        buttons[index].setFocusPainted(false); // Remove focus border
@@ -219,19 +269,24 @@ public class RunElectionGameCombined implements Runnable {
 	            @Override
 	            public void mousePressed(java.awt.event.MouseEvent evt) {
 	                buttons[index].setIcon(buttonClickedIcon);
-	                buttons[index].setFont(new Font("Dialog", Font.BOLD, 18)); // Slightly smaller font on click
+	                buttons[index].setFont(new Font("Dialog", Font.BOLD, (int)(0.8*loadingFontSize))); // Slightly smaller font on click
+	                player.playSoundEffect("files/playbutton.MP3");
 	            }
 
 	            @Override
 	            public void mouseReleased(java.awt.event.MouseEvent evt) {
 	                buttons[index].setIcon(buttonHoverIcon);
-	                buttons[index].setFont(new Font("Dialog", Font.BOLD, 20)); // Restore font size
+	                buttons[index].setFont(new Font("Dialog", Font.BOLD, loadingFontSize)); // Restore font size
 	            }
 	        });
 
 	        // Add each button to the button panel
 	        buttonPanel.add(buttons[index]);
 	    }
+	    
+	    // Revalidate and repaint the panel to ensure layout is updated
+	    buttonPanel.revalidate();
+	    buttonPanel.repaint();
 
 	    // Add the button panel to the loading screen (centered on the screen)
 	    loadingScreen.setLayout(new GridBagLayout());
@@ -271,49 +326,9 @@ public class RunElectionGameCombined implements Runnable {
 		int frameWidth = frame.getWidth();
 		int frameHeight = frame.getHeight();
 		
-		cardSize = (int)(frameWidth/1920.0*275.0);
 			    
-		// Initialize soundtrack with prefix
-		List<String> tracks = Arrays.asList(
-		    prefix + "files/americathebeautiful.MP3",
-		    prefix + "files/battlehymnoftherepublic.MP3",
-		    prefix + "files/columbiathegemoftheocean.MP3",
-		    prefix + "files/dixie.MP3",
-		    prefix + "files/mycountrytisofthee.MP3",
-		    prefix + "files/starsandstripesforever.MP3",
-		    prefix + "files/starspangledbanner.MP3",
-		    prefix + "files/whenjohnnycomesmarchinghome.MP3",
-		    prefix + "files/yankeedoodle.MP3",
-		    prefix + "files/youreagrandoldflag.MP3",
-		    prefix + "files/camptownraces.MP3",
-		    prefix + "files/itsalonglongwaytotipperary.MP3",
-		    prefix + "files/justlikewashingtoncrossedthedelawaregeneralpershingwillcrosstherhine.MP3",
-		    prefix + "files/myoldkentuckyhome.MP3",
-		    prefix + "files/onthealamo.MP3",
-		    prefix + "files/onthemississippi.MP3",
-		    prefix + "files/packupyourtroublesinyouroldkitbagandsmilesmilesmile.MP3",
-		    prefix + "files/ragtimecowboyjoe.MP3",
-		    prefix + "files/swanee.MP3",
-		    prefix + "files/temptationrag.MP3",
-		    prefix + "files/thebattlecryoffreedom.MP3",
-		    prefix + "files/tramptramptramp.MP3"
-		);
-
-
-	    // Create the SoundtrackPlayer instance
-	    SoundtrackPlayer player = new SoundtrackPlayer(tracks);
-
-	    // Start playing the soundtrack in a new thread
-	    new Thread(new Runnable() {
-	        public void run() {
-	            while (true) {
-	                player.play();
-	                // Since `play()` plays one track and then returns,
-	                // we just loop and wait for it to return before playing the next track.
-	            }
-	        }
-	    }).start();
-	    
+		
+		CustomDialog.setGlobalScale(cardSize / 275.0);
 	    CustomDialog.setGlobalPlayer(player);
 	    CustomDialog.setGlobalFontSize((int)(16.0 * (cardSize / 225.0)));
 	    CustomDialog.preloadImages();
@@ -1313,15 +1328,15 @@ public class RunElectionGameCombined implements Runnable {
 
 		
 		// Calculate initial font size based on the initial card size
-		int initialFontSize = (int)(16 * (cardSize / 225.0));
-		Font initialFont = new Font("Dialog", Font.PLAIN, initialFontSize);
+		//int initialFontSize = (int)(16 * (cardSize / 225.0));
+		//Font initialFont = new Font("Dialog", Font.PLAIN, initialFontSize);
 
 		// Update JLabel components recursively within the frame
-		updateFonts(frame, initialFont);
+		//updateFonts(frame, initialFont);
 
 		// Update JOptionPane font
-		UIManager.put("OptionPane.messageFont", initialFont);
-		UIManager.put("OptionPane.buttonFont", initialFont);
+		//UIManager.put("OptionPane.messageFont", initialFont);
+		//UIManager.put("OptionPane.buttonFont", initialFont);
 
 	    //user_cards.hideCards(5);
 		

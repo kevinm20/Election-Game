@@ -1,6 +1,6 @@
 package org.cis120;
 
-import org.cis120.electiongame.CampaignClash;
+import org.cis120.electiongame.Game;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.*;
@@ -20,7 +20,7 @@ public class CompilationTest {
                 "\"Game\" in package \"org.cis120\" with a main method:\n" +
                 "   public static void main(String[] args)");
 
-        Class<CampaignClash> gameClass = CampaignClash.class;
+        Class<Game> gameClass = Game.class;
         if (gameClass == null) {
             System.out.println(error + "\nBut there was no Game class.");
             fail(error + "\nBut there was no Game class.");

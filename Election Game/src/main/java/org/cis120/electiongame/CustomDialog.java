@@ -13,13 +13,14 @@ public class CustomDialog extends JDialog {
     private static SoundtrackPlayer globalPlayer; // Static reference to global SoundtrackPlayer
     private static final Color FONT_COLOR = new Color(0, 0, 0); // Custom font color
     private static int globalFontSize = 14; // Default font size
+    private static double scaleFactor = 1.0; // Default scaling factor (no scaling)
     private int selectedOption = -1; // Store the selected option
 
     // Cache for the button and background images
     private ImageIcon buttonIcon;
     private ImageIcon buttonHoverIcon;
     private ImageIcon buttonClickedIcon;
-    
+
     private static Map<String, ImageIcon> imageCache = new HashMap<>();
 
     private int mouseX;
@@ -28,7 +29,7 @@ public class CustomDialog extends JDialog {
     private JTextField inputField; // Add this line at the beginning of your class
     private List<JCheckBox> checkBoxes = new ArrayList<>(); // List to store checkboxes
     private List<String> selectedTags = new ArrayList<>(); // List to store selected tags
-    
+
     public CustomDialog(Container parent, String message, String title, String[] options, String type) {
         this(parent, message, title, options, type, 1.0, 1.0); // Call the main constructor with defaults
     }
@@ -43,7 +44,7 @@ public class CustomDialog extends JDialog {
         if (System.getProperty("os.name").toLowerCase().contains("mac")) {
             setModalityType(ModalityType.APPLICATION_MODAL);  // Set modality for macOS
         }
-        
+
         // Determine the background image path
         String backgroundImage = getBackgroundImagePath(type, widthRatio, heightRatio);
 
@@ -65,11 +66,14 @@ public class CustomDialog extends JDialog {
         // Add the title image
         if (title != null && !title.isEmpty()) {
             ImageIcon titleIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(title))
-                    .getImage().getScaledInstance(400, 100, Image.SCALE_SMOOTH));
+                    .getImage().getScaledInstance((int) (400 * scaleFactor), (int) (100 * scaleFactor), Image.SCALE_SMOOTH));
             JLabel titleLabel = new JLabel(titleIcon);
-            titleLabel.setBounds((int) ((900 * widthRatio - 400) / 2), 0, 400, 100); // Center the title horizontally and place it at the top
+            // Center the title horizontally, adjusting for scaleFactor
+            titleLabel.setBounds((int) ((900 * widthRatio * scaleFactor - 400 * scaleFactor) / 2), 0, 
+                                 (int) (400 * scaleFactor), (int) (100 * scaleFactor));
             panel.add(titleLabel);
         }
+
 
         // Bind the ESC key to close the dialog
         panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
@@ -108,18 +112,18 @@ public class CustomDialog extends JDialog {
 
         // Adjust the message text for newline
         JLabel messageLabel = new JLabel("<html>" + message.replace("\n", "<br>") + "</html>");
-        messageLabel.setFont(new Font("Dialog", Font.BOLD, globalFontSize));
+        messageLabel.setFont(new Font("Dialog", Font.BOLD, (int) (globalFontSize * scaleFactor)));
         messageLabel.setForeground(FONT_COLOR);
-        messageLabel.setBounds((int) (75 * widthRatio), (int) (120 * heightRatio), (int) (750 * widthRatio),
-                (int) (300 * heightRatio)); // Adjusted position and size
+        messageLabel.setBounds((int) (75 * widthRatio * scaleFactor), (int) (120 * heightRatio * scaleFactor),
+                (int) (750 * widthRatio * scaleFactor), (int) (300 * heightRatio * scaleFactor)); // Adjusted position and size
         panel.add(messageLabel);
 
         // Create the input field if necessary
         if (type.equals("input")) {
             inputField = new JTextField();
-            inputField.setFont(new Font("Dialog", Font.PLAIN, globalFontSize));
-            inputField.setBounds((int) (75 * widthRatio), (int) (300 * heightRatio), (int) (750 * widthRatio),
-                    (int) (50 * heightRatio)); // Adjusted position
+            inputField.setFont(new Font("Dialog", Font.PLAIN, (int) (globalFontSize * scaleFactor)));
+            inputField.setBounds((int) (75 * widthRatio * scaleFactor), (int) (300 * heightRatio * scaleFactor),
+                    (int) (750 * widthRatio * scaleFactor), (int) (50 * heightRatio * scaleFactor)); // Adjusted position
             panel.add(inputField);
             SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
         }
@@ -133,12 +137,14 @@ public class CustomDialog extends JDialog {
             for (String tag : options) {
                 JCheckBox checkBox = new JCheckBox(tag);
                 checkBox.setOpaque(false); // Make each checkbox transparent
+                checkBox.setFont(new Font("Dialog", Font.PLAIN, (int) (globalFontSize * scaleFactor)));
                 checkBoxes.add(checkBox);
                 checkboxPanel.add(checkBox);
             }
 
             JCheckBox selectAllCheckBox = new JCheckBox("Select All");
             selectAllCheckBox.setOpaque(false); // Make the "Select All" checkbox transparent
+            selectAllCheckBox.setFont(new Font("Dialog", Font.PLAIN, (int) (globalFontSize * scaleFactor)));
             checkboxPanel.add(selectAllCheckBox);
 
             selectAllCheckBox.addActionListener(e -> {
@@ -146,7 +152,8 @@ public class CustomDialog extends JDialog {
                 checkBoxes.forEach(checkBox -> checkBox.setSelected(selectAll));
             });
 
-            checkboxPanel.setBounds((int) (75 * widthRatio), (int) (265 * heightRatio), (int) (750 * widthRatio), (int) (200 * heightRatio));
+            checkboxPanel.setBounds((int) (75 * widthRatio * scaleFactor), (int) (265 * heightRatio * scaleFactor),
+                    (int) (750 * widthRatio * scaleFactor), (int) (200 * heightRatio * scaleFactor));
             panel.add(checkboxPanel);
 
             // Only add the "Ok" button
@@ -179,8 +186,8 @@ public class CustomDialog extends JDialog {
         JPanel buttonPanel = new JPanel(new GridLayout(rows, cols, 30, 30)); // Dynamic rows and cols, 30px gaps
         buttonPanel.setOpaque(false); // Make the button area transparent
 
-        int buttonWidth = 225; // Fixed button width
-        int buttonHeight = 75; // Fixed button height
+        int buttonWidth = (int) (225 * scaleFactor); // Scaled button width
+        int buttonHeight = (int) (75 * scaleFactor); // Scaled button height
         buttonIcon = getCachedImage("files/blankbutton.PNG");
         buttonHoverIcon = getCachedImage("files/blankbuttonhover.PNG");
         buttonClickedIcon = getCachedImage("files/blankbuttonclicked.PNG");
@@ -190,7 +197,7 @@ public class CustomDialog extends JDialog {
             JButton button = new JButton(option);
 
             button.setIcon(buttonIcon);
-            button.setFont(new Font("Dialog", Font.BOLD, globalFontSize));
+            button.setFont(new Font("Dialog", Font.BOLD, (int) (globalFontSize * scaleFactor)));
             button.setForeground(new Color(222, 162, 6));
             button.setHorizontalTextPosition(SwingConstants.CENTER); // Center the text on the image
             button.setFocusPainted(false); // Remove focus border
@@ -213,13 +220,13 @@ public class CustomDialog extends JDialog {
                 @Override
                 public void mousePressed(java.awt.event.MouseEvent evt) {
                     button.setIcon(buttonClickedIcon);
-                    button.setFont(new Font("Dialog", Font.BOLD, (int) ((double) (globalFontSize) * 0.8)));
+                    button.setFont(new Font("Dialog", Font.BOLD, (int) (globalFontSize * scaleFactor * 0.8)));
                 }
 
                 @Override
                 public void mouseReleased(java.awt.event.MouseEvent evt) {
                     button.setIcon(buttonHoverIcon);
-                    button.setFont(new Font("Dialog", Font.BOLD, globalFontSize));
+                    button.setFont(new Font("Dialog", Font.BOLD, (int) (globalFontSize * scaleFactor)));
                 }
             });
 
@@ -258,24 +265,25 @@ public class CustomDialog extends JDialog {
         }
 
         // Calculate the Y position for the buttons to be at the bottom
-        int dialogHeight = (int) (600 * heightRatio); // Scaled dialog height
+        int dialogHeight = (int) (600 * heightRatio * scaleFactor); // Scaled dialog height
         int buttonPanelHeight = buttonHeight * rows + (rows - 1) * 30; // Account for rows and gaps
 
         // Calculate the total width of the button panel (buttons + gaps)
         int totalButtonPanelWidth = buttonWidth * cols + (cols - 1) * 30;
 
         // Center the button panel horizontally
-        int buttonX = (int) ((900 * widthRatio - totalButtonPanelWidth) / 2);
+        int buttonX = (int) ((900 * widthRatio * scaleFactor - totalButtonPanelWidth) / 2);
 
         // Calculate Y position for buttons
-        int buttonY = dialogHeight - buttonPanelHeight - (int) (60 * heightRatio);
+        int buttonY = dialogHeight - buttonPanelHeight - (int) (60 * heightRatio * scaleFactor);
 
         buttonPanel.setBounds(buttonX, buttonY, totalButtonPanelWidth, buttonPanelHeight); // Adjust for GridLayout
         panel.add(buttonPanel);
 
         // Create the close ("X") button in the top right corner
         JButton closeButton = new JButton("X");
-        closeButton.setBounds((int) (825 * widthRatio), 0, (int) (75 * widthRatio), (int) (75 * heightRatio)); // Scaled position and size
+        closeButton.setBounds((int) (825 * widthRatio * scaleFactor), 0,
+                (int) (75 * widthRatio * scaleFactor), (int) (75 * heightRatio * scaleFactor)); // Scaled position and size
         closeButton.setForeground(Color.WHITE);
         closeButton.setBackground(new Color(212, 38, 38)); // Initial background color
         closeButton.setFocusPainted(false); // Remove the focus outline
@@ -307,7 +315,7 @@ public class CustomDialog extends JDialog {
         panel.add(closeButton);
 
         pack();
-        setSize((int) (900 * widthRatio), (int) (600 * heightRatio)); // Scaled size
+        setSize((int) (900 * widthRatio * scaleFactor), (int) (600 * heightRatio * scaleFactor)); // Scaled size
 
         // Set the location relative to the parent container (centered)
         setLocationRelativeTo(parent);
@@ -315,7 +323,7 @@ public class CustomDialog extends JDialog {
         // If the type is "round", apply the vertical offset
         if ("round".equalsIgnoreCase(type)) {
             Point location = getLocation();
-            location.y += 275;
+            location.y += 275 * scaleFactor;
             setLocation(location);
         }
 
@@ -332,6 +340,11 @@ public class CustomDialog extends JDialog {
         globalFontSize = fontSize;
     }
 
+    // Static method to set the global scale factor
+    public static void setGlobalScale(double scale) {
+        scaleFactor = scale;
+    }
+
     // Static method to play the appropriate sound based on the type
     private static void playSoundEffect(String type) {
         if (globalPlayer != null) {
@@ -345,7 +358,7 @@ public class CustomDialog extends JDialog {
         }
     }
 
- // Preload background and button images with proper scaling
+    // Preload background and button images with proper scaling
     public static void preloadImages() {
         String[] backgroundImagePaths = {
             "files/electionmenubackground.PNG",
@@ -364,8 +377,8 @@ public class CustomDialog extends JDialog {
         }
 
         // Preload and scale button images
-        int buttonWidth = 225; // Fixed button width
-        int buttonHeight = 75; // Fixed button height
+        int buttonWidth = (int) (225 * scaleFactor); // Scaled button width
+        int buttonHeight = (int) (75 * scaleFactor); // Scaled button height
         String[] buttonImagePaths = {
             "files/blankbutton.PNG",
             "files/blankbuttonhover.PNG",
