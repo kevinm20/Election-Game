@@ -395,6 +395,8 @@ public class CustomDialog extends JDialog {
                 imageCache.put(path, scaledIcon);
             }
         }
+        
+        
     }
 
     private static ImageIcon getCachedImage(String path) {

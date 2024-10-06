@@ -319,11 +319,11 @@ public class ElectionGame {
     }
     
     public String p1Score() {
-        return player1.getName() + ": " + player1.getWins() + " Wins";
+        return player1.getName() + ": " + "<br>" + player1.getWins() + " Wins";
     }
     
     public String p2Score() {
-        return player2.getName() + ": " + player2.getWins() + " Wins";
+        return player2.getName() + ": " + "<br>" + player2.getWins() + " Wins";
     }
 
     public String finalScore(boolean result) {

@@ -36,6 +36,8 @@ import javazoom.jl.decoder.JavaLayerException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 
@@ -191,22 +193,53 @@ public class RunElectionGameCombined implements Runnable {
 	 		);
 
 
-	 	    // Create the SoundtrackPlayer instance
-	 	    SoundtrackPlayer player = new SoundtrackPlayer(tracks);
+	 	// Create the SoundtrackPlayer instance
+	 		SoundtrackPlayer player = new SoundtrackPlayer(tracks);
 
-	 	    // Start playing the soundtrack in a new thread
-	 	    new Thread(new Runnable() {
-	 	        public void run() {
-	 	            while (true) {
-	 	                player.play();
-	 	                // Since `play()` plays one track and then returns,
-	 	                // we just loop and wait for it to return before playing the next track.
-	 	            }
-	 	        }
-	 	    }).start();
+	 		// Separate thread to manage playback when not muted
+	 		new Thread(() -> {
+	 		    while (!Thread.currentThread().isInterrupted()) {
+	 		        if (!player.isMuted()) {
+	 		            player.play();  // Only play when not muted
+	 		            try {
+	 		                // Sleep to prevent continuous play checks, 
+	 		                // enough time for track to finish or until mute is toggled
+	 		                Thread.sleep(10000);  // Adjust based on your track length if needed
+	 		            } catch (InterruptedException e) {
+	 		                Thread.currentThread().interrupt();
+	 		                System.out.println("Playback thread interrupted.");
+	 		                return;  // Exit the loop if interrupted
+	 		            }
+	 		        } else {
+	 		            try {
+	 		                Thread.sleep(1000);  // Add a delay while muted
+	 		            } catch (InterruptedException e) {
+	 		                Thread.currentThread().interrupt();
+	 		                System.out.println("Playback thread interrupted while muted.");
+	 		                return;  // Exit the loop if interrupted
+	 		            }
+	 		        }
+	 		    }
+	 		}).start();
+
+
+
+
 
 	    // Set the frame to be undecorated before making it displayable
 	    frame.setUndecorated(true);
+	    
+	    // Load the custom cursor image
+        Image cursorImage = Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("files/mouse.PNG"));
+
+        // Scale the image to make the cursor bigger
+        int newCursorSize = 100;  // Adjust this size to make it bigger or smaller
+        Image scaledCursorImage = cursorImage.getScaledInstance(newCursorSize, newCursorSize, Image.SCALE_SMOOTH);
+        
+        // Create a custom cursor with the loaded image, with the hotspot at (0,0)
+        Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(scaledCursorImage, new Point(0, 0), "Custom Cursor");
+        
+        frame.setCursor(customCursor);
 
 	    //System.setProperty("sun.java2d.uiScale", "1.0");
 
@@ -307,8 +340,8 @@ public class RunElectionGameCombined implements Runnable {
 	        frame.setSize(screenSize.width, screenSize.height);  // Make sure the frame is sized correctly
 
 	        // Enable full-screen capabilities and toggle full-screen mode
-	        com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true);
-	        com.apple.eawt.Application.getApplication().requestToggleFullScreen(frame);
+	        //com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true);
+	        //com.apple.eawt.Application.getApplication().requestToggleFullScreen(frame);
 	    } else {
 	        // For non-macOS systems (e.g., Windows), use the regular full-screen method
 	        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -405,25 +438,50 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Using the new constructor with cropping starting from a specific position
 		decks = new BackgroundPanel(prefix + "files/backgroundfull.PNG", deckHeightRatio, deckStartYRatio, deckWidthRatio, deckStartXRatio);
-		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
+		decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*175)));
 
 		// Scale the image for use in the JLabel
 		ImageIcon logoIconScaled = new ImageIcon(
 		    new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/logo.PNG")).getImage()
-		        .getScaledInstance((int) (cardSize / 225.0 * 100), (int) (cardSize / 225.0 * 100), Image.SCALE_SMOOTH)
+		        .getScaledInstance((int) (cardSize / 225.0 * 150), (int) (cardSize / 225.0 * 150), Image.SCALE_SMOOTH)
 		);
 
 		// Use the scaled image for the JLabel
 		JLabel logoLabel = new JLabel(logoIconScaled);
+		
+
+		// Create a BackgroundPanel for the scoreboard, with the image "scoreboard.PNG"
+		BackgroundPanel scoreboardPanel = new BackgroundPanel(prefix + "files/scoreboard.PNG");
+
+		// Set padding around the scoreboardPanel (10px on all sides)
+		scoreboardPanel.setBorder(new EmptyBorder((int)(cardSize/275.0*10), (int)(cardSize/275.0*10), (int)(cardSize/275.0*10), (int)(cardSize/275.0*10)));
+
+		// Create the status JLabel for displaying the score
+		final JLabel status = new JLabel("<html><body>" + election.p1Score() + "<br><br>" + election.p2Score() + "</body></html>", SwingConstants.CENTER);
+
+		// Set up the status label (font, color, alignment)
+		status.setFont(new Font("Dialog", Font.BOLD, (int)(cardSize/275.0*20))); // Set font size and style
+		status.setForeground(Color.WHITE); // Set text color to white
+		status.setHorizontalAlignment(SwingConstants.CENTER); // Center the text
+
+		// Add the status label to the scoreboard panel
+		scoreboardPanel.setLayout(new BorderLayout()); // Use BorderLayout to center the label
+		scoreboardPanel.add(status, BorderLayout.CENTER);
+
+		// Create a container to add space around scoreboardPanel
+		JPanel paddedPanel = new JPanel(new BorderLayout());
+		paddedPanel.setBorder(new EmptyBorder((int)(cardSize/275.0*60), (int)(cardSize/275.0*10), (int)(cardSize/275.0*60), (int)(cardSize/275.0*10))); // Add padding (10px on all sides)
+		paddedPanel.setOpaque(false);
+		paddedPanel.add(scoreboardPanel, BorderLayout.CENTER); // Add scoreboardPanel in the center of the padded panel
+
+		// Add the padded panel to the decks (instead of directly adding the scoreboardPanel)
 		decks.add(logoLabel);
+		decks.add(paddedPanel); // Replace scoreboardPanel with paddedPanel
 
 		frame.add(decks, BorderLayout.WEST);
 
-		final JLabel status = new JLabel(election.currentScore(), SwingConstants.CENTER);
-		setLabel(status);
-		decks.add(status);
 
-		decks.setLayout(new GridLayout(5, 1));
+		decks.setLayout(new GridLayout(2, 1, 0, (int)(cardSize/275.0*10))); // Use 10px vertical gap between components
 
 
 		// Control panel with custom background
@@ -937,19 +995,19 @@ public class RunElectionGameCombined implements Runnable {
 		ImageIcon settingsClickedIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/settingsclicked.PNG"));
 
 		// Create the stats button with the settings icon
-		final JButton stats = new JButton(new ImageIcon(settingsIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+		final JButton settings = new JButton(new ImageIcon(settingsIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
 		// Set the rollover icon to the hover image
-		stats.setRolloverIcon(new ImageIcon(settingsHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
-		stats.setPressedIcon(new ImageIcon(settingsClickedIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+		settings.setRolloverIcon(new ImageIcon(settingsHoverIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
+		settings.setPressedIcon(new ImageIcon(settingsClickedIcon.getImage().getScaledInstance(buttonWidth, buttonHeight, Image.SCALE_SMOOTH)));
 
 		// Set button preferences
-		stats.setContentAreaFilled(false); // Remove default button background
-		stats.setBorderPainted(false);     // Remove button border
-		stats.setPreferredSize(new Dimension(buttonWidth, buttonHeight)); // Set preferred size
+		settings.setContentAreaFilled(false); // Remove default button background
+		settings.setBorderPainted(false);     // Remove button border
+		settings.setPreferredSize(new Dimension(buttonWidth, buttonHeight)); // Set preferred size
 
 
-		stats.addActionListener(new ActionListener() {
+		settings.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
 
@@ -967,7 +1025,7 @@ public class RunElectionGameCombined implements Runnable {
 				}
 
 				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck",
-						"Exit Game", "Rig Deck", "Home Screen" };
+						"Exit Game", "Rig Deck", "Home Screen", "Audio" };
 				int settingToChange = CustomDialog.showCustomDialog(
 					    frame,
 					    "Stats for " + election.getPlayer1().getName() + " this session: \n" 
@@ -1104,123 +1162,6 @@ public class RunElectionGameCombined implements Runnable {
 						}
 					}
 				}
-				/* Change card size
-				if (settingToChange == 3) {
-				    try {
-				        int newCardSize = Integer.parseInt(JOptionPane.showInputDialog(frame,
-				                "What would you like the new card size to be (current is " + cardSize + ")?"));
-				        if (newCardSize < 10) {
-				            newCardSize = 10;
-				        }
-				        cardSize = newCardSize;
-
-				        // Calculate new font size based on cardSize
-				        int newFontSize = (int)(16 * (cardSize / 225.0));  // Example scaling, adjust as needed
-				        Font newFont = new Font("Dialog", Font.PLAIN, newFontSize);
-
-				        // Update JLabel components recursively within the frame
-				        updateFonts(frame, newFont);
-
-				        // Update JOptionPane font
-				        UIManager.put("OptionPane.messageFont", newFont);
-				        UIManager.put("OptionPane.buttonFont", newFont);
-
-				        user_cards.paintCards();
-
-				        // Update the JScrollPane size
-				        userPolicies.setPreferredSize(new Dimension((int)(cardSize/225.0*3600), (int)(cardSize/225.0*325)));
-				        userPolicies.revalidate();
-				        userPolicies.repaint();
-
-				        ai_cards.removeAll();  // Clear existing cards
-				        for (int i = 0; i < 5; i++) {
-				            URL imgURL = getClass().getClassLoader().getResource(prefix + "files/aicard.PNG");
-				            ImageIcon icon = new ImageIcon(new ImageIcon(imgURL).getImage().getScaledInstance(
-				                (int) (0.266666667 * cardSize), (int) (0.351111111 * cardSize), Image.SCALE_SMOOTH));
-				            JLabel aicardlabel = new JLabel(icon);
-				            ai_cards.add(aicardlabel);
-				        }
-				        ai_cards.revalidate();
-				        ai_cards.repaint();
-
-				        // Update deck images with new scaled instances
-				        elecdeck.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/electionsdeck.PNG"))
-				                .getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
-				        prezdeck.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/presidentdeck.PNG"))
-				                .getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
-				        poldeck.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policydeck.PNG"))
-				                .getImage().getScaledInstance((int)(cardSize/225.0*119), (int)(cardSize/225.0*91), Image.SCALE_SMOOTH)));
-
-				        // Redraw decks panel to reflect new sizes
-				        decks.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
-				        
-				        // Update control panel buttons' sizes and icons
-				        for (Component comp : control_panel.getComponents()) {
-				            if (comp instanceof JButton) {
-				                JButton button = (JButton) comp;
-				                button.setPreferredSize(new Dimension((int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85)));  // Maintain proportional size
-
-				                // Scale the icon based on the new size
-				                ImageIcon icon = (ImageIcon) button.getIcon();
-				                if (icon != null) {
-				                    button.setIcon(new ImageIcon(icon.getImage().getScaledInstance(
-				                            (int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
-				                }
-				                
-				                ImageIcon rolloverIcon = (ImageIcon) button.getRolloverIcon();
-				                if (rolloverIcon != null) {
-				                    button.setRolloverIcon(new ImageIcon(rolloverIcon.getImage().getScaledInstance(
-				                            (int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
-				                }
-				                
-				                ImageIcon pressedIcon = (ImageIcon) button.getPressedIcon();
-				                if (pressedIcon != null) {
-				                    button.setPressedIcon(new ImageIcon(pressedIcon.getImage().getScaledInstance(
-				                            (int)(cardSize / 225.0 * 160), (int)(cardSize / 225.0 * 85), Image.SCALE_SMOOTH)));
-				                }
-				            }
-				        }
-				        control_panel.revalidate();
-				        control_panel.repaint();
-
-				        board.draw();
-
-				        // Force the frame to lay out its components again
-				        frame.invalidate();  // Invalidate the layout
-				        frame.validate();    // Validate the layout again to apply changes
-				        frame.repaint();     // Repaint the whole frame to reflect changes
-				    } catch (Exception ex) {
-				        JOptionPane.showMessageDialog(board, "Error: Your input was invalid.", "Error",
-				                JOptionPane.ERROR_MESSAGE);
-				    }
-				}*/
-				/*
-				// Music Settings
-				if (settingToChange == 4) {
-				    Object[] musicOptions = { "Stop", "Resume", "Next Track", "Previous Track", "Close" };
-
-				    int musicChoice = JOptionPane.showOptionDialog(frame, "Current song: " + player.getCurrentTrackName(),
-				            "Music Settings", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, musicOptions, musicOptions[4]);
-
-				    switch (musicChoice) {
-				        case 0: // Stop
-				            player.stop();
-				            break;
-				        case 1: // Resume
-				            player.play();
-				            break;
-				        case 2: // Next Track
-				            player.playNext();
-				            break;
-				        case 3: // Previous Track
-				            player.playPrevious();
-				            break;
-				        case 4: // Close
-				            // Do nothing, just close the dialog
-				            break;
-				    }
-				}
-				*/
 
 				
 				// Exit Game
@@ -1291,6 +1232,60 @@ public class RunElectionGameCombined implements Runnable {
 				        // "No" was selected, do nothing and return to the game
 				    }
 				}
+				
+				// Audio Settings
+				if (settingToChange == 6) {
+				    int audioChoice;  // No need to initialize it with -1 here
+				    do {  // Use a do-while loop to ensure the dialog shows at least once
+				    	// Display track name or "Muted" if audio is muted
+				        String currentTrackMessage = player.isMuted() ? "Muted" : "Current track: " + player.getCurrentTrackName();
+				        String muteLabel = player.isMuted() ? "Unmute" : "Mute";
+				        
+				        String[] audioOptions = { "Previous Track", "Next Track", muteLabel, "Ok" };
+				        
+				        // Show the dialog with the current track name or "Muted"
+				        audioChoice = CustomDialog.showCustomDialog(
+				            frame,
+				            currentTrackMessage,  // Display the current track name or "Muted"
+				            prefix + "files/settingstitle.PNG",
+				            audioOptions,
+				            "settings"
+				        );
+
+				        System.out.println("Audio choice made: " + audioChoice);  // Debug line
+
+				        switch (audioChoice) {
+				            case 0:  // Previous Track option
+				                System.out.println("Attempting to play previous track.");
+				                player.playPreviousTrack();  // Call a method to go to the previous track
+				                break;
+				            case 1:  // Next Track option
+				                System.out.println("Attempting to play next track.");
+				                player.playNextTrack();  // Call a method to go to the next track
+				                break;
+				            case 2:  // Mute/Unmute option
+				                System.out.println("Attempting to mute/unmute audio.");
+				                player.toggleMute();  // Toggle mute/unmute
+				                break;
+				            case 3:  // Ok option
+				                System.out.println("Ok pressed, closing dialog.");
+				                break;
+				            case -1:  // X button (window close)
+				                System.out.println("Dialog closed with X button.");
+				                break;
+				            default:
+				                System.out.println("Unexpected option selected.");
+				                break;
+				        }
+				    } while (audioChoice != 3 && audioChoice != -1);  // Continue until "Ok" (3) or "X" (-1) is pressed
+				}
+
+
+
+
+
+
+
 
 				
 				if (settingToChange == 2) {
@@ -1310,7 +1305,7 @@ public class RunElectionGameCombined implements Runnable {
 			}
 		});
 		gbc.gridy = 2;
-		control_panel.add(stats, gbc);
+		control_panel.add(settings, gbc);
 		
 		// Loop through all components in the control_panel
 		for (Component comp : control_panel.getComponents()) {
@@ -2447,9 +2442,9 @@ public class RunElectionGameCombined implements Runnable {
 	            int imageHeight = bufferedImage.getHeight();
 
 	            int cropStartX = 0;
-	            int cropStartY = (int) (785.0 / 1200.0 * imageHeight);
+	            int cropStartY = (int) (803.0 / 1200.0 * imageHeight);
 	            int cropWidth = imageWidth;
-	            int cropHeight = (int) (415.0 / 1200.0 * imageHeight);
+	            int cropHeight = (int) (397.0 / 1200.0 * imageHeight);
 
 	            BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
 
@@ -2509,7 +2504,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	        paintCards();
 
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
+	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policiesbackground.PNG")).getImage();
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
@@ -2770,6 +2765,10 @@ public class RunElectionGameCombined implements Runnable {
 	    @Override
 	    public void paintComponent(Graphics g) {
 	        super.paintComponent(g);
+	        // Draw the background image scaled to the size of the panel
+	        if (backgroundImage != null) {
+	            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+	        }
 	    }
 
 	    @Override
@@ -3125,7 +3124,7 @@ public class RunElectionGameCombined implements Runnable {
 	}
 
 	private void setLabel(JLabel j) {
-		j.setText("<html><body>" + election.p1Score() + "<br>" + election.p2Score() + "</body></html>");
+		j.setText("<html><body>" + election.p1Score() + "<br><br>" + election.p2Score() + "</body></html>");
 		j.repaint();
 	}
 }
