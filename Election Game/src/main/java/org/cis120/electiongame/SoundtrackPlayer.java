@@ -157,7 +157,7 @@ public class SoundtrackPlayer {
 
     // Play the previous track
     public void playPreviousTrack() {
-        currentTrackIndex = (currentTrackIndex - 1 + tracks.size()) % tracks.size() - 1;  // Move to previous track
+        currentTrackIndex = (currentTrackIndex - 1 + tracks.size()) % tracks.size()-1;  // Move to previous track
         stop();  // Stop the current track
     }
 }
