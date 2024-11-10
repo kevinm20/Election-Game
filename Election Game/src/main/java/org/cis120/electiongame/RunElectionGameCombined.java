@@ -1112,7 +1112,7 @@ public class RunElectionGameCombined implements Runnable {
 
 							String[] customTags = { "President","Founding Era",
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Trump Era" };
 
 							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
