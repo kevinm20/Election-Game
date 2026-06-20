@@ -29,13 +29,17 @@ public class CustomDialog extends JDialog {
     private JTextField inputField; // Add this line at the beginning of your class
     private List<JCheckBox> checkBoxes = new ArrayList<>(); // List to store checkboxes
     private List<String> selectedTags = new ArrayList<>(); // List to store selected tags
-
+        
     public CustomDialog(Container parent, String message, String title, String[] options, String type) {
-        this(parent, message, title, options, type, 1.0, 1.0); // Call the main constructor with defaults
+        this(parent, message, title, options, type, 1.0, 1.0, 0); // Call the main constructor with defaults
+    }
+    
+    public CustomDialog(Container parent, String message, String title, String[] options, String type, double heightRatio, double widthRatio) {
+        this(parent, message, title, options, type, heightRatio, widthRatio, 0); // Call the main constructor with defaults
     }
 
     public CustomDialog(Container parent, String message, String title, String[] options, String type,
-                        double heightRatio, double widthRatio) {
+                        double heightRatio, double widthRatio, int offset) {
         super(JOptionPane.getFrameForComponent(parent), title, true);
 
         setUndecorated(true); // Remove default decorations
@@ -165,7 +169,6 @@ public class CustomDialog extends JDialog {
             options = new String[]{"Ok"};
         }
 
-        // Existing button handling code...
         int buttonCount = options.length;
         int rows, cols;
 
@@ -320,10 +323,12 @@ public class CustomDialog extends JDialog {
         // Set the location relative to the parent container (centered)
         setLocationRelativeTo(parent);
 
-        // If the type is "round", apply the vertical offset
+        // Offset if it's "round"
         if ("round".equalsIgnoreCase(type)) {
             Point location = getLocation();
-            location.y += 275 * scaleFactor;
+            
+            // Determine the offset based on the last click status
+            location.y += offset * scaleFactor;
             setLocation(location);
         }
 
@@ -444,6 +449,13 @@ public class CustomDialog extends JDialog {
         CustomDialog dialog = new CustomDialog(parent, message, title, options, type, heightRatio, widthRatio);
         return dialog.getSelectedOption();
     }
+    
+ // New static method to create and show the dialog with optional parameters
+    public static int showCustomDialog(Container parent, String message, String title, String[] options, String type,
+                                       double heightRatio, double widthRatio, int offset) {
+        CustomDialog dialog = new CustomDialog(parent, message, title, options, type, heightRatio, widthRatio, offset);
+        return dialog.getSelectedOption();
+    }
 
     // Static method to create and show the input dialog, and return the input string
     public static String showInputDialog(Container parent, String message, String title) {
@@ -462,4 +474,5 @@ public class CustomDialog extends JDialog {
         Image image = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
         return new ImageIcon(image);
     }
+    
 }

@@ -38,6 +38,7 @@ public class ElectionGame {
     public int rounds = 0;
     public boolean statTesting = false;
     public boolean lastwinner = true;
+    public boolean winner = true;
     
     public String deckPreset = "standard";
     public String achievement = null;
@@ -90,6 +91,10 @@ public class ElectionGame {
 
     public boolean getLastWinner() {
     	return lastwinner;
+    }
+    
+    public boolean getWinner() {
+    	return winner;
     }
     /* For testing */
     public Player getPlayer1() {
@@ -459,40 +464,6 @@ public class ElectionGame {
     	current = year;
     }
 
-    // Even though you also have to play policies, I left this method in for easy
-    // testing. THIS IS OLD VERSION IGNORE IT
-    public void playRound(President c1, President c2) {
-
-        if (c1 == null || c2 == null) {
-            throw new IllegalArgumentException();
-        }
-        boolean winner = current.getWinner(c1, c2);
-        if (winner) {
-            message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName()
-                    + "'s "
-                    + c2.toString() + "! " + "Round score: " + current.getScore(c1) + " to "
-                    + current.getScore(c2) + "\nKey Attributes were: "
-                    + current.getAttrOne().toUpperCase()
-                    + ", " + current.getAttrTwo().toUpperCase() + ".";
-            player1.winRound();
-        } else {
-            message =
-
-                    player2.getName() + "'s " + c2.toString() + " beat " + player1.getName() +
-                            "'s "
-                            + c1.toString() + "! " + "Round score: " + current.getScore(c2) + " to "
-                            + current.getScore(c1) + "\nKey Attributes were: "
-                            + current.getAttrOne().toUpperCase()
-                            + ", " + current.getAttrTwo().toUpperCase() + ".";
-
-            player2.winRound();
-        }
-
-        System.out.println(message);
-        System.out.println();
-        current = (Election) electionDeck.draw();
-    }
-
     public void playRound(President c1, ArrayList<Policy> p1, President c2, ArrayList<Policy> p2) {
 
         if (c1 == null || p1.get(0) == null || p1.get(1) == null || p2.get(0) == null
@@ -511,7 +482,7 @@ public class ElectionGame {
 		double p2pct = 100 - p1pct;
 		rounds++;     
         
-		boolean winner = current.getWinner(c1, p1.get(0), p1.get(1), c2, p2.get(0), p2.get(1));
+		winner = current.getWinner(c1, p1.get(0), p1.get(1), c2, p2.get(0), p2.get(1));
 		lastwinner = winner;
 		if (winner) {
 			message = player1.getName() + "'s " + c1.toString() + " beat " + player2.getName() + "'s " + c2.toString()
@@ -547,6 +518,7 @@ public class ElectionGame {
 		 * 
 		 */
         
+		/*
         if (winner&&c1.getName().equals("George W. Bush")&&c2.getName().equals("Al Gore")) {
             achievement = "ACHIEVEMENT: Win Florida (Defeat Al Gore with George W. Bush)";
             //System.out.println(achievement);
@@ -674,9 +646,15 @@ public class ElectionGame {
             //System.out.println(achievement);
         }
         
+        
         else {
             achievement = null;
         }
+        */
+    }
+        
+    // Make sure to always do this in playRound if testing in this file
+    public void finishRound() {
 
         nullifyUser();
         nullifyAI();

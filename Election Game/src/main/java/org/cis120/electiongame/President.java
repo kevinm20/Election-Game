@@ -208,7 +208,12 @@ public class President extends Card {
     // I used this to easily get the file location of all the president cards
     @Override
     public String getImageURL() {
-        String target = super.getName().replaceAll("\\s", "").replace(".", "").replace("'", "");
+    	String target = super.getName()
+    	        .replaceAll("\\s", "")
+    	        .replace(".", "")
+    	        .replace("'", "")
+    	        .replace("(", "")
+    	        .replace(")", "");
         target = target.toLowerCase();
         return "files/" + target + ".PNG";
     }

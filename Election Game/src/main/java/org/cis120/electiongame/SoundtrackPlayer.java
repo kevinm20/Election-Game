@@ -32,7 +32,6 @@ public class SoundtrackPlayer {
     // Play the current track, if not muted and should play
     public synchronized void play() {
         if (!shouldPlay) {
-            System.out.println("Skipping play, muted.");
             return;  // If muted, don't play
         }
 
@@ -43,7 +42,6 @@ public class SoundtrackPlayer {
         if (tracks.isEmpty()) return;
 
         String trackPath = tracks.get(currentTrackIndex);
-        System.out.println("Playing track: " + trackPath);
 
         playbackThread = new Thread(() -> {
             isPlaying = true;
@@ -57,7 +55,6 @@ public class SoundtrackPlayer {
             } catch (JavaLayerException | IOException e) {
                 e.printStackTrace();
             } finally {
-                System.out.println("Track finished playing.");
                 isPlaying = false;  // Track finished
                 nextTrack();  // Automatically play the next track
             }
@@ -76,30 +73,21 @@ public class SoundtrackPlayer {
 
  // Stop playback
     public synchronized void stop() {
-        System.out.println("Attempting to stop audio.");
         if (isPlaying) {
             if (playbackThread != null && playbackThread.isAlive()) {
-                System.out.println("Interrupting playback thread.");
                 playbackThread.interrupt();  // Interrupt the playback thread
-                System.out.println("Playback thread interrupted");
                 try {
-                    System.out.println("Attempting to join playback thread with timeout.");
                     playbackThread.join(1);  // Wait for the thread to properly stop with timeout
-                    System.out.println("Playback thread joined.");
                 } catch (InterruptedException e) {
-                    System.out.println("Error waiting for playback thread to finish.");
                     Thread.currentThread().interrupt();
                 }
             }
             if (player != null) {
-                System.out.println("Closing audio player.");
                 player.close();  // This will stop playback
-                System.out.println("Audio player closed.");
                 player = null;
             }
             isPlaying = false;
         }
-        System.out.println("Stop code finished.");
     }
 
 
@@ -124,15 +112,10 @@ public class SoundtrackPlayer {
 
     // Toggle mute
     public void toggleMute() {
-        System.out.println("toggleMute code reached. Next is: shouldPlay = !shouldPlay;");
         shouldPlay = !shouldPlay;  // Flip the play state
-        System.out.println("Mute toggled, shouldPlay is now: " + shouldPlay);
-
         if (!shouldPlay) {
-            System.out.println("Stopping audio.");
             stop();  // Stop all audio if muted
         } else {
-            System.out.println("Resuming audio.");
             play();  // Resume playing if unmuted
         }
     }

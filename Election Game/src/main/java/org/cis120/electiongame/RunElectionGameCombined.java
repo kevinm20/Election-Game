@@ -83,6 +83,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	// Change this if the screen is wacky
 	int cardSize = 275;
+	public int screenWidth;
 
 	public static InputStream loadImage(String path) {
 		InputStream input = RunElectionGameCombined.class.getResourceAsStream(path);
@@ -135,11 +136,18 @@ public class RunElectionGameCombined implements Runnable {
 	    
 	    // Get the screen size
 	    Dimension fullScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	    int screenWidth = fullScreenSize.width;
+	    screenWidth = fullScreenSize.width;
 	    int screenHeight = fullScreenSize.height;
 
 	    // Calculate cardSize based on screen width
 	    cardSize = (int)(screenWidth / 1920.0 * 275.0);
+	    
+	    /*Check Java Version - Should be 1.8
+	    System.out.println("Java version: " + System.getProperty("java.version"));
+	    System.out.println("Java home: " + System.getProperty("java.home"));
+	    System.out.println("UI scale: " + System.getProperty("sun.java2d.uiScale"));
+	    System.out.println("DPI aware: " + System.getProperty("sun.java2d.dpiaware"));
+	    */
 
 	    // Create a loading screen panel with the desired background image
 	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
@@ -376,12 +384,15 @@ public class RunElectionGameCombined implements Runnable {
                 if (up != null) {
                     up.drawOnGlassPane(g);
                 }
+                if (board != null) {  // Ensure gameBoard is available and call its draw method
+                    board.drawOnGlassPane(g);
+                }
             }
         };
         frame.setGlassPane(glassPane);
         glassPane.setVisible(true); // Make the glass pane visible
         
-        board = new GameBoard(player);
+        board = new GameBoard(player, glassPane);
         
 	    // User Policy Deck, I added a scrollbar since you get 15 policies
 	    up = new UserPolicies(player, glassPane);
@@ -574,11 +585,15 @@ public class RunElectionGameCombined implements Runnable {
 						election.player2PlayCard(cpuplay);
 						election.pinAIPolicies(ai.playPolicies(cpuplay, election.getPol()));
 
-						board.flipCPU();
-						board.draw();
+						
 
 						election.playRound(election.getPlayer1Card(), election.getPinned1(), cpuplay,
 								election.getPinned2());
+						
+						board.flipCPU();
+						board.draw();
+						
+						election.finishRound();
 
 					} else {
 						if (election.getTurn()) {
@@ -620,11 +635,14 @@ public class RunElectionGameCombined implements Runnable {
 							election.getPlayer1().draw(election.getPres());
 							election.getPlayer1().drawPols(election.getPol());
 
-							board.flipCPU();
-							board.draw();
 
 							election.playRound(election.getPlayer1Card(), election.getPinned1(),
 									election.getPlayer2Card(), election.getPinned2());
+							
+							board.flipCPU();
+							board.draw();
+							
+							election.finishRound();
 							election.flipPlayer();
 						}
 					}
@@ -632,13 +650,32 @@ public class RunElectionGameCombined implements Runnable {
 					if (!twoplayermode || election.getTurn()) {
 						setLabel(status);
 						status.repaint();
-						CustomDialog.showCustomDialog(
-							    frame,
-							    election.getMessage(),  // The message from the election object
-							    null,  // Title of the dialog
-							    new String[] { "Ok" },  // Single "Ok" button directly in the method call
-							    "round"  // Dialog type indicating it's a round result
-							);
+						// Display the initial dialog with the first line and an option to show details
+						int result = CustomDialog.showCustomDialog(
+						    frame,
+						    election.getMessage().split("\n", 2)[0],  // Get only the first line of the message
+						    null,  // Title of the dialog
+						    new String[] { "Ok", "Details" },  // "Ok" and "Details" buttons
+						    "round",  // Dialog type indicating it's a round result
+						    0.5,
+						    1.0,
+						    -450
+						);
+
+						// If "Details" is clicked (result == 1), show remaining message
+						if (result == 1) {
+						    CustomDialog.showCustomDialog(
+						        frame,
+						        election.getMessage(),  // Show remaining details
+						        null,
+						        new String[] { "Ok" },
+						        "round",
+						        1.0,
+						        1.0,
+						        275
+						    );
+						}
+						
 						if (election.getAchievement() != null) {
 							JOptionPane.showMessageDialog(frame, election.getAchievement());
 						}
@@ -1025,7 +1062,7 @@ public class RunElectionGameCombined implements Runnable {
 				}
 
 				String[] settingOptions = { "Change Your Name", "Change AI Difficulty", "Change Deck",
-						"Exit Game", "Rig Deck", "Home Screen", "Audio" };
+						"Exit Game", "Home Screen", "Audio" /*, "Rig Deck"*/ };
 				int settingToChange = CustomDialog.showCustomDialog(
 					    frame,
 					    "Stats for " + election.getPlayer1().getName() + " this session: \n" 
@@ -1184,8 +1221,9 @@ public class RunElectionGameCombined implements Runnable {
 
 				}
 
+				/*
 				// Rig deck (for testing)
-				if (settingToChange == 4) {
+				if (settingToChange == 6) {
 					String cardtoget = CustomDialog.showInputDialog(frame, "Pick a president to add",
 							"files/settingstitle.PNG");
 					String electiontoset = CustomDialog.showInputDialog(frame, "Pick an election to set",
@@ -1203,9 +1241,10 @@ public class RunElectionGameCombined implements Runnable {
 					board.draw();
 					user_cards.paintCards();
 				}
+				*/
 				
 				// Back to Loading Screen
-				if (settingToChange == 5) {
+				if (settingToChange == 4) {
 				    // Show confirmation dialog
 				    int confirmation = CustomDialog.showCustomDialog(
 				        frame, 
@@ -1234,7 +1273,7 @@ public class RunElectionGameCombined implements Runnable {
 				}
 				
 				// Audio Settings
-				if (settingToChange == 6) {
+				if (settingToChange == 5) {
 				    int audioChoice;  // No need to initialize it with -1 here
 				    do {  // Use a do-while loop to ensure the dialog shows at least once
 				    	// Display track name or "Muted" if audio is muted
@@ -2263,7 +2302,7 @@ public class RunElectionGameCombined implements Runnable {
 	                            hand.remove(draggedCard); // Remove the card from the hand when dragging starts
 	                            revalidate();
 	                            repaint();
-	                            glassPane.setVisible(true); // Show glass pane when dragging starts
+	                            glassPane.setVisible(true);
 	                            glassPane.repaint();
 	                            remove(component); // Remove the card from the deck view immediately
 	                        });
@@ -2790,338 +2829,380 @@ public class RunElectionGameCombined implements Runnable {
 
 
 	/// This class represents the main game board in the center of the screen.
-	@SuppressWarnings("serial")
-	public class GameBoard extends JPanel {
-		private boolean cpuPlayed;
-		private boolean hideUsers;
-	    private Image backgroundImage; // To hold the background image
-	    private BufferedImage bufferedImage; // To hold buffered image of background image
-	    private SoundtrackPlayer player;
-	    private double xref;
-	    private double frameXRef;
-	    private Card zoomedCard = null;
+		@SuppressWarnings("serial")
+		public class GameBoard extends JPanel {
+			private boolean cpuPlayed;
+			private boolean hideUsers;
+		    private Image backgroundImage; // To hold the background image
+		    private BufferedImage bufferedImage; // To hold buffered image of background image
+		    private SoundtrackPlayer player;
+		    private double xref;
+		    private double frameXRef;
+		    private Card zoomedCard = null;
+		    
+		    private JComponent glassPane;
+		    private Image whiteHouseImage;
 
-		// Game constants
-		public static final int BOARD_WIDTH = 600;
-		public static final int BOARD_HEIGHT = 250;
+			// Game constants
+			public static final int BOARD_WIDTH = 600;
+			public static final int BOARD_HEIGHT = 250;
 
-		/**
-		 * Initializes the game board.
-		 */
-		public GameBoard(SoundtrackPlayer player) {
-			cpuPlayed = false;
-			
-			this.player = player;
-
-			// Load the background image
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
-	        xref = 215.0;
-	        frameXRef = 1920.0;
-	        
-			draw();
-
-			addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseReleased(MouseEvent e) {
-
-					repaint(); // repaints the game board
-				}
-			});
-		}
-		
-		// For background
-		public void setRefs(double ref, double frameRef) {
-			xref=ref;
-			frameXRef=frameRef;
-		}
-
-		// Flip CPU cards when cards are played
-		public void flipCPU() {
-			cpuPlayed = !cpuPlayed;
-		}
-
-		public void flipUser() {
-			hideUsers = !hideUsers;
-		}
-		
-		// Method to zoom in a card
-	    public void zoomCard(Card card) {
-	        this.zoomedCard = card;
-	        draw();  // Redraw the board to show the zoomed card
-	    }
-
-	    public void unzoom() {
-	    	if (this.zoomedCard != null) {
-		    	this.zoomedCard = null;
-		    	draw();
-	    	}
-	    }
-		// This method basically draws all the cards, the "pinned"
-		// cards that the player is about to play along with others
-		public void draw() {
-			this.removeAll();
-			this.updateUI();
-
-			if (zoomedCard != null) {
-				// Use the same dimensions as the zoomed election card
-	            final int zoomedCardWidth = (int) (0.888888889 * cardSize * 1.75);
-	            final int zoomedCardHeight = (int) (1.17777778 * cardSize * 1.75);
-
-	            ImageIcon zoomedIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + zoomedCard.getImageURL()))
-	                    .getImage().getScaledInstance(zoomedCardWidth, zoomedCardHeight, Image.SCALE_SMOOTH));
-	            JLabel zoomedLabel = new JLabel(zoomedIcon);
-	            zoomedLabel.setBounds((getWidth() - zoomedCardWidth) / 2, (getHeight() - zoomedCardHeight) / 2, zoomedCardWidth, zoomedCardHeight);
-	            this.add(zoomedLabel);
-
-	            // Add a click listener to unzoom the card
-	            zoomedLabel.addMouseListener(new MouseAdapter() {
-	                @Override
-	                public void mouseReleased(MouseEvent e) {
-	                    zoomedCard = null;  // Unzoom the card
-	                    player.playSoundEffect(prefix + "files/cardplay.MP3");
-	                    draw();  // Redraw the board to restore the normal view
-	                }
-	            });
-	        } else {
-			// Player 1 played policies
-			JPanel userpin = new JPanel();
-		    userpin.setOpaque(false); // Make the userpin panel transparent
-
-			if (cardSize == 0) {
-				cardSize = 225;
-			}
-
-			for (int i = 0; i < 2; i++) {
-				if (hideUsers && twoplayermode) {
-					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-							.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
-					final JLabel label = new JLabel(usercard);
-					userpin.add(label);
-				} else {
-					int pos = i;
-					Policy curr = election.getActivePinnedPolicies().get(i);
-					if (curr != null) {
-						ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
-						final JLabel label = new JLabel(usercard);
-						label.addMouseListener(new MouseAdapter() {
-							public void mouseReleased(MouseEvent e) {
-								player.playSoundEffect(prefix + "files/cardplay.MP3");
-								election.getActivePlayer().add(election.pinActivePolicy(null, pos));
-								draw();
-								up.paintCards();
-							}
-						});
-						userpin.add(label);
-					} else {
-						ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
-						final JLabel label = new JLabel(usercard);
-						userpin.add(label);
-					}
-				}
-			}
-
-			userpin.setLayout(new GridLayout(2, 1));
-			this.add(userpin);
-
-			/*
-			 * Player 1 played president
+			/**
+			 * Initializes the game board.
 			 */
-			if (hideUsers && twoplayermode) {
-				ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
-				final JLabel label = new JLabel(aicard);
-				this.add(label);
-			} else if (election.getActivePinCard() != null) {
-				ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getActivePinCard().getImageURL()))
-						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
-				final JLabel butt = new JLabel(usercard);
-				this.add(butt);
-				butt.addMouseListener(new MouseAdapter() {
+			public GameBoard(SoundtrackPlayer player, JComponent glassPane) {
+				cpuPlayed = false;
+				
+				this.player = player;
+				this.glassPane = glassPane;
 
+				// Load the background image
+		        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
+		        xref = 215.0;
+		        frameXRef = 1920.0;
+		        
+		        // Load the White House image
+		        loadWhiteHouseImage();
+		        
+				draw();
+
+				addMouseListener(new MouseAdapter() {
+					@Override
 					public void mouseReleased(MouseEvent e) {
-						player.playSoundEffect(prefix + "files/cardplay.MP3");
-						election.getActivePlayer().add(election.getActivePinCard());
-						election.activePinCard(null);
-						draw();
-						user_cards.paintCards();
+
+						repaint(); // repaints the game board
 					}
 				});
-			} else {
-				ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
-				final JLabel label = new JLabel(usercard);
-				this.add(label);
 			}
 			
-			/*
-	         * Current Election Card
-	         */
-			final int electionCardWidth = (int) (0.888888889 * cardSize);
-			final int electionCardHeight = (int) (1.17777778 * cardSize);
+			// Method to load the White House image
+		    private void loadWhiteHouseImage() {
+		        ImageIcon whIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/whitehouse.PNG"));
+		        int scaledWidth = (int) (200 * (cardSize / 275.0));
+		        int scaledHeight = (int) (200 * (cardSize / 275.0));
+		        whiteHouseImage = whIcon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+		    }
+			
+			// For background
+			public void setRefs(double ref, double frameRef) {
+				xref=ref;
+				frameXRef=frameRef;
+			}
 
-	        if (starting) {
-	            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-	                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
-	            final JLabel elec = new JLabel(currelection);
-	            this.add(elec);
-	        } else {
-	            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getElection().getImageURL()))
-	                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
-	            final JLabel elec = new JLabel(currelection);
-	            this.add(elec);
+			// Flip CPU cards when cards are played
+			public void flipCPU() {
+				cpuPlayed = !cpuPlayed;
+			}
 
-	            // Add mouse listener to toggle zoom
-	            elec.addMouseListener(new MouseAdapter() {
-	                @Override
-	                public void mouseReleased(MouseEvent e) {
-	                	player.playSoundEffect(prefix + "files/cardplay.MP3");
-	                    zoomedCard = election.getElection();
-	                    draw(); // Redraw the board to update the size of the election card
-	                }
-	            });
-	        }
-			/*
-			 * CPU Pinned Cards
-			 */
-			JPanel cpupin = new JPanel();
-		    cpupin.setOpaque(false); // Make the userpin panel transparent
-			    
-			if (starting) {
-				ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-						.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
-				final JLabel label = new JLabel(aicard);
-				this.add(label);
+			public void flipUser() {
+				hideUsers = !hideUsers;
+			}
+			
+			// Method to zoom in a card
+		    public void zoomCard(Card card) {
+		        this.zoomedCard = card;
+		        draw();  // Redraw the board to show the zoomed card
+		    }
 
+		    public void unzoom() {
+		    	if (this.zoomedCard != null) {
+			    	this.zoomedCard = null;
+			    	draw();
+		    	}
+		    }
+			// This method basically draws all the cards, the "pinned"
+			// cards that the player is about to play along with others
+			public void draw() {
+				this.removeAll();
+				this.updateUI();
+
+				if (zoomedCard != null) {
+					// Use the same dimensions as the zoomed election card
+		            final int zoomedCardWidth = (int) (0.888888889 * cardSize * 1.75);
+		            final int zoomedCardHeight = (int) (1.17777778 * cardSize * 1.75);
+
+		            ImageIcon zoomedIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + zoomedCard.getImageURL()))
+		                    .getImage().getScaledInstance(zoomedCardWidth, zoomedCardHeight, Image.SCALE_SMOOTH));
+		            JLabel zoomedLabel = new JLabel(zoomedIcon);
+		            zoomedLabel.setBounds((getWidth() - zoomedCardWidth) / 2, (getHeight() - zoomedCardHeight) / 2, zoomedCardWidth, zoomedCardHeight);
+		            this.add(zoomedLabel);
+
+		            // Add a click listener to unzoom the card
+		            zoomedLabel.addMouseListener(new MouseAdapter() {
+		                @Override
+		                public void mouseReleased(MouseEvent e) {
+		                    zoomedCard = null;  // Unzoom the card
+		                    player.playSoundEffect(prefix + "files/cardplay.MP3");
+		                    draw();  // Redraw the board to restore the normal view
+		                }
+		            });
+		        } else {
+		        	
+				// Player 1 played policies
+				JPanel userpin = new JPanel();
+			    userpin.setOpaque(false); // Make the userpin panel transparent
+
+				if (cardSize == 0) {
+					cardSize = 225;
+				}
 
 				for (int i = 0; i < 2; i++) {
-					ImageIcon place = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-							.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
-					final JLabel placeLab = new JLabel(place);
-					cpupin.add(placeLab);
-				}
-				cpupin.setLayout(new GridLayout(2, 1));
-				this.add(cpupin);
+					if (hideUsers && twoplayermode) {
+						ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(usercard);
+						userpin.add(label);
+					} else {
+						int pos = i;
+						Policy curr = election.getActivePinnedPolicies().get(i);
+						if (curr != null) {
+							ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							final JLabel label = new JLabel(usercard);
 
-			} else if (!twoplayermode) {
+							label.addMouseListener(new MouseAdapter() {
+								public void mouseReleased(MouseEvent e) {
+									player.playSoundEffect(prefix + "files/cardplay.MP3");
+									election.getActivePlayer().add(election.pinActivePolicy(null, pos));
+									draw();
+									up.paintCards();
+								}
+							});
+							userpin.add(label);
+						} else {
+							ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							final JLabel label = new JLabel(usercard);
+							userpin.add(label);
+						}
+					}
+				}
+
+				userpin.setLayout(new GridLayout(2, 1));
+				this.add(userpin);
+
 				/*
-				 * 1-Player Mode
+				 * Player 1 played president
 				 */
-				if (!cpuPlayed || election.getPlayer2Card() == null) {
+				if (hideUsers && twoplayermode) {
 					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
 							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
+				} else if (election.getActivePinCard() != null) {
+					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getActivePinCard().getImageURL()))
+							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+					final JLabel butt = new JLabel(usercard);
+
+					this.add(butt);
+					butt.addMouseListener(new MouseAdapter() {
+
+						public void mouseReleased(MouseEvent e) {
+							player.playSoundEffect(prefix + "files/cardplay.MP3");
+							election.getActivePlayer().add(election.getActivePinCard());
+							election.activePinCard(null);
+							draw();
+							user_cards.paintCards();
+						}
+					});
 				} else {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer2Card().getImageURL()))
+					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+					final JLabel label = new JLabel(usercard);
+					this.add(label);
+				}
+				
+				/*
+		         * Current Election Card
+		         */
+				final int electionCardWidth = (int) (0.888888889 * cardSize);
+				final int electionCardHeight = (int) (1.17777778 * cardSize);
+
+		        if (starting) {
+		            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+		                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
+		            final JLabel elec = new JLabel(currelection);
+		            this.add(elec);
+		        } else {
+		            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getElection().getImageURL()))
+		                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
+		            final JLabel elec = new JLabel(currelection);
+		            this.add(elec);
+
+		            // Add mouse listener to toggle zoom
+		            elec.addMouseListener(new MouseAdapter() {
+		                @Override
+		                public void mouseReleased(MouseEvent e) {
+		                	player.playSoundEffect(prefix + "files/cardplay.MP3");
+		                    zoomedCard = election.getElection();
+		                    draw(); // Redraw the board to update the size of the election card
+		                }
+		            });
+		        }
+				/*
+				 * CPU Pinned Cards
+				 */
+				JPanel cpupin = new JPanel();
+			    cpupin.setOpaque(false); // Make the userpin panel transparent
+				    
+				if (starting) {
+					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
 							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
-				}
 
-				for (Policy curr : election.getPinned2()) {
-					if (!cpuPlayed || curr == null) {
+
+					for (int i = 0; i < 2; i++) {
+						ImageIcon place = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
+								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+						final JLabel placeLab = new JLabel(place);
+						cpupin.add(placeLab);
+					}
+					cpupin.setLayout(new GridLayout(2, 1));
+					this.add(cpupin);
+
+				} else if (!twoplayermode) {
+					/*
+					 * 1-Player Mode
+					 */
+					// CPU President
+					if (!cpuPlayed || election.getPlayer2Card() == null) {
 						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
-						cpupin.add(label);
+						this.add(label);
 					} else {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer2Card().getImageURL()))
+								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
 						final JLabel label = new JLabel(aicard);
-						cpupin.add(label);
+						this.add(label);
 					}
-				}
+					
+					// CPU Policies
+					for (Policy curr : election.getPinned2()) {
+						if (!cpuPlayed || curr == null) {
+							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
+									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							final JLabel label = new JLabel(aicard);
+							cpupin.add(label);
+						} else {
+							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							final JLabel label = new JLabel(aicard);
 
-				cpupin.setLayout(new GridLayout(2, 1));
-				this.add(cpupin);
-			} else {
-				String cd = prefix + "files/placeholder.PNG";
-				if (!election.getTurn()) {
-					cd = prefix + "files/aicard.PNG";
-				}
-				if (!cpuPlayed || election.getPlayer1Card() == null) {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
-							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
-					final JLabel label = new JLabel(aicard);
-					this.add(label);
+							cpupin.add(label);
+						}
+					}
+
+					cpupin.setLayout(new GridLayout(2, 1));
+					this.add(cpupin);
 				} else {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer1Card().getImageURL()))
-							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
-					final JLabel label = new JLabel(aicard);
-					this.add(label);
-				}
-
-				for (Policy curr : election.getPinned1()) {
-					if (!cpuPlayed || curr == null) {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
-						final JLabel label = new JLabel(aicard);
-						cpupin.add(label);
-					} else {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
-						final JLabel label = new JLabel(aicard);
-						cpupin.add(label);
+					String cd = prefix + "files/placeholder.PNG";
+					if (!election.getTurn()) {
+						cd = prefix + "files/aicard.PNG";
 					}
+					if (!cpuPlayed || election.getPlayer1Card() == null) {
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
+								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(aicard);
+						this.add(label);
+					} else {
+						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer1Card().getImageURL()))
+								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+						final JLabel label = new JLabel(aicard);
+
+						this.add(label);
+					}
+
+					for (Policy curr : election.getPinned1()) {
+						if (!cpuPlayed || curr == null) {
+							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
+									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							final JLabel label = new JLabel(aicard);
+							cpupin.add(label);
+						} else {
+							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
+									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							final JLabel label = new JLabel(aicard);
+
+							cpupin.add(label);
+						}
+					}
+
+					cpupin.setLayout(new GridLayout(2, 1));
+					this.add(cpupin);
 				}
-
-				cpupin.setLayout(new GridLayout(2, 1));
-				this.add(cpupin);
+		        
+		        }
+				repaint();
 			}
-	        
-	        }
-			repaint();
+
+			public void reset() {
+				cpuPlayed = false;
+				draw();
+				repaint();
+			}
+
+			@Override
+			public void paintComponent(Graphics g) {
+			    super.paintComponent(g);
+
+			    if (backgroundImage != null) {
+			    	if (bufferedImage == null) {
+			        // Convert Image to BufferedImage
+			        bufferedImage = new BufferedImage(
+			            backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+			        Graphics2D bGr = bufferedImage.createGraphics();
+			        bGr.drawImage(backgroundImage, 0, 0, null);
+			        bGr.dispose();
+			    	}
+			        // Get the size of the original background image
+			        int imageWidth = bufferedImage.getWidth();
+			        int imageHeight = bufferedImage.getHeight();
+
+			        // Calculate the cropping parameters for the board
+			        int cropStartX = (int) (xref / frameXRef * imageWidth); // Start X at 213/1900 from the left
+			        int cropStartY = (int) (106.0 / 1200.0 * imageHeight); // Start Y at 106/1200 from the top
+			        int cropWidth = (int) ((imageWidth * (1 - 2 * (xref) / frameXRef))); // Width from 213/1900 from the left to 213/1900 from the right
+			        int cropHeight = (int) (679.0 / 1200.0 * imageHeight); // Height from 106/1200 to 679/1200
+
+			        // Crop the BufferedImage
+			        BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
+			    	
+			        // Draw the cropped image scaled to the GameBoard's size
+			        g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
+			    }
+			}
+			
+
+			public void drawOnGlassPane(Graphics g) {
+			    if (whiteHouseImage != null && !starting) {
+			        int x = (screenWidth - whiteHouseImage.getWidth(null)) / 2;  // Center by default
+			        int y = getHeight() - (int)(85.0 * (cardSize/275.0));  // Default vertical position, below the board
+
+			        // Determine position based on winner
+			        if (cpuPlayed && election.getWinner()) {
+			            // Player 1 won, align with Player 1's card area
+			            x -= board.getWidth()/5; // Adjust X-coordinate for player 1
+			        } else if (cpuPlayed) {
+			            // CPU won, align with Player 2's card area
+			            x += board.getWidth()/5; // Adjust X-coordinate for player 2
+			        }
+			        //Prolly do this properly?
+			        //g.drawImage(whiteHouseImage, x, y, null);
+			    }
+			}
+
+			/**
+			 * Returns the size of the game board.
+			 */
+			@Override
+			public Dimension getPreferredSize() {
+				return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
+			}
 		}
 
-		public void reset() {
-			cpuPlayed = false;
-			draw();
-			repaint();
-		}
-
-		@Override
-		public void paintComponent(Graphics g) {
-		    super.paintComponent(g);
-
-		    if (backgroundImage != null) {
-		    	if (bufferedImage == null) {
-		        // Convert Image to BufferedImage
-		        bufferedImage = new BufferedImage(
-		            backgroundImage.getWidth(null), backgroundImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-
-		        Graphics2D bGr = bufferedImage.createGraphics();
-		        bGr.drawImage(backgroundImage, 0, 0, null);
-		        bGr.dispose();
-		    	}
-		        // Get the size of the original background image
-		        int imageWidth = bufferedImage.getWidth();
-		        int imageHeight = bufferedImage.getHeight();
-
-		        // Calculate the cropping parameters for the board
-		        int cropStartX = (int) (xref / frameXRef * imageWidth); // Start X at 213/1900 from the left
-		        int cropStartY = (int) (106.0 / 1200.0 * imageHeight); // Start Y at 106/1200 from the top
-		        int cropWidth = (int) ((imageWidth * (1 - 2 * (xref) / frameXRef))); // Width from 213/1900 from the left to 213/1900 from the right
-		        int cropHeight = (int) (679.0 / 1200.0 * imageHeight); // Height from 106/1200 to 679/1200
-
-		        // Crop the BufferedImage
-		        BufferedImage croppedImage = bufferedImage.getSubimage(cropStartX, cropStartY, cropWidth, cropHeight);
-		    	
-		        // Draw the cropped image scaled to the GameBoard's size
-		        g.drawImage(croppedImage, 0, 0, getWidth(), getHeight(), this);
-		    }
-		}
-
-
-		/**
-		 * Returns the size of the game board.
-		 */
-		@Override
-		public Dimension getPreferredSize() {
-			return new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
-		}
-	}
 
 	private void setLabel(JLabel j) {
 		j.setText("<html><body>" + election.p1Score() + "<br><br>" + election.p2Score() + "</body></html>");
