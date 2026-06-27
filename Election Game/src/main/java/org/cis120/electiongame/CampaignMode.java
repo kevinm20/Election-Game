@@ -55,11 +55,22 @@ public class CampaignMode implements Runnable {
     private static final String SAVE_VERSION = "CAMPAIGN_CLASH_SAVE_V3";
     private static final String SAVE_VERSION_V2 = "CAMPAIGN_CLASH_SAVE_V2";
     private static final String SAVE_VERSION_V1 = "CAMPAIGN_CLASH_SAVE_V1";
-    private static final String SAVE_FILE_PATH = "files/campaignsave.TXT";
+
+    // v8.0: Campaign Mode now supports up to three save slots.
+    private static final int MAX_SAVE_SLOTS = 3;
+    private static final String SAVE_DIRECTORY_PATH = "files/campaign_saves";
+    private static final String SAVE_FILE_PREFIX = "campaign_slot_";
+    private static final String SAVE_FILE_SUFFIX = ".TXT";
+    private static final String ACTIVE_SLOT_FILE_PATH = "files/campaign_saves/active_slot.TXT";
+
+    // Legacy single-save path used before v8.0. If it exists and slot 1 is empty,
+    // CampaignMode can migrate it into slot 1 so old progress is not lost.
+    private static final String LEGACY_SAVE_FILE_PATH = "files/campaignsave.TXT";
 
     private CampaignPlayer player;
     private List<President> allPresidents;
     private List<CampaignTournament> eraTournaments;
+    private int activeSaveSlot = 1;
 
     private CampaignMatchConfig pendingPlayableMatchConfig;
     private long pendingPlayableMatchStartedAtMillis;
@@ -585,8 +596,625 @@ public class CampaignMode implements Runnable {
         return "CPU sim: " + difficulty + " AI using " + getCpuDeckDescription(difficulty);
     }
 
+    public static int getMaxSaveSlots() {
+        return MAX_SAVE_SLOTS;
+    }
+
+    /**
+     * Backward-compatible helper for older UI code. New v8 code should prefer
+     * instance methods like getActiveSaveFilePath() and slot-specific methods.
+     */
     public static String getSaveFilePath() {
-        return SAVE_FILE_PATH;
+        return getSaveSlotPath(1);
+    }
+
+    public static String getLegacySaveFilePath() {
+        return LEGACY_SAVE_FILE_PATH;
+    }
+
+    public static String getSaveDirectoryPath() {
+        return SAVE_DIRECTORY_PATH;
+    }
+
+    public static String getSaveSlotPath(int slot) {
+        return getSaveSlotFile(slot).getPath();
+    }
+
+    public int getActiveSaveSlot() {
+        return activeSaveSlot;
+    }
+
+    public boolean setActiveSaveSlot(int slot) {
+        if (!isValidSaveSlot(slot)) {
+            return false;
+        }
+        activeSaveSlot = slot;
+        writeActiveSaveSlot(slot);
+        return true;
+    }
+
+    public String getActiveSaveFilePath() {
+        return getSaveSlotPath(activeSaveSlot);
+    }
+
+    public boolean hasAnySaveSlot() {
+        migrateLegacySingleSaveIfNeeded();
+        for (int slot = 1; slot <= MAX_SAVE_SLOTS; slot++) {
+            if (saveSlotExists(slot)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int getDefaultContinueSlot() {
+        migrateLegacySingleSaveIfNeeded();
+        int rememberedSlot = readActiveSaveSlot();
+        if (saveSlotExists(rememberedSlot)) {
+            return rememberedSlot;
+        }
+        for (int slot = 1; slot <= MAX_SAVE_SLOTS; slot++) {
+            if (saveSlotExists(slot)) {
+                return slot;
+            }
+        }
+        return 1;
+    }
+
+    public boolean saveSlotExists(int slot) {
+        if (!isValidSaveSlot(slot)) {
+            return false;
+        }
+        return getSaveSlotFile(slot).exists();
+    }
+
+    public boolean deleteSaveSlot(int slot) {
+        if (!isValidSaveSlot(slot)) {
+            return false;
+        }
+
+        File saveFile = getSaveSlotFile(slot);
+        if (!saveFile.exists()) {
+            return true;
+        }
+
+        boolean deleted = saveFile.delete();
+        if (deleted && activeSaveSlot == slot) {
+            int replacementSlot = 1;
+            for (int candidate = 1; candidate <= MAX_SAVE_SLOTS; candidate++) {
+                if (candidate != slot && saveSlotExists(candidate)) {
+                    replacementSlot = candidate;
+                    break;
+                }
+            }
+            activeSaveSlot = replacementSlot;
+            writeActiveSaveSlot(replacementSlot);
+        }
+        return deleted;
+    }
+
+
+    /**
+     * Renames the player/campaign name stored in a save slot without requiring
+     * the user to load the slot first. If the renamed slot is currently active,
+     * the in-memory CampaignPlayer name is updated too.
+     */
+    public boolean renameSaveSlot(int slot, String newPlayerName) {
+        if (!isValidSaveSlot(slot)) {
+            System.out.println("Invalid save slot: " + slot + ".");
+            return false;
+        }
+
+        String cleanName = sanitizeSaveSlotName(newPlayerName);
+        if (cleanName.length() == 0) {
+            System.out.println("Save slot name cannot be blank.");
+            return false;
+        }
+
+        File saveFile = getSaveSlotFile(slot);
+        if (!saveFile.exists()) {
+            System.out.println("No campaign save found in Save Slot " + slot + ".");
+            return false;
+        }
+
+        ArrayList<String> lines = new ArrayList<String>();
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(saveFile));
+            String line = reader.readLine();
+            while (line != null) {
+                lines.add(line);
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Could not read Save Slot " + slot + " for rename.");
+            return false;
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Could not close save file cleanly.");
+            }
+        }
+
+        if (lines.isEmpty()) {
+            System.out.println("Save Slot " + slot + " is empty or corrupt.");
+            return false;
+        }
+
+        if (SAVE_VERSION_V1.equals(lines.get(0))) {
+            if (lines.size() < 2) {
+                System.out.println("Legacy Save Slot " + slot + " is missing a name line.");
+                return false;
+            }
+            lines.set(1, cleanName);
+        } else {
+            boolean replacedName = false;
+            for (int i = 1; i < lines.size(); i++) {
+                String line = lines.get(i);
+                int equalsIndex = line.indexOf('=');
+                if (equalsIndex > 0) {
+                    String key = line.substring(0, equalsIndex).trim();
+                    if ("NAME".equalsIgnoreCase(key)) {
+                        lines.set(i, "NAME=" + cleanName);
+                        replacedName = true;
+                        break;
+                    }
+                }
+            }
+            if (!replacedName) {
+                lines.add(1, "NAME=" + cleanName);
+            }
+        }
+
+        BufferedWriter writer = null;
+        try {
+            writer = new BufferedWriter(new FileWriter(saveFile));
+            for (String line : lines) {
+                writer.write(line == null ? "" : line);
+                writer.newLine();
+            }
+            if (slot == activeSaveSlot && player != null) {
+                player.setName(cleanName);
+            }
+            System.out.println("Renamed Save Slot " + slot + " to " + cleanName + ".");
+            return true;
+        } catch (IOException e) {
+            System.out.println("Could not rename Save Slot " + slot + ".");
+            return false;
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Could not close save file cleanly.");
+            }
+        }
+    }
+
+    /**
+     * Copies one save slot into another. The UI is responsible for asking the
+     * user to confirm before overwriting an occupied destination slot.
+     */
+    public boolean duplicateSaveSlot(int sourceSlot, int destinationSlot) {
+        if (!isValidSaveSlot(sourceSlot) || !isValidSaveSlot(destinationSlot)) {
+            System.out.println("Invalid save slot.");
+            return false;
+        }
+        if (sourceSlot == destinationSlot) {
+            System.out.println("Source and destination save slots must be different.");
+            return false;
+        }
+
+        File sourceFile = getSaveSlotFile(sourceSlot);
+        File destinationFile = getSaveSlotFile(destinationSlot);
+        if (!sourceFile.exists()) {
+            System.out.println("No campaign save found in Save Slot " + sourceSlot + ".");
+            return false;
+        }
+
+        ensureSaveDirectoryExists();
+        BufferedReader reader = null;
+        BufferedWriter writer = null;
+        try {
+            reader = new BufferedReader(new FileReader(sourceFile));
+            writer = new BufferedWriter(new FileWriter(destinationFile));
+            String line = reader.readLine();
+            while (line != null) {
+                writer.write(line);
+                writer.newLine();
+                line = reader.readLine();
+            }
+            System.out.println("Duplicated Save Slot " + sourceSlot + " into Save Slot "
+                    + destinationSlot + ".");
+            return true;
+        } catch (IOException e) {
+            System.out.println("Could not duplicate Save Slot " + sourceSlot
+                    + " into Save Slot " + destinationSlot + ".");
+            return false;
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Could not close save files cleanly.");
+            }
+        }
+    }
+
+    private String sanitizeSaveSlotName(String name) {
+        if (name == null) {
+            return "";
+        }
+        return name.replace('\r', ' ').replace('\n', ' ').trim();
+    }
+
+
+    public List<SaveSlotSummary> getSaveSlotSummaries() {
+        migrateLegacySingleSaveIfNeeded();
+        ArrayList<SaveSlotSummary> summaries = new ArrayList<SaveSlotSummary>();
+        for (int slot = 1; slot <= MAX_SAVE_SLOTS; slot++) {
+            summaries.add(getSaveSlotSummary(slot));
+        }
+        return summaries;
+    }
+
+    public SaveSlotSummary getDefaultSaveSlotSummary() {
+        return getSaveSlotSummary(getDefaultContinueSlot());
+    }
+
+    public SaveSlotSummary getSaveSlotSummary(int slot) {
+        if (!isValidSaveSlot(slot)) {
+            return SaveSlotSummary.empty(slot, getTotalPresidentCount());
+        }
+
+        File saveFile = getSaveSlotFile(slot);
+        if (!saveFile.exists()) {
+            return SaveSlotSummary.empty(slot, getTotalPresidentCount());
+        }
+
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(saveFile));
+            String version = reader.readLine();
+
+            if (SAVE_VERSION_V1.equals(version)) {
+                String savedName = reader.readLine();
+                String savedPCText = reader.readLine();
+                String cardCsvRow = reader.readLine();
+                int savedPC = safeParseNonNegativeInt(savedPCText, 0);
+                int cardsOwned = countCardsInCsvRow(cardCsvRow);
+                return new SaveSlotSummary(slot, true, cleanSaveField(savedName, "Player"),
+                        savedPC, 0, 0, cardsOwned, getTotalPresidentCount(), false, "");
+            }
+
+            Map<String, String> fields = new HashMap<String, String>();
+            String line = reader.readLine();
+            while (line != null) {
+                int equalsIndex = line.indexOf('=');
+                if (equalsIndex > 0) {
+                    String key = line.substring(0, equalsIndex).trim().toUpperCase();
+                    String value = line.substring(equalsIndex + 1);
+                    fields.put(key, value);
+                }
+                line = reader.readLine();
+            }
+
+            String name = cleanSaveField(fields.get("NAME"), "Player");
+            int pc = safeParseNonNegativeInt(fields.get("PC"), 0);
+            int wins = safeParseNonNegativeInt(fields.get("WINS"), 0);
+            int losses = safeParseNonNegativeInt(fields.get("LOSSES"), 0);
+            int cardsOwned = countCardsInCsvRow(fields.get("CARDS"));
+            boolean pending = parseSaveBoolean(fields.get("PENDING_PLAYABLE_MATCH"));
+            String pendingTitle = pending
+                    ? cleanSaveField(fields.get("PENDING_MATCH_TITLE"), "Playable Campaign Match")
+                    : "";
+
+            return new SaveSlotSummary(slot, true, name, pc, wins, losses, cardsOwned,
+                    getTotalPresidentCount(), pending, pendingTitle);
+        } catch (Exception e) {
+            return SaveSlotSummary.corrupt(slot, getTotalPresidentCount());
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (IOException e) {
+                // Ignore summary preview close failures.
+            }
+        }
+    }
+
+    private int countCardsInCsvRow(String cardCsvRow) {
+        if (cardCsvRow == null || cardCsvRow.trim().isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        String[] parts = cardCsvRow.split(",");
+        for (String part : parts) {
+            if (part != null && !part.trim().isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int safeParseNonNegativeInt(String text, int defaultValue) {
+        if (text == null) {
+            return defaultValue;
+        }
+        try {
+            int value = Integer.parseInt(text.trim());
+            return value < 0 ? defaultValue : value;
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private static boolean isValidSaveSlot(int slot) {
+        return slot >= 1 && slot <= MAX_SAVE_SLOTS;
+    }
+
+    private static File getSaveSlotFile(int slot) {
+        int cleanSlot = isValidSaveSlot(slot) ? slot : 1;
+        return new File(SAVE_DIRECTORY_PATH + File.separator + SAVE_FILE_PREFIX
+                + cleanSlot + SAVE_FILE_SUFFIX);
+    }
+
+    private static File getSaveDirectory() {
+        return new File(SAVE_DIRECTORY_PATH);
+    }
+
+    private void ensureSaveDirectoryExists() {
+        File saveDirectory = getSaveDirectory();
+        if (!saveDirectory.exists()) {
+            saveDirectory.mkdirs();
+        }
+    }
+
+    private int readActiveSaveSlot() {
+        File activeSlotFile = new File(ACTIVE_SLOT_FILE_PATH);
+        if (!activeSlotFile.exists()) {
+            return activeSaveSlot;
+        }
+
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(activeSlotFile));
+            String line = reader.readLine();
+            int slot = Integer.parseInt(line == null ? "1" : line.trim());
+            return isValidSaveSlot(slot) ? slot : activeSaveSlot;
+        } catch (Exception e) {
+            return activeSaveSlot;
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (IOException e) {
+                // Ignore active-slot preview close failures.
+            }
+        }
+    }
+
+    private void writeActiveSaveSlot(int slot) {
+        if (!isValidSaveSlot(slot)) {
+            return;
+        }
+
+        ensureSaveDirectoryExists();
+        BufferedWriter writer = null;
+        try {
+            writer = new BufferedWriter(new FileWriter(ACTIVE_SLOT_FILE_PATH));
+            writer.write(String.valueOf(slot));
+            writer.newLine();
+        } catch (IOException e) {
+            System.out.println("Could not remember active save slot.");
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Could not close active slot file cleanly.");
+            }
+        }
+    }
+
+    /**
+     * One-time v8.0 convenience migration: if the pre-v8 single save exists and
+     * slot 1 is empty, copy it into slot 1. The old file is left in place as a
+     * backup instead of being deleted.
+     */
+    public boolean migrateLegacySingleSaveIfNeeded() {
+        File legacySave = new File(LEGACY_SAVE_FILE_PATH);
+        File slotOne = getSaveSlotFile(1);
+        if (!legacySave.exists() || slotOne.exists()) {
+            return false;
+        }
+
+        ensureSaveDirectoryExists();
+        BufferedReader reader = null;
+        BufferedWriter writer = null;
+        try {
+            reader = new BufferedReader(new FileReader(legacySave));
+            writer = new BufferedWriter(new FileWriter(slotOne));
+            String line = reader.readLine();
+            while (line != null) {
+                writer.write(line);
+                writer.newLine();
+                line = reader.readLine();
+            }
+            activeSaveSlot = 1;
+            writeActiveSaveSlot(1);
+            System.out.println("Migrated legacy campaign save into Save Slot 1.");
+            return true;
+        } catch (IOException e) {
+            System.out.println("Could not migrate legacy campaign save into Save Slot 1.");
+            return false;
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Could not close save migration files cleanly.");
+            }
+        }
+    }
+
+    public static class SaveSlotSummary {
+        private int slotNumber;
+        private boolean exists;
+        private boolean corrupt;
+        private String playerName;
+        private int pc;
+        private int wins;
+        private int losses;
+        private int cardsOwned;
+        private int totalCards;
+        private boolean pendingPlayableMatch;
+        private String pendingMatchTitle;
+
+        private SaveSlotSummary(
+                int slotNumber, boolean exists, String playerName, int pc,
+                int wins, int losses, int cardsOwned, int totalCards,
+                boolean pendingPlayableMatch, String pendingMatchTitle
+        ) {
+            this.slotNumber = slotNumber;
+            this.exists = exists;
+            this.corrupt = false;
+            this.playerName = playerName == null || playerName.trim().isEmpty()
+                    ? "Player"
+                    : playerName.trim();
+            this.pc = Math.max(0, pc);
+            this.wins = Math.max(0, wins);
+            this.losses = Math.max(0, losses);
+            this.cardsOwned = Math.max(0, cardsOwned);
+            this.totalCards = Math.max(0, totalCards);
+            this.pendingPlayableMatch = pendingPlayableMatch;
+            this.pendingMatchTitle = pendingMatchTitle == null ? "" : pendingMatchTitle.trim();
+        }
+
+        private static SaveSlotSummary empty(int slotNumber, int totalCards) {
+            return new SaveSlotSummary(slotNumber, false, "", 0, 0, 0, 0, totalCards, false, "");
+        }
+
+        private static SaveSlotSummary corrupt(int slotNumber, int totalCards) {
+            SaveSlotSummary summary = new SaveSlotSummary(slotNumber, true, "Corrupt Save", 0, 0, 0, 0,
+                    totalCards, false, "");
+            summary.corrupt = true;
+            return summary;
+        }
+
+        public int getSlotNumber() {
+            return slotNumber;
+        }
+
+        public boolean exists() {
+            return exists;
+        }
+
+        public boolean isCorrupt() {
+            return corrupt;
+        }
+
+        public String getPlayerName() {
+            return playerName;
+        }
+
+        public int getPC() {
+            return pc;
+        }
+
+        public int getWins() {
+            return wins;
+        }
+
+        public int getLosses() {
+            return losses;
+        }
+
+        public int getCardsOwned() {
+            return cardsOwned;
+        }
+
+        public int getTotalCards() {
+            return totalCards;
+        }
+
+        public boolean hasPendingPlayableMatch() {
+            return pendingPlayableMatch;
+        }
+
+        public String getPendingMatchTitle() {
+            return pendingMatchTitle;
+        }
+
+        public String getRecordSummary() {
+            int total = wins + losses;
+            if (total <= 0) {
+                return "0-0";
+            }
+            double pct = wins * 100.0 / total;
+            return wins + "-" + losses + " (" + String.format("%.1f", pct) + "%)";
+        }
+
+        public String getCollectionSummary() {
+            if (totalCards <= 0) {
+                return cardsOwned + " cards";
+            }
+            double pct = cardsOwned * 100.0 / totalCards;
+            return cardsOwned + "/" + totalCards + " (" + String.format("%.1f", pct) + "%)";
+        }
+
+        public String getOneLineSummary() {
+            if (!exists) {
+                return "Slot " + slotNumber + ": Empty";
+            }
+            if (corrupt) {
+                return "Slot " + slotNumber + ": Corrupt save";
+            }
+            String summary = "Slot " + slotNumber + ": " + playerName
+                    + " | " + getRecordSummary()
+                    + " | " + getCollectionSummary()
+                    + " | " + CampaignMode.formatPC(pc);
+            if (pendingPlayableMatch) {
+                summary += " | Pending: " + (pendingMatchTitle.isEmpty()
+                        ? "Playable Match"
+                        : pendingMatchTitle);
+            }
+            return summary;
+        }
+
+        public String getDetailedSummary() {
+            if (!exists) {
+                return "Slot " + slotNumber + "\nEmpty Save Slot";
+            }
+            if (corrupt) {
+                return "Slot " + slotNumber + "\nCorrupt save file";
+            }
+            return "Slot " + slotNumber
+                    + "\nName: " + playerName
+                    + "\nRecord: " + getRecordSummary()
+                    + "\nCollection: " + getCollectionSummary()
+                    + "\nPolitical Capital: " + CampaignMode.formatPC(pc)
+                    + (pendingPlayableMatch
+                            ? "\nPending match: " + (pendingMatchTitle.isEmpty()
+                                    ? "Playable Match"
+                                    : pendingMatchTitle)
+                            : "");
+        }
     }
 
     /**
@@ -1243,12 +1871,29 @@ public class CampaignMode implements Runnable {
         return saveCampaign(true);
     }
 
+    public boolean saveCampaignToSlot(int slot) {
+        return saveCampaignToSlot(slot, true);
+    }
+
     private boolean autosaveCampaign() {
         return saveCampaign(false);
     }
 
     private boolean saveCampaign(boolean printMessage) {
-        File saveFile = new File(SAVE_FILE_PATH);
+        return saveCampaignToSlot(activeSaveSlot, printMessage);
+    }
+
+    private boolean saveCampaignToSlot(int slot, boolean printMessage) {
+        if (!isValidSaveSlot(slot)) {
+            System.out.println("Invalid save slot: " + slot + ".");
+            return false;
+        }
+
+        activeSaveSlot = slot;
+        ensureSaveDirectoryExists();
+        writeActiveSaveSlot(slot);
+
+        File saveFile = getSaveSlotFile(slot);
         File parent = saveFile.getParentFile();
         if (parent != null && !parent.exists()) {
             parent.mkdirs();
@@ -1273,11 +1918,13 @@ public class CampaignMode implements Runnable {
             writePendingPlayableMatchFields(writer);
 
             if (printMessage) {
-                System.out.println("Campaign saved to " + SAVE_FILE_PATH + ".");
+                System.out.println("Campaign saved to Save Slot " + slot + " ("
+                        + saveFile.getPath() + ").");
             }
             return true;
         } catch (IOException e) {
-            System.out.println("Could not save campaign to " + SAVE_FILE_PATH + ".");
+            System.out.println("Could not save campaign to Save Slot " + slot
+                    + " (" + saveFile.getPath() + ").");
             return false;
         } finally {
             try {
@@ -1339,11 +1986,25 @@ public class CampaignMode implements Runnable {
      * Loads campaign progress from the save file, if one exists.
      */
     public boolean loadCampaign() {
-        File saveFile = new File(SAVE_FILE_PATH);
-        if (!saveFile.exists()) {
-            System.out.println("No campaign save file found at " + SAVE_FILE_PATH + ".");
+        return loadCampaignFromSlot(activeSaveSlot);
+    }
+
+    public boolean loadCampaignFromSlot(int slot) {
+        migrateLegacySingleSaveIfNeeded();
+
+        if (!isValidSaveSlot(slot)) {
+            System.out.println("Invalid save slot: " + slot + ".");
             return false;
         }
+
+        File saveFile = getSaveSlotFile(slot);
+        if (!saveFile.exists()) {
+            System.out.println("No campaign save found in Save Slot " + slot + ".");
+            return false;
+        }
+
+        activeSaveSlot = slot;
+        writeActiveSaveSlot(slot);
 
         BufferedReader reader = null;
         try {
@@ -1359,7 +2020,8 @@ public class CampaignMode implements Runnable {
                 return false;
             }
         } catch (IOException e) {
-            System.out.println("Could not load campaign from " + SAVE_FILE_PATH + ".");
+            System.out.println("Could not load campaign from Save Slot " + slot
+                    + " (" + saveFile.getPath() + ").");
             return false;
         } catch (IllegalArgumentException e) {
             System.out.println("Save file could not be loaded: " + e.getMessage());
@@ -1481,10 +2143,12 @@ public class CampaignMode implements Runnable {
         player = loadedPlayer;
 
         if (legacySave) {
-            System.out.println("Loaded legacy campaign save from " + SAVE_FILE_PATH + ".");
+            System.out.println("Loaded legacy campaign save from Save Slot " + activeSaveSlot
+                    + " (" + getActiveSaveFilePath() + ").");
             System.out.println("This save will be upgraded the next time it autosaves.");
         } else {
-            System.out.println("Loaded campaign from " + SAVE_FILE_PATH + ".");
+            System.out.println("Loaded campaign from Save Slot " + activeSaveSlot
+                    + " (" + getActiveSaveFilePath() + ").");
         }
         System.out.println("Loaded " + loadedCards + " cards.");
         printStatus();
@@ -1542,7 +2206,7 @@ public class CampaignMode implements Runnable {
     }
 
     private boolean saveFileExists() {
-        return new File(SAVE_FILE_PATH).exists();
+        return saveSlotExists(activeSaveSlot);
     }
 
     /**
@@ -1665,7 +2329,7 @@ public class CampaignMode implements Runnable {
     private boolean runStartMenu(Scanner scanner) {
         while (true) {
             System.out.println("Campaign Clash - Campaign Mode Console Test");
-            System.out.println("Save file: " + SAVE_FILE_PATH);
+            System.out.println("Active save slot: " + activeSaveSlot + " (" + getActiveSaveFilePath() + ")");
             System.out.println();
 
             if (saveFileExists()) {

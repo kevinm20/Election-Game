@@ -44,9 +44,14 @@ import javax.swing.border.LineBorder;
 
 
 /**
- * This class sets up the top-level frame and widgets for the GUI. v6.6 hardens Campaign Mode playable-match containment.
+ * This class sets up the top-level frame and widgets for the GUI.
+ *
+ * v7.2 wraps the playable match UI in an internal match screen panel.
+ * Home, Campaign Mode, and playable matches now swap as screens inside the
+ * single main Campaign Clash JFrame instead of directly adding/removing match
+ * widgets all over the frame.
  */
-public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher {
+public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher, CampaignNavigationHost {
 
     private JFrame frame;
     private BackgroundPanel loadingScreen;
@@ -56,12 +61,16 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
     private JScrollPane userPoliciesScrollPane;
     private BackgroundPanel controlPanel;
     private JLabel statusLabel;
+    private JPanel matchScreenPanel;
+    private Component currentBottomMatchComponent;
 
     private boolean activeCampaignMatchMode = false;
     private boolean activeCampaignMatchResultSent = false;
     private CampaignMatchConfig activeCampaignMatchConfig = null;
     private CampaignMatchCallback activeCampaignMatchCallback = null;
     private SoundtrackPlayer soundtrackPlayer = null;
+    private RunCampaignMode embeddedCampaignMode = null;
+    private JPanel embeddedCampaignPanel = null;
 
 	private ElectionGame election = new ElectionGame();
 	private boolean starting = true;
@@ -452,7 +461,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 
 		
 		// Game board/Election Area
-		frame.add(board, BorderLayout.CENTER);
+        ensureMatchScreenPanel();
+        matchScreenPanel.add(board, BorderLayout.CENTER);
 		board.setLayout(new GridLayout(1, 7));
 
 		// AI Card Deck, just for visuals
@@ -463,7 +473,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 
 		BackgroundPanel ai_cards = new BackgroundPanel(prefix + "files/backgroundfull.PNG", aiCardHeightRatio, aiCardStartYRatio, aiCardWidthRatio, aiCardStartXRatio);
         aiCardsPanel = ai_cards;
-		frame.add(ai_cards, BorderLayout.NORTH);
+        ensureMatchScreenPanel();
+        matchScreenPanel.add(ai_cards, BorderLayout.NORTH);
 
 		for (int i = 0; i < 5; i++) {
 		    URL imgURL = getClass().getClassLoader().getResource(prefix + "files/aicard.PNG");
@@ -522,7 +533,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		decks.add(logoLabel);
 		decks.add(paddedPanel); // Replace scoreboardPanel with paddedPanel
 
-		frame.add(decks, BorderLayout.WEST);
+        ensureMatchScreenPanel();
+        matchScreenPanel.add(decks, BorderLayout.WEST);
 
 
 		decks.setLayout(new GridLayout(2, 1, 0, (int)(cardSize/275.0*10))); // Use 10px vertical gap between components
@@ -1043,7 +1055,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		swap.setRolloverIcon(policiesHoverIconScaled);
 		swap.setPressedIcon(policiesClickIconScaled);
 
-		frame.add(user_cards, BorderLayout.SOUTH);
+        ensureMatchScreenPanel();
+        setMatchBottomComponent(user_cards);
 
 		swap.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -1055,8 +1068,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 					swap.setIcon(presidentsIconScaled);
 		            swap.setRolloverIcon(presidentsHoverIconScaled);
 		            swap.setPressedIcon(presidentsClickIconScaled);
-					frame.add(userPolicies, BorderLayout.SOUTH);
-					frame.remove(user_cards);
+                    setMatchBottomComponent(userPolicies);
 					
 					swapmode = true;
 				} else {
@@ -1064,8 +1076,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 					swap.setIcon(policiesIconScaled);
 		            swap.setRolloverIcon(policiesHoverIconScaled);
 		            swap.setPressedIcon(policiesClickIconScaled);
-					frame.add(user_cards, BorderLayout.SOUTH);
-					frame.remove(userPolicies);
+                    setMatchBottomComponent(user_cards);
 					swapmode = false;
 				}
 				user_cards.paintCards();
@@ -1316,16 +1327,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 				    );
 
 				    if (confirmation == 0) { // "Yes" was selected
-				        // Clear the current game state and components
-				        frame.getContentPane().removeAll();
-
-				        // Re-add the loading screen
-				        frame.add(loadingScreen, BorderLayout.CENTER);
-				        loadingScreen.add(buttonPanel, buttonConstraints);
-
-				        // Revalidate and repaint the frame to reflect the changes
-				        frame.revalidate();
-				        frame.repaint();
+                        showMainHomeScreen();
 				    } else {
 				        // "No" was selected, do nothing and return to the game
 				    }
@@ -1453,7 +1455,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 
 		control_panel.setPreferredSize(new Dimension((int)(cardSize/225.0*175), (int)(cardSize/225.0*200)));
 		//control_panel.setLayout(new GridLayout(5, 1));
-		frame.add(control_panel, BorderLayout.EAST);
+        ensureMatchScreenPanel();
+        matchScreenPanel.add(control_panel, BorderLayout.EAST);
 
 		
 		// Calculate initial font size based on the initial card size
@@ -1544,11 +1547,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 					deckSet = accountSettingsArray[2];
 					// End active account login
 					if (starting == false) {
-						frame.add(user_cards, BorderLayout.SOUTH);
-						frame.add(ai_cards, BorderLayout.NORTH);
-						frame.add(decks, BorderLayout.WEST);
-						frame.add(control_panel, BorderLayout.EAST);
-						frame.add(board, BorderLayout.CENTER);
+                        // Match panels are shown below by showGameplayPanelsForClassicMatch().
 					}
 		    		starting = false;
 		    		user_cards.paintCards();
@@ -1564,9 +1563,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		    		
 		    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
 		    		
-		    		frame.remove(loadingScreen);
-		    		frame.revalidate();
-		    	    frame.repaint();
+                    showGameplayPanelsForClassicMatch();
 		    	    
 		    		/*
 		    		 System.out.println("AI Cards: " + ai_cards.getSize());
@@ -1971,11 +1968,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 				}
 			}
 			if (starting == false) {
-				frame.add(user_cards, BorderLayout.SOUTH);
-				frame.add(ai_cards, BorderLayout.NORTH);
-				frame.add(decks, BorderLayout.WEST);
-				frame.add(control_panel, BorderLayout.EAST);
-				frame.add(board, BorderLayout.CENTER);
+                // Match panels are shown below by showGameplayPanelsForClassicMatch().
 			}
 			starting = false;
     		user_cards.paintCards();
@@ -1991,9 +1984,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
     		
     		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
     		
-    		frame.remove(loadingScreen);
-    		frame.revalidate();
-    	    frame.repaint();
+            showGameplayPanelsForClassicMatch();
 		}
 		    });
 		//End edit account
@@ -2144,11 +2135,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		    			}
 		    		}
 		    		if (starting == false) {
-						frame.add(user_cards, BorderLayout.SOUTH);
-						frame.add(ai_cards, BorderLayout.NORTH);
-						frame.add(decks, BorderLayout.WEST);
-						frame.add(control_panel, BorderLayout.EAST);
-						frame.add(board, BorderLayout.CENTER);
+                        // Match panels are shown below by showGameplayPanelsForClassicMatch().
 					}
 		    		starting = false;
 		    		user_cards.paintCards();
@@ -2164,9 +2151,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		    		
 		    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
 		    		
-		    		frame.remove(loadingScreen);
-		    		frame.revalidate();
-		    	    frame.repaint();
+                    showGameplayPanelsForClassicMatch();
 		    }
 		});
 		
@@ -2310,11 +2295,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		    			}
 		    		}
 		    		if (starting == false) {
-						frame.add(user_cards, BorderLayout.SOUTH);
-						frame.add(ai_cards, BorderLayout.NORTH);
-						frame.add(decks, BorderLayout.WEST);
-						frame.add(control_panel, BorderLayout.EAST);
-						frame.add(board, BorderLayout.CENTER);
+                        // Match panels are shown below by showGameplayPanelsForClassicMatch().
 					}
 		    		starting = false;
 		    		user_cards.paintCards();
@@ -2330,9 +2311,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
 		    		
 		    		board.setRefs((double)(decks.getWidth()), (double)(frameWidth));
 		    		
-		    		frame.remove(loadingScreen);
-		    		frame.revalidate();
-		    	    frame.repaint();
+                    showGameplayPanelsForClassicMatch();
 		    }
 		});
 
@@ -3345,8 +3324,18 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
             @Override
             public void run() {
                 try {
-                    RunCampaignMode campaignMode = new RunCampaignMode(RunElectionGameCombined.this);
-                    campaignMode.run();
+                    embeddedCampaignMode = new RunCampaignMode(
+                            RunElectionGameCombined.this,
+                            RunElectionGameCombined.this
+                    );
+                    embeddedCampaignPanel = embeddedCampaignMode.buildEmbeddedPanel(frame);
+
+                    showCampaignModeScreen();
+
+                    boolean started = embeddedCampaignMode.startEmbeddedCampaignSession();
+                    if (!started) {
+                        showMainHomeScreen();
+                    }
                 } catch (RuntimeException ex) {
                     String message = ex.getMessage();
                     if (message == null || message.trim().isEmpty()) {
@@ -3370,6 +3359,129 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
         } else {
             SwingUtilities.invokeLater(openTask);
         }
+    }
+
+    @Override
+    public void showMainHomeScreen() {
+        Runnable showTask = new Runnable() {
+            @Override
+            public void run() {
+                if (frame == null || loadingScreen == null) {
+                    return;
+                }
+
+                clearKeyboardSelection();
+                if (board != null) {
+                    board.unzoom();
+                }
+
+                // Important: after Campaign Mode has removed the classic panels
+                // from the frame, keep starting=false so the existing home-screen
+                // Continue / 1-Player / 2-Players handlers re-add the match panels.
+                starting = false;
+                swapmode = false;
+                activeCampaignMatchMode = false;
+                activeCampaignMatchResultSent = false;
+                activeCampaignMatchConfig = null;
+                activeCampaignMatchCallback = null;
+
+                frame.getContentPane().removeAll();
+                if (loadingButtonPanel != null && loadingButtonPanel.getParent() != loadingScreen) {
+                    loadingScreen.add(loadingButtonPanel, loadingButtonConstraints);
+                }
+                frame.add(loadingScreen, BorderLayout.CENTER);
+                frame.setTitle("Campaign Clash");
+                restoreMainFrameVisibility();
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            showTask.run();
+        } else {
+            SwingUtilities.invokeLater(showTask);
+        }
+    }
+
+    @Override
+    public void showCampaignModeScreen() {
+        Runnable showTask = new Runnable() {
+            @Override
+            public void run() {
+                if (frame == null) {
+                    return;
+                }
+
+                if (embeddedCampaignPanel == null) {
+                    openCampaignModeFromHome();
+                    return;
+                }
+
+                clearKeyboardSelection();
+                if (board != null) {
+                    board.unzoom();
+                }
+
+                // Disable gameplay keyboard shortcuts while Campaign Mode is the
+                // visible screen. showMainHomeScreen() flips this back for legacy
+                // home-screen launch flows.
+                starting = true;
+                swapmode = false;
+
+                frame.getContentPane().removeAll();
+                embeddedCampaignPanel.setVisible(true);
+                frame.add(embeddedCampaignPanel, BorderLayout.CENTER);
+                frame.setTitle("Campaign Clash - Campaign Mode");
+                restoreMainFrameVisibility();
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            showTask.run();
+        } else {
+            SwingUtilities.invokeLater(showTask);
+        }
+    }
+
+    @Override
+    public void exitApplication() {
+        Runnable exitTask = new Runnable() {
+            @Override
+            public void run() {
+                if (frame != null) {
+                    frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                } else {
+                    System.exit(0);
+                }
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            exitTask.run();
+        } else {
+            SwingUtilities.invokeLater(exitTask);
+        }
+    }
+
+    private void restoreMainFrameVisibility() {
+        if (frame == null) {
+            return;
+        }
+
+        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            frame.setSize(screenSize.width, screenSize.height);
+        } else {
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        }
+
+        if (!frame.isVisible()) {
+            frame.setVisible(true);
+        }
+        frame.revalidate();
+        frame.repaint();
+        frame.toFront();
+        frame.requestFocus();
+        frame.requestFocusInWindow();
     }
 
 
@@ -3521,7 +3633,10 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
         frame.getContentPane().removeAll();
         frame.revalidate();
         frame.repaint();
-        frame.setVisible(false);
+
+        if (embeddedCampaignMode == null) {
+            frame.setVisible(false);
+        }
     }
 
     private void showCampaignMatchSettingsMenu() {
@@ -3639,54 +3754,105 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher 
         System.exit(0);
     }
 
+    private void ensureMatchScreenPanel() {
+        if (matchScreenPanel == null) {
+            matchScreenPanel = new JPanel(new BorderLayout());
+            matchScreenPanel.setOpaque(false);
+        }
+    }
+
+    private void setMatchBottomComponent(Component bottomComponent) {
+        ensureMatchScreenPanel();
+
+        if (currentBottomMatchComponent != null
+                && currentBottomMatchComponent.getParent() == matchScreenPanel) {
+            matchScreenPanel.remove(currentBottomMatchComponent);
+        }
+
+        if (bottomComponent != null) {
+            matchScreenPanel.add(bottomComponent, BorderLayout.SOUTH);
+        }
+        currentBottomMatchComponent = bottomComponent;
+
+        matchScreenPanel.revalidate();
+        matchScreenPanel.repaint();
+    }
+
+    private void showGameplayPanelsForClassicMatch() {
+        showGameplayMatchScreen(user_cards);
+    }
+
     private void showGameplayPanelsForCampaignMatch() {
+        showGameplayMatchScreen(user_cards);
+    }
+
+    private void showGameplayMatchScreen(Component bottomComponent) {
         if (frame == null) {
             return;
         }
 
-        frame.getContentPane().removeAll();
+        ensureMatchScreenPanel();
+        matchScreenPanel.removeAll();
 
         if (aiCardsPanel != null) {
-            frame.add(aiCardsPanel, BorderLayout.NORTH);
+            matchScreenPanel.add(aiCardsPanel, BorderLayout.NORTH);
         }
         if (decks != null) {
-            frame.add(decks, BorderLayout.WEST);
+            matchScreenPanel.add(decks, BorderLayout.WEST);
         }
         if (controlPanel != null) {
-            frame.add(controlPanel, BorderLayout.EAST);
+            matchScreenPanel.add(controlPanel, BorderLayout.EAST);
         }
         if (board != null) {
-            frame.add(board, BorderLayout.CENTER);
+            matchScreenPanel.add(board, BorderLayout.CENTER);
         }
-        if (user_cards != null) {
-            frame.add(user_cards, BorderLayout.SOUTH);
+        currentBottomMatchComponent = null;
+        setMatchBottomComponent(bottomComponent);
+
+        frame.getContentPane().removeAll();
+        frame.add(matchScreenPanel, BorderLayout.CENTER);
+        frame.setTitle(activeCampaignMatchMode
+                ? "Campaign Clash - Campaign Match"
+                : "Campaign Clash");
+
+        restoreMatchPanelBackgroundRefs();
+        restoreMainFrameVisibility();
+    }
+
+    private void restoreMatchPanelBackgroundRefs() {
+        if (frame == null) {
+            return;
         }
 
+        int frameWidth = Math.max(1, frame.getWidth());
+
         if (decks != null) {
-            int frameWidth = Math.max(1, frame.getWidth());
-            deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+            int deckWidth = decks.getWidth() > 0
+                    ? decks.getWidth()
+                    : (int) (cardSize / 225.0 * 175);
+            deckWidthRatio = (double) deckWidth / (double) frameWidth;
             decks.setBackgroundImage(prefix + "files/backgroundfull.PNG",
                     697.0 / 1200.0, 106.0 / 1200.0, deckWidthRatio, 0.0);
         }
+
         if (controlPanel != null) {
-            int frameWidth = Math.max(1, frame.getWidth());
-            controlPanelWidthRatio = (double) controlPanel.getWidth() / (double) frameWidth;
+            int controlWidth = controlPanel.getWidth() > 0
+                    ? controlPanel.getWidth()
+                    : (int) (cardSize / 225.0 * 175);
+            controlPanelWidthRatio = (double) controlWidth / (double) frameWidth;
             controlPanelStartXRatio = 1.0 - controlPanelWidthRatio;
             controlPanel.setBackgroundImage(prefix + "files/backgroundfull.PNG",
                     controlPanelHeightRatio, controlPanelStartYRatio,
                     controlPanelWidthRatio, controlPanelStartXRatio);
         }
-        if (board != null && decks != null) {
-            board.setRefs((double) decks.getWidth(), (double) Math.max(1, frame.getWidth()));
+
+        if (board != null) {
+            double deckRef = decks != null && decks.getWidth() > 0
+                    ? (double) decks.getWidth()
+                    : (double) (cardSize / 225.0 * 175);
+            board.setRefs(deckRef, (double) frameWidth);
             board.draw();
         }
-
-        frame.setVisible(true);
-        frame.setState(Frame.NORMAL);
-        frame.revalidate();
-        frame.repaint();
-        frame.toFront();
-        frame.requestFocus();
     }
 
 	private void setLabel(JLabel j) {

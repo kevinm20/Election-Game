@@ -17,7 +17,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -49,17 +50,11 @@ import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
 /**
- * Barebones Swing UI for Campaign Mode.
+ * Swing UI for Campaign Mode.
  *
- * This is still intentionally simple for v6.8: card-image active deck,
- * collection/store screens, central pack-result displays, dashboard match
- * difficulty choices, cached collection image loading, era tournaments, and a
- * filterable owned/missing collection browser are included. It also has
- * a Sim / Play toggle so Campaign Mode can either use the existing simulation
- * path or launch a playable match through CampaignMatchLauncher when a host
- * game shell provides one. v6.8 adds window choreography: when a playable
- * campaign match launches, this Campaign Mode window hides, and it returns to
- * the front after the playable match reports its result.
+ * v8.0 adds Campaign Mode save slots. The normal opening flow keeps Continue
+ * Campaign as the default path, while Load Campaign exposes the three-slot
+ * save manager for testing and alternate campaigns.
  */
 public class RunCampaignMode implements Runnable {
 
@@ -73,6 +68,10 @@ public class RunCampaignMode implements Runnable {
     private static final String COLLECTION_OWNERSHIP_ALL = "All Cards";
 
     private JFrame frame;
+    private JPanel rootPanel;
+    private boolean embeddedMode = false;
+    private boolean ownsFrame = true;
+    private CampaignNavigationHost navigationHost;
     private CampaignMode campaign;
     private SoundtrackPlayer soundtrackPlayer;
 
@@ -110,22 +109,78 @@ public class RunCampaignMode implements Runnable {
     private List<President> activeTournamentDeck;
 
     private CampaignMatchLauncher campaignMatchLauncher;
-    private boolean playableMatchMode = false;
+
+    // Normal Campaign Mode should be played manually through the board. This
+    // testing switch is kept for economy/balance work and is exposed only from
+    // the Campaign Menu, not on the main match/tournament screens.
+    private boolean simTestMode = false;
 
     public RunCampaignMode() {
-        this(null);
+        this(null, null);
     }
 
     public RunCampaignMode(CampaignMatchLauncher campaignMatchLauncher) {
+        this(campaignMatchLauncher, null);
+    }
+
+    public RunCampaignMode(
+            CampaignMatchLauncher campaignMatchLauncher, CampaignNavigationHost navigationHost
+    ) {
         this.campaignMatchLauncher = campaignMatchLauncher;
+        this.navigationHost = navigationHost;
     }
 
     public void setCampaignMatchLauncher(CampaignMatchLauncher campaignMatchLauncher) {
         this.campaignMatchLauncher = campaignMatchLauncher;
     }
 
+    public void setCampaignNavigationHost(CampaignNavigationHost navigationHost) {
+        this.navigationHost = navigationHost;
+    }
+
+    /**
+     * Builds Campaign Mode as a JPanel for the main one-window Campaign Clash
+     * shell. The supplied host frame is used only as the parent for dialogs;
+     * this class does not own or dispose it in embedded mode.
+     */
+    public JPanel buildEmbeddedPanel(JFrame hostFrame) {
+        embeddedMode = true;
+        ownsFrame = false;
+        frame = hostFrame;
+
+        campaign = new CampaignMode();
+        initializeUiResources();
+        rootPanel = buildRootPanel();
+        return rootPanel;
+    }
+
+    /**
+     * Called by the host after the embedded panel is visible. Returns false if
+     * the player chose to quit from the Campaign Mode start dialog.
+     */
+    public boolean startEmbeddedCampaignSession() {
+        if (!embeddedMode) {
+            return false;
+        }
+
+        boolean started = showStartDialog();
+        if (!started) {
+            return false;
+        }
+
+        refreshDashboard();
+        displayActiveDeckCards();
+        return true;
+    }
+
+    public JPanel getRootPanel() {
+        return rootPanel;
+    }
+
     @Override
     public void run() {
+        embeddedMode = false;
+        ownsFrame = true;
         campaign = new CampaignMode();
         initializeUiResources();
         buildFrame();
@@ -187,10 +242,23 @@ public class RunCampaignMode implements Runnable {
         frame.setLayout(new BorderLayout(10, 10));
         installFrameIconAndCursor();
 
+        rootPanel = buildRootPanel();
+        frame.setContentPane(rootPanel);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                confirmSaveAndQuit();
+            }
+        });
+
+        applyFullScreenSizing();
+    }
+
+    private JPanel buildRootPanel() {
         JPanel root = new JPanel(new BorderLayout(10, 10));
         root.setBorder(new EmptyBorder(16, 16, 16, 16));
         root.setBackground(new Color(244, 239, 225));
-        frame.setContentPane(root);
 
         root.add(buildHeaderPanel(), BorderLayout.NORTH);
 
@@ -201,15 +269,7 @@ public class RunCampaignMode implements Runnable {
         root.add(center, BorderLayout.CENTER);
 
         root.add(buildButtonPanel(), BorderLayout.SOUTH);
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                confirmSaveAndQuit();
-            }
-        });
-
-        applyFullScreenSizing();
+        return root;
     }
 
     private JPanel buildHeaderPanel() {
@@ -335,7 +395,7 @@ public class RunCampaignMode implements Runnable {
         JButton activeDeckButton = makeButton("View Active Deck");
         activeDeckButton.addActionListener(e -> displayActiveDeckCards());
 
-        JButton quitButton = makeButton("Save and Quit");
+        JButton quitButton = makeButton(embeddedMode ? "Campaign Menu" : "Save and Quit");
         quitButton.addActionListener(e -> confirmSaveAndQuit());
 
         buttonPanel.add(playMatchButton);
@@ -375,50 +435,63 @@ public class RunCampaignMode implements Runnable {
 
     private boolean showStartDialog() {
         while (true) {
-            if (saveFileExists()) {
+            campaign.migrateLegacySingleSaveIfNeeded();
+
+            if (campaign.hasAnySaveSlot()) {
+                final int defaultSlot = campaign.getDefaultContinueSlot();
+                CampaignMode.SaveSlotSummary defaultSummary = campaign.getSaveSlotSummary(defaultSlot);
+                String welcomeName = defaultSummary == null || !defaultSummary.exists()
+                        ? "Campaign Manager"
+                        : defaultSummary.getPlayerName();
+
                 int choice = showChoiceDialog(
-                        "Campaign save found at:\n" + CampaignMode.getSaveFilePath(),
+                        "Welcome back, " + welcomeName + "!\n\n"
+                                + "Continue your active campaign, load another save slot, "
+                                + "or start a new campaign.\n\n"
+                                + "Current campaign:\n"
+                                + (defaultSummary == null
+                                        ? "Slot " + defaultSlot
+                                        : defaultSummary.getOneLineSummary()),
                         "files/setuptitle.PNG",
-                        new String[] { "Continue Campaign", "Restart Campaign", "Quit" },
+                        new String[] { "Continue Campaign", "Load Campaign", "New Campaign", "Quit" },
                         "settings",
-                        1.0,
-                        1.25
+                        1.2,
+                        1.55
                 );
 
                 if (choice == 0) {
-                    OperationResult result = captureBooleanOutput(() -> campaign.loadCampaign());
+                    OperationResult result = captureBooleanOutput(() -> campaign.loadCampaignFromSlot(defaultSlot));
                     appendLog(result.output);
                     if (result.success) {
                         showLongTextDialog("Campaign Loaded", result.output);
                         return true;
                     }
-                    showShortDialog("Load Failed", "Load failed. You can restart the campaign or quit.", true);
+                    showShortDialog("Load Failed", "Load failed. You can load another save, start a new campaign, or quit.", true);
                 } else if (choice == 1) {
-                    int confirm = showChoiceDialog(
-                            "Restarting will overwrite your current Campaign Mode save. Continue?",
-                            "files/settingstitle.PNG",
-                            new String[] { "Yes", "No" },
-                            "settings",
-                            1.0,
-                            1.0
-                    );
-                    if (confirm == 0) {
-                        return startNewCampaignFromDialog();
+                    if (showLoadCampaignDialog(true)) {
+                        return true;
+                    }
+                } else if (choice == 2) {
+                    if (showStartNewCampaignSlotDialog()) {
+                        return true;
                     }
                 } else {
                     return false;
                 }
             } else {
                 int choice = showChoiceDialog(
-                        "No Campaign Mode save file was found.\nStart a new campaign?",
+                        "Welcome to Campaign Mode!\n\nBuild your presidential collection, play matches, "
+                                + "win era tournaments, and spend Political Capital in the Store.\n\n"
+                                + "Ready to start a new campaign?",
                         "files/setuptitle.PNG",
                         new String[] { "Start New Campaign", "Quit" },
                         "settings",
-                        1.0,
-                        1.0
+                        1.15,
+                        1.35
                 );
 
                 if (choice == 0) {
+                    campaign.setActiveSaveSlot(1);
                     return startNewCampaignFromDialog();
                 }
                 return false;
@@ -426,10 +499,262 @@ public class RunCampaignMode implements Runnable {
         }
     }
 
+    private boolean showStartNewCampaignSlotDialog() {
+        List<CampaignMode.SaveSlotSummary> summaries = campaign.getSaveSlotSummaries();
+        String[] options = new String[summaries.size() + 1];
+        for (int i = 0; i < summaries.size(); i++) {
+            options[i] = summaries.get(i).getOneLineSummary();
+        }
+        options[summaries.size()] = "Back";
+
+        int choice = showChoiceDialog(
+                "Choose a save slot for the new campaign.\n\n"
+                        + "Starting a new campaign in an occupied slot will overwrite that slot.",
+                "files/setuptitle.PNG",
+                options,
+                "settings",
+                1.15,
+                1.85
+        );
+
+        if (choice < 0 || choice >= summaries.size()) {
+            return false;
+        }
+
+        CampaignMode.SaveSlotSummary selected = summaries.get(choice);
+        int slot = selected.getSlotNumber();
+        if (selected.exists()) {
+            int confirm = showChoiceDialog(
+                    selected.getDetailedSummary()
+                            + "\n\nThis will permanently overwrite Save Slot " + slot + ". Continue?",
+                    "files/settingstitle.PNG",
+                    new String[] { "Yes, Overwrite", "No" },
+                    "settings",
+                    1.15,
+                    1.45
+            );
+            if (confirm != 0) {
+                return false;
+            }
+        }
+
+        campaign.setActiveSaveSlot(slot);
+        return startNewCampaignFromDialog();
+    }
+
+    private boolean showLoadCampaignDialog(boolean startupMode) {
+        while (true) {
+            List<CampaignMode.SaveSlotSummary> summaries = campaign.getSaveSlotSummaries();
+            String[] options = new String[summaries.size() + 1];
+            for (int i = 0; i < summaries.size(); i++) {
+                options[i] = summaries.get(i).getOneLineSummary();
+            }
+            options[summaries.size()] = startupMode ? "Back" : "Cancel";
+
+            int choice = showChoiceDialog(
+                    "Load Campaign\n\nChoose one of your Campaign Mode save slots.",
+                    "files/setuptitle.PNG",
+                    options,
+                    "settings",
+                    1.2,
+                    1.95
+            );
+
+            if (choice < 0 || choice >= summaries.size()) {
+                return false;
+            }
+
+            CampaignMode.SaveSlotSummary selected = summaries.get(choice);
+            int slot = selected.getSlotNumber();
+
+            if (!selected.exists()) {
+                int emptyChoice = showChoiceDialog(
+                        "Save Slot " + slot + " is empty.\n\nStart a new campaign in this slot?",
+                        "files/setuptitle.PNG",
+                        new String[] { "Start New Campaign", "Back" },
+                        "settings",
+                        0.95,
+                        1.25
+                );
+                if (emptyChoice == 0) {
+                    campaign.setActiveSaveSlot(slot);
+                    return startNewCampaignFromDialog();
+                }
+                continue;
+            }
+
+            int action = showChoiceDialog(
+                    selected.getDetailedSummary()
+                            + (selected.hasPendingPlayableMatch()
+                                    ? "\n\nWarning: this save has an abandoned playable match. Continuing will count it as a forfeit loss."
+                                    : ""),
+                    "files/setuptitle.PNG",
+                    new String[] { "Continue", "Restart Slot", "Rename Slot", "Duplicate Slot", "Delete Slot", "Back" },
+                    "settings",
+                    1.25,
+                    1.7
+            );
+
+            if (action == 0) {
+                OperationResult result = captureBooleanOutput(() -> campaign.loadCampaignFromSlot(slot));
+                appendLog(result.output);
+                if (result.success) {
+                    showLongTextDialog("Campaign Loaded", result.output);
+                    refreshDashboard();
+                    displayActiveDeckCards();
+                    return true;
+                }
+                showShortDialog("Load Failed", "Could not load Save Slot " + slot + ".", true);
+            } else if (action == 1) {
+                int confirm = showChoiceDialog(
+                        "Restarting Save Slot " + slot + " will permanently overwrite this campaign.\n\nAre you absolutely sure?",
+                        "files/settingstitle.PNG",
+                        new String[] { "Yes, Restart", "No" },
+                        "settings",
+                        1.0,
+                        1.35
+                );
+                if (confirm == 0) {
+                    campaign.setActiveSaveSlot(slot);
+                    return startNewCampaignFromDialog();
+                }
+            } else if (action == 2) {
+                renameSaveSlotFromMenu(slot, selected);
+            } else if (action == 3) {
+                duplicateSaveSlotFromMenu(slot);
+            } else if (action == 4) {
+                int confirm = showChoiceDialog(
+                        "Delete Save Slot " + slot + "?\n\nThis cannot be undone.",
+                        "files/errortitle.PNG",
+                        new String[] { "Yes, Delete", "No" },
+                        "error",
+                        0.9,
+                        1.2
+                );
+                if (confirm == 0) {
+                    OperationResult result = captureBooleanOutput(() -> campaign.deleteSaveSlot(slot));
+                    appendLog(result.output);
+                    showShortDialog(
+                            result.success ? "Save Deleted" : "Delete Failed",
+                            result.success
+                                    ? "Save Slot " + slot + " deleted."
+                                    : "Could not delete Save Slot " + slot + ".",
+                            !result.success
+                    );
+                }
+            }
+        }
+    }
+
+    private void renameSaveSlotFromMenu(final int slot, CampaignMode.SaveSlotSummary summary) {
+        if (summary == null || !summary.exists()) {
+            showShortDialog("Rename Failed", "That save slot is empty.", true);
+            return;
+        }
+
+        String currentName = summary.getPlayerName();
+        String newName = CustomDialog.showInputDialog(
+                frame,
+                "Rename Save Slot " + slot + ".\n\nCurrent name: " + currentName
+                        + "\n\nEnter the new campaign name:",
+                "files/settingstitle.PNG"
+        );
+
+        if (newName == null) {
+            return;
+        }
+        newName = newName.trim();
+        if (newName.isEmpty()) {
+            showShortDialog("Rename Failed", "Campaign name cannot be blank.", true);
+            return;
+        }
+
+        final String cleanName = newName;
+        OperationResult result = captureBooleanOutput(() -> campaign.renameSaveSlot(slot, cleanName));
+        appendLog(result.output);
+        if (result.success) {
+            refreshDashboard();
+        }
+        showShortDialog(
+                result.success ? "Save Renamed" : "Rename Failed",
+                result.success
+                        ? "Save Slot " + slot + " renamed to " + cleanName + "."
+                        : "Could not rename Save Slot " + slot + ".",
+                !result.success
+        );
+    }
+
+    private void duplicateSaveSlotFromMenu(final int sourceSlot) {
+        List<CampaignMode.SaveSlotSummary> summaries = campaign.getSaveSlotSummaries();
+        ArrayList<CampaignMode.SaveSlotSummary> destinations = new ArrayList<CampaignMode.SaveSlotSummary>();
+        for (CampaignMode.SaveSlotSummary summary : summaries) {
+            if (summary != null && summary.getSlotNumber() != sourceSlot) {
+                destinations.add(summary);
+            }
+        }
+
+        if (destinations.isEmpty()) {
+            showShortDialog("Duplicate Failed", "There is no other save slot available.", true);
+            return;
+        }
+
+        String[] options = new String[destinations.size() + 1];
+        for (int i = 0; i < destinations.size(); i++) {
+            options[i] = destinations.get(i).getOneLineSummary();
+        }
+        options[destinations.size()] = "Back";
+
+        int choice = showChoiceDialog(
+                "Duplicate Save Slot " + sourceSlot + "\n\nChoose a destination slot.",
+                "files/setuptitle.PNG",
+                options,
+                "settings",
+                1.1,
+                1.85
+        );
+
+        if (choice < 0 || choice >= destinations.size()) {
+            return;
+        }
+
+        CampaignMode.SaveSlotSummary destination = destinations.get(choice);
+        final int destinationSlot = destination.getSlotNumber();
+
+        if (destination.exists()) {
+            int confirm = showChoiceDialog(
+                    destination.getDetailedSummary()
+                            + "\n\nDuplicating Save Slot " + sourceSlot
+                            + " into Save Slot " + destinationSlot
+                            + " will permanently overwrite this destination slot. Continue?",
+                    "files/settingstitle.PNG",
+                    new String[] { "Yes, Overwrite", "No" },
+                    "settings",
+                    1.2,
+                    1.55
+            );
+            if (confirm != 0) {
+                return;
+            }
+        }
+
+        OperationResult result = captureBooleanOutput(
+                () -> campaign.duplicateSaveSlot(sourceSlot, destinationSlot)
+        );
+        appendLog(result.output);
+        showShortDialog(
+                result.success ? "Save Duplicated" : "Duplicate Failed",
+                result.success
+                        ? "Save Slot " + sourceSlot + " duplicated into Save Slot "
+                                + destinationSlot + "."
+                        : "Could not duplicate Save Slot " + sourceSlot + ".",
+                !result.success
+        );
+    }
+
     private boolean startNewCampaignFromDialog() {
         String name = CustomDialog.showInputDialog(
                 frame,
-                "Enter player name. Leave blank for Player:",
+                "What should we call your campaign manager? Leave blank for Player:",
                 "files/setuptitle.PNG"
         );
 
@@ -441,7 +766,9 @@ public class RunCampaignMode implements Runnable {
             name = "Player";
         }
 
+        int selectedSlot = campaign == null ? 1 : campaign.getActiveSaveSlot();
         campaign = new CampaignMode(name);
+        campaign.setActiveSaveSlot(selectedSlot);
         OperationResult result = captureVoidOutput(() -> campaign.startNewCampaign());
         appendLog(result.output);
         showLongTextDialog("New Campaign Started", result.output);
@@ -469,23 +796,13 @@ public class RunCampaignMode implements Runnable {
 
         JLabel intro = new JLabel(
                 "<html><center>Pick a campaign match. "
-                        + "Sim mode keeps using the existing AI-vs-AI engine; Play mode launches "
-                        + "the real Campaign Clash board with your active deck.</center></html>",
+                        + getMatchModeHelpText()
+                        + "</center></html>",
                 SwingConstants.CENTER
         );
         intro.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
         intro.setForeground(new Color(35, 35, 35));
-
-        JPanel topPanel = new JPanel(new BorderLayout(8, 8));
-        topPanel.setOpaque(false);
-        topPanel.add(intro, BorderLayout.CENTER);
-        topPanel.add(buildMatchModePanel(new Runnable() {
-            @Override
-            public void run() {
-                displayMatchOptionsDashboard();
-            }
-        }), BorderLayout.SOUTH);
-        wrapper.add(topPanel, BorderLayout.NORTH);
+        wrapper.add(intro, BorderLayout.NORTH);
 
         JPanel choices = new JPanel(new GridLayout(1, 3, 24, 24));
         choices.setOpaque(false);
@@ -527,49 +844,38 @@ public class RunCampaignMode implements Runnable {
         return panel;
     }
 
-    private JPanel buildMatchModePanel(final Runnable refreshAfterChange) {
-        JPanel modePanel = new JPanel(new BorderLayout(8, 4));
-        modePanel.setOpaque(false);
-        modePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(210, 190, 145), 1),
-                new EmptyBorder(8, 10, 8, 10)
-        ));
-
-        String modeText = shouldUsePlayableMatches()
-                ? "Current Mode: Playable matches"
-                : "Current Mode: Simulated matches";
-        JLabel modeLabel = new JLabel(modeText, SwingConstants.CENTER);
-        modeLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
-        modeLabel.setForeground(new Color(20, 35, 65));
-
-        JCheckBox playableToggle = new JCheckBox("Play matches manually through the Campaign Clash board");
-        playableToggle.setOpaque(false);
-        playableToggle.setHorizontalAlignment(SwingConstants.CENTER);
-        playableToggle.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
-        playableToggle.setForeground(new Color(35, 35, 35));
-        playableToggle.setSelected(playableMatchMode && campaignMatchLauncher != null);
-        playableToggle.setEnabled(campaignMatchLauncher != null);
-        if (campaignMatchLauncher == null) {
-            playableToggle.setText("Play matches manually through the Campaign Clash board (available from main game shell)");
-        }
-        playableToggle.addActionListener(e -> {
-            playableMatchMode = playableToggle.isSelected();
-            if (refreshAfterChange != null) {
-                refreshAfterChange.run();
-            }
-        });
-
-        modePanel.add(modeLabel, BorderLayout.NORTH);
-        modePanel.add(playableToggle, BorderLayout.CENTER);
-        return modePanel;
-    }
-
     private boolean shouldUsePlayableMatches() {
-        return playableMatchMode && campaignMatchLauncher != null;
+        return campaignMatchLauncher != null && !simTestMode;
     }
 
     private String getMatchActionVerb() {
         return shouldUsePlayableMatches() ? "Play" : "Sim";
+    }
+
+    private String getMatchModeHelpText() {
+        if (shouldUsePlayableMatches()) {
+            return "Matches launch the real Campaign Clash board with your active deck.";
+        }
+        if (simTestMode) {
+            return "Sim/Test Mode is ON, so matches use the AI-vs-AI simulation engine.";
+        }
+        return "Playable matches are available when Campaign Mode is launched from the main Campaign Clash home screen.";
+    }
+
+    private String getSimTestMenuLabel() {
+        return simTestMode ? "Disable Sim/Test Mode" : "Enable Sim/Test Mode";
+    }
+
+    private void toggleSimTestModeFromMenu() {
+        simTestMode = !simTestMode;
+        String modeText = simTestMode
+                ? "Sim/Test Mode is now ON. Match and tournament buttons will simulate results for testing."
+                : "Sim/Test Mode is now OFF. Campaign Mode will launch playable matches from the Campaign Clash board.";
+        showShortDialog("Campaign Mode", modeText, false);
+
+        if (displayTitleLabel != null && "Choose Match Difficulty".equals(displayTitleLabel.getText())) {
+            displayMatchOptionsDashboard();
+        }
     }
 
     private JButton makeDashboardButton(String text) {
@@ -597,6 +903,13 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void hideCampaignWindowForPlayableMatch() {
+        if (embeddedMode) {
+            if (rootPanel != null) {
+                rootPanel.setVisible(false);
+            }
+            return;
+        }
+
         if (frame == null) {
             return;
         }
@@ -605,6 +918,16 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void restoreCampaignWindowAfterPlayableMatch() {
+        if (embeddedMode) {
+            if (rootPanel != null) {
+                rootPanel.setVisible(true);
+            }
+            if (navigationHost != null) {
+                navigationHost.showCampaignModeScreen();
+            }
+            return;
+        }
+
         if (frame == null) {
             return;
         }
@@ -645,7 +968,7 @@ public class RunCampaignMode implements Runnable {
             showShortDialog(
                     "Playable Match Unavailable",
                     "Playable matches require Campaign Mode to be launched from the main Campaign Clash shell.\n"
-                            + "Use Sim mode for now, or launch Campaign Mode from the home screen once v6.5 is installed.",
+                            + "Use Sim/Test Mode for now, or launch Campaign Mode from the main Campaign Clash home screen.",
                     true
             );
             return;
@@ -989,16 +1312,7 @@ public class RunCampaignMode implements Runnable {
         );
         details.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
         details.setForeground(new Color(20, 35, 65));
-        JPanel topPanel = new JPanel(new BorderLayout(8, 8));
-        topPanel.setOpaque(false);
-        topPanel.add(details, BorderLayout.CENTER);
-        topPanel.add(buildMatchModePanel(new Runnable() {
-            @Override
-            public void run() {
-                displayTournamentRunDashboard(tournament, nextRound);
-            }
-        }), BorderLayout.SOUTH);
-        wrapper.add(topPanel, BorderLayout.NORTH);
+        wrapper.add(details, BorderLayout.NORTH);
 
         wrapper.add(buildActiveTournamentDeckPanel(), BorderLayout.CENTER);
 
@@ -1132,7 +1446,7 @@ public class RunCampaignMode implements Runnable {
             showShortDialog(
                     "Playable Match Unavailable",
                     "Playable tournament rounds require Campaign Mode to be launched from the main Campaign Clash shell.\n"
-                            + "Use Sim mode for now, or launch Campaign Mode from the home screen once v6.5 is installed.",
+                            + "Use Sim/Test Mode for now, or launch Campaign Mode from the main Campaign Clash home screen.",
                     true
             );
             return;
@@ -2390,14 +2704,48 @@ public class RunCampaignMode implements Runnable {
                 !result.success);
     }
 
+    private void changeCampaignPlayerNameFromUI() {
+        if (campaign == null || campaign.getPlayer() == null) {
+            return;
+        }
+
+        String currentName = campaign.getPlayer().getName();
+        String newName = CustomDialog.showInputDialog(
+                frame,
+                "Current campaign name: " + currentName + "\n\nEnter the new campaign name:",
+                "files/settingstitle.PNG"
+        );
+
+        if (newName == null) {
+            return;
+        }
+        newName = newName.trim();
+        if (newName.isEmpty()) {
+            showShortDialog("Name Not Changed", "Campaign name cannot be blank.", true);
+            return;
+        }
+
+        campaign.getPlayer().setName(newName);
+        OperationResult result = captureBooleanOutput(() -> campaign.saveCampaign());
+        appendLog(result.output);
+        refreshDashboard();
+        showShortDialog(
+                result.success ? "Name Changed" : "Name Changed, Save Failed",
+                result.success
+                        ? "Campaign name changed to " + newName + "."
+                        : "Campaign name changed to " + newName + ", but the save failed.",
+                !result.success
+        );
+    }
+
     private void restartCampaignFromUI() {
         int confirm = showChoiceDialog(
-                "Restarting will overwrite your current Campaign Mode save. Continue?",
+                "Restarting will permanently overwrite your current Campaign Mode save.\n\nAre you absolutely sure?",
                 "files/settingstitle.PNG",
-                new String[] { "Yes", "No" },
+                new String[] { "Yes, Restart", "No" },
                 "settings",
                 1.0,
-                1.0
+                1.2
         );
         if (confirm != 0) {
             return;
@@ -2411,16 +2759,21 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void confirmSaveAndQuit() {
+        if (navigationHost != null) {
+            confirmEmbeddedSaveAndQuit();
+            return;
+        }
+
         int choice = showChoiceDialog(
                 "What would you like to do?",
                 "files/settingstitle.PNG",
-                new String[] { "Save", "Save and Quit", "Quit Without Saving", "Restart Campaign", "Cancel" },
+                new String[] { "Save", "Change Name", "Load Campaign", "Save and Quit", getSimTestMenuLabel(), "Restart Campaign", "Cancel" },
                 "settings",
-                0.95,
-                1.65
+                1.0,
+                1.85
         );
 
-        if (choice == 4 || choice == -1) {
+        if (choice == 6 || choice == -1) {
             return;
         }
 
@@ -2429,30 +2782,161 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
-        if (choice == 3) {
+        if (choice == 1) {
+            changeCampaignPlayerNameFromUI();
+            return;
+        }
+
+        if (choice == 2) {
+            loadCampaignFromMenu();
+            return;
+        }
+
+        if (choice == 4) {
+            toggleSimTestModeFromMenu();
+            return;
+        }
+
+        if (choice == 5) {
             restartCampaignFromUI();
             return;
         }
 
-        if (choice == 1) {
-            OperationResult result = captureBooleanOutput(() -> campaign.saveCampaign());
-            appendLog(result.output);
-            if (!result.success) {
-                int quitAnyway = showChoiceDialog(
-                        "Save failed. Quit anyway?",
-                        "files/errortitle.PNG",
-                        new String[] { "Yes", "No" },
-                        "error",
-                        0.85,
-                        1.0
-                );
-                if (quitAnyway != 0) {
-                    return;
-                }
+        if (choice == 3) {
+            if (!saveCampaignBeforeNavigation()) {
+                return;
             }
         }
 
-        frame.dispose();
+        if (ownsFrame && frame != null) {
+            frame.dispose();
+        }
+    }
+
+    private void confirmEmbeddedSaveAndQuit() {
+        int choice = showChoiceDialog(
+                "Campaign Mode Menu",
+                "files/settingstitle.PNG",
+                new String[] {
+                        "Save",
+                        "Change Name",
+                        "Return Home",
+                        "Save + Quit",
+                        getSimTestMenuLabel(),
+                        "Load Campaign",
+                        "Restart",
+                        "Cancel"
+                },
+                "settings",
+                1.0,
+                1.75
+        );
+
+        if (choice == 7 || choice == -1) {
+            return;
+        }
+
+        if (choice == 0) {
+            saveCampaignFromUI();
+            return;
+        }
+
+        if (choice == 1) {
+            changeCampaignPlayerNameFromUI();
+            return;
+        }
+
+        if (choice == 4) {
+            toggleSimTestModeFromMenu();
+            return;
+        }
+
+        if (choice == 5) {
+            loadCampaignFromMenu();
+            return;
+        }
+
+        if (choice == 6) {
+            restartCampaignFromUI();
+            return;
+        }
+
+        // Return Home and Quit both save first by design.
+        if (choice == 2 || choice == 3) {
+            if (!saveCampaignBeforeNavigation()) {
+                return;
+            }
+        }
+
+        if (choice == 2) {
+            returnToMainHomeScreen();
+        } else if (choice == 3) {
+            exitFullApplication();
+        }
+    }
+
+
+    private void loadCampaignFromMenu() {
+        if (!saveCampaignBeforeNavigation()) {
+            return;
+        }
+
+        boolean loaded = showLoadCampaignDialog(false);
+        if (loaded) {
+            refreshDashboard();
+            displayActiveDeckCards();
+        }
+    }
+
+    private boolean saveCampaignBeforeNavigation() {
+        OperationResult result = captureBooleanOutput(() -> campaign.saveCampaign());
+        appendLog(result.output);
+        if (result.success) {
+            return true;
+        }
+
+        int continueAnyway = showChoiceDialog(
+                "Save failed. Continue anyway?",
+                "files/errortitle.PNG",
+                new String[] { "Yes", "No" },
+                "error",
+                0.85,
+                1.0
+        );
+        return continueAnyway == 0;
+    }
+
+    private boolean confirmNavigationWithoutSaving(boolean returningHome) {
+        String destination = returningHome ? "return to the Campaign Clash home screen" : "quit the game";
+        int confirm = showChoiceDialog(
+                "Continue without saving and " + destination + "?",
+                "files/settingstitle.PNG",
+                new String[] { "Yes", "No" },
+                "settings",
+                0.9,
+                1.2
+        );
+        return confirm == 0;
+    }
+
+    private void returnToMainHomeScreen() {
+        if (navigationHost != null) {
+            navigationHost.showMainHomeScreen();
+            return;
+        }
+        if (ownsFrame && frame != null) {
+            frame.dispose();
+        }
+    }
+
+    private void exitFullApplication() {
+        if (navigationHost != null) {
+            navigationHost.exitApplication();
+            return;
+        }
+        if (ownsFrame && frame != null) {
+            frame.dispose();
+        }
     }
 
     private void refreshDashboard() {
@@ -2515,7 +2999,8 @@ public class RunCampaignMode implements Runnable {
                 + " win / " + CampaignMode.formatPC(campaign.getMediumLossRewardPC()) + " loss\n"
                 + "Hard rewards: " + CampaignMode.formatPC(campaign.getHardWinRewardPC())
                 + " win / " + CampaignMode.formatPC(campaign.getHardLossRewardPC()) + " loss\n"
-                + "Save file: " + CampaignMode.getSaveFilePath();
+                + "Active Save Slot: " + campaign.getActiveSaveSlot()
+                + " (" + campaign.getActiveSaveFilePath() + ")";
     }
 
     /**
@@ -2637,7 +3122,7 @@ public class RunCampaignMode implements Runnable {
     }
 
     private boolean saveFileExists() {
-        return new File(CampaignMode.getSaveFilePath()).exists();
+        return campaign != null && campaign.hasAnySaveSlot();
     }
 
     private void installFrameIconAndCursor() {
