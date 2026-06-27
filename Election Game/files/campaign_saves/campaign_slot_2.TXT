@@ -1,0 +1,7 @@
+CAMPAIGN_CLASH_SAVE_V3
+NAME=Player
+PC=100000
+WINS=0
+LOSSES=0
+CARDS=Lafayette,James R. Mann,Tom Cotton,Stephen B. Elkins,Benjamin F. Shively,John Bidwell,James M. Garnett,Mehmet Oz,Doug Burgum,Joseph Bryan
+PENDING_PLAYABLE_MATCH=false

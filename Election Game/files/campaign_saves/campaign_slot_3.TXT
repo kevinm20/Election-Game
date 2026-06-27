@@ -1,0 +1,7 @@
+CAMPAIGN_CLASH_SAVE_V3
+NAME=dummy 3
+PC=100000
+WINS=0
+LOSSES=0
+CARDS=Henry Clay,Samuel Smith,James Speed,William L. Wilson,John Trumbull,Cornelius Newton Bliss,Gary Peters,James R. Williams,Maxwell Frost,Thomas H. Carter
+PENDING_PLAYABLE_MATCH=false
