@@ -61,6 +61,11 @@ public class RunElectionGameCombined implements Runnable {
 	private int cumulativeGames = 0;
 	private boolean cardInfoMode = false;
 	private boolean askToResign = true;
+	private int keyboardSelectedIndex = -1;
+	private boolean keyboardSelectionActive = false;
+	private SoundtrackPlayer keyboardPlayer = null;
+	private static final Color KEYBOARD_SELECTION_COLOR = Color.YELLOW;
+	
 	
 	// Login settings
 	private int loginMode = -1;
@@ -203,6 +208,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	 	// Create the SoundtrackPlayer instance
 	 		SoundtrackPlayer player = new SoundtrackPlayer(tracks);
+	 		keyboardPlayer = player;
 
 	 		// Separate thread to manage playback when not muted
 	 		new Thread(() -> {
@@ -558,6 +564,7 @@ public class RunElectionGameCombined implements Runnable {
 				// Play the button click sound
 		        player.playSoundEffect(prefix + "files/playbutton.MP3");
 		        board.unzoom();
+		        clearKeyboardSelection();
 		        
 				if (election.getActivePinCard() == null || election.getActivePinnedPolicies().get(0) == null
 						|| election.getActivePinnedPolicies().get(1) == null) {
@@ -762,7 +769,7 @@ public class RunElectionGameCombined implements Runnable {
 		gbc.weightx = 1.0;
 		gbc.weighty = 1.0;
 		control_panel.add(play, gbc);
-		
+
 		// Load the resign icon and hover icon
 		ImageIcon resignIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/resign.PNG"));
 		ImageIcon resignHoverIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/resignhover.PNG"));
@@ -788,6 +795,7 @@ public class RunElectionGameCombined implements Runnable {
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
+				clearKeyboardSelection();
 				
 				if (!askToResign) {
 					cumulativeGames++;
@@ -994,6 +1002,7 @@ public class RunElectionGameCombined implements Runnable {
 		swap.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
+				clearKeyboardSelection();
 
 				if (!swapmode) {
 					// Switch to policies view
@@ -1149,7 +1158,7 @@ public class RunElectionGameCombined implements Runnable {
 
 							String[] customTags = { "President","Founding Era",
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Trump Era" };
+							        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Trump Era" };
 
 							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
@@ -1345,6 +1354,42 @@ public class RunElectionGameCombined implements Runnable {
 		});
 		gbc.gridy = 2;
 		control_panel.add(settings, gbc);
+		
+		bindButtonShortcut(frame, KeyEvent.VK_ENTER, "pressPlayButton", play);
+		bindButtonShortcut(frame, KeyEvent.VK_R, "pressResignButton", reset);
+		bindButtonShortcut(frame, KeyEvent.VK_H, "pressHelpButton", help);
+		bindButtonShortcut(frame, KeyEvent.VK_S, "pressSettingsButton", settings);
+		bindButtonShortcut(frame, KeyEvent.VK_P, "pressSwapButton", swap);
+		bindGameKeyboardAction(frame, KeyEvent.VK_LEFT, "selectPreviousCard", new Runnable() {
+		    @Override
+		    public void run() {
+		        moveKeyboardSelection(-1);
+		    }
+		});
+		bindGameKeyboardAction(frame, KeyEvent.VK_RIGHT, "selectNextCard", new Runnable() {
+		    @Override
+		    public void run() {
+		        moveKeyboardSelection(1);
+		    }
+		});
+		bindGameKeyboardAction(frame, KeyEvent.VK_UP, "playSelectedCard", new Runnable() {
+		    @Override
+		    public void run() {
+		        playKeyboardSelectedCard();
+		    }
+		});
+		bindGameKeyboardAction(frame, KeyEvent.VK_DOWN, "recallCardOrClearSelection", new Runnable() {
+		    @Override
+		    public void run() {
+		        recallCardFromBoardOrClearSelection();
+		    }
+		});
+		bindGameKeyboardAction(frame, KeyEvent.VK_ESCAPE, "clearKeyboardCardSelection", new Runnable() {
+		    @Override
+		    public void run() {
+		        clearKeyboardSelection();
+		    }
+		});
 		
 		// Loop through all components in the control_panel
 		for (Component comp : control_panel.getComponents()) {
@@ -1735,7 +1780,7 @@ public class RunElectionGameCombined implements Runnable {
 
 							String[] customTags = { "President","Founding Era",
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-							        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+							        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Present Era" };
 
 							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
@@ -1999,7 +2044,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		    				String[] customTags = { "President","Founding Era",
 		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-		    				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+		    				        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Present Era" };
 
 		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
@@ -2165,7 +2210,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		    				String[] customTags = { "President","Founding Era",
 		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-		    				        "New Deal Era", "Civil Rights Era", "Reagan Era", "Modern Era", "Present Era" };
+		    				        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Present Era" };
 
 		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/setuptitle.PNG");
 
@@ -2400,13 +2445,27 @@ public class RunElectionGameCombined implements Runnable {
 
 	                updateImageCache();
 
-	                for (President curr : hand) {
+	                normalizeKeyboardSelectionForCurrentHand();
+
+	                for (int i = 0; i < hand.size(); i++) {
+	                    President curr = hand.get(i);
 	                    ImageIcon img = imageCache.get(curr.getImageURL());
 	                    JLabel userCardLabel = new JLabel(img);
 	                    if (cardInfoMode) {
 	                        userCardLabel.setText("<html>" + curr.getCardInfo() + "</html>");
 	                    }
 	                    userCardLabel.setPreferredSize(new Dimension(scaledCardWidth, scaledCardHeight));
+	                    if (isKeyboardSelectedPresident(i)) {
+	                        userCardLabel.setBorder(new LineBorder(KEYBOARD_SELECTION_COLOR,
+	                                Math.max(3, (int) (4 * (cardSize / 275.0)))));
+	                        final JLabel selectedLabel = userCardLabel;
+	                        SwingUtilities.invokeLater(new Runnable() {
+	                            @Override
+	                            public void run() {
+	                                selectedLabel.scrollRectToVisible(selectedLabel.getBounds());
+	                            }
+	                        });
+	                    }
 	                    this.add(userCardLabel);
 	                }
 
@@ -2735,10 +2794,24 @@ public class RunElectionGameCombined implements Runnable {
 
 	            updateImageCache();
 
-	            for (Policy curr : hand) {
+	            normalizeKeyboardSelectionForCurrentHand();
+
+	            for (int i = 0; i < hand.size(); i++) {
+	                Policy curr = hand.get(i);
 	                ImageIcon img = imageCache.get(curr.getImageURL());
 	                JLabel userPolicyLabel = new JLabel(img);
 	                userPolicyLabel.setPreferredSize(new Dimension(scaledCardWidth, scaledCardHeight));
+	                if (isKeyboardSelectedPolicy(i)) {
+	                    userPolicyLabel.setBorder(new LineBorder(KEYBOARD_SELECTION_COLOR,
+	                            Math.max(3, (int) (4 * (cardSize / 275.0)))));
+	                    final JLabel selectedLabel = userPolicyLabel;
+	                    SwingUtilities.invokeLater(new Runnable() {
+	                        @Override
+	                        public void run() {
+	                            selectedLabel.scrollRectToVisible(selectedLabel.getBounds());
+	                        }
+	                    });
+	                }
 	                this.add(userPolicyLabel);
 	            }
 
@@ -3207,5 +3280,344 @@ public class RunElectionGameCombined implements Runnable {
 	private void setLabel(JLabel j) {
 		j.setText("<html><body>" + election.p1Score() + "<br><br>" + election.p2Score() + "</body></html>");
 		j.repaint();
+	}
+
+	private void bindButtonShortcut(JFrame frame, int keyCode, String actionName, JButton button) {
+	    frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+	            KeyStroke.getKeyStroke(keyCode, 0),
+	            actionName
+	    );
+
+	    frame.getRootPane().getActionMap().put(actionName, new AbstractAction() {
+	        @Override
+	        public void actionPerformed(ActionEvent e) {
+	            if (shouldTriggerControlButtonFromKey(frame, button)) {
+	                button.doClick();
+	            }
+	        }
+	    });
+	}
+
+	private void bindGameKeyboardAction(JFrame frame, int keyCode, String actionName, final Runnable action) {
+	    frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+	            KeyStroke.getKeyStroke(keyCode, 0),
+	            actionName
+	    );
+
+	    frame.getRootPane().getActionMap().put(actionName, new AbstractAction() {
+	        @Override
+	        public void actionPerformed(ActionEvent e) {
+	            if (shouldTriggerGameKeyboardAction(frame)) {
+	                action.run();
+	            }
+	        }
+	    });
+	}
+
+	private boolean shouldTriggerControlButtonFromKey(JFrame frame, JButton button) {
+	    if (!shouldTriggerGameKeyboardAction(frame)) {
+	        return false;
+	    }
+
+	    // Don't trigger hidden/disabled buttons.
+	    if (button == null || !button.isShowing() || !button.isEnabled()) {
+	        return false;
+	    }
+
+	    return true;
+	}
+
+	private boolean shouldTriggerGameKeyboardAction(JFrame frame) {
+	    // Don't allow keyboard shortcuts while still on the home/loading screen.
+	    if (starting) {
+	        return false;
+	    }
+
+	    // Don't trigger while another Swing window/dialog is active.
+	    Window activeWindow = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+	    if (activeWindow != null && activeWindow != frame) {
+	        return false;
+	    }
+
+	    // Don't trigger if a CustomDialog/JDialog owned by the main frame is open.
+	    for (Window window : frame.getOwnedWindows()) {
+	        if (window != null && window.isShowing()) {
+	            return false;
+	        }
+	    }
+
+	    // Don't trigger while typing in an input box.
+	    Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+	    if (focusOwner instanceof javax.swing.text.JTextComponent) {
+	        return false;
+	    }
+
+	    // Don't trigger while a combo box / dropdown is active.
+	    if (focusOwner instanceof JComboBox ||
+	            (focusOwner != null && SwingUtilities.getAncestorOfClass(JComboBox.class, focusOwner) != null)) {
+	        return false;
+	    }
+
+	    // Don't trigger while a Swing popup menu is open.
+	    if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) {
+	        return false;
+	    }
+
+	    return true;
+	}
+
+	private int getVisibleKeyboardHandSize() {
+	    if (starting || election == null || election.getActivePlayer() == null) {
+	        return 0;
+	    }
+
+	    if (swapmode) {
+	        return election.getActivePlayer().getPolicies().size();
+	    } else {
+	        return election.getActivePlayer().getHand().size();
+	    }
+	}
+
+	private void normalizeKeyboardSelectionForCurrentHand() {
+	    if (!keyboardSelectionActive) {
+	        keyboardSelectedIndex = -1;
+	        return;
+	    }
+
+	    int handSize = getVisibleKeyboardHandSize();
+	    if (handSize <= 0) {
+	        keyboardSelectionActive = false;
+	        keyboardSelectedIndex = -1;
+	        return;
+	    }
+
+	    if (keyboardSelectedIndex < 0) {
+	        keyboardSelectedIndex = 0;
+	    } else if (keyboardSelectedIndex >= handSize) {
+	        keyboardSelectedIndex = handSize - 1;
+	    }
+	}
+
+	private boolean isKeyboardSelectedPresident(int index) {
+	    return keyboardSelectionActive && !swapmode && keyboardSelectedIndex == index;
+	}
+
+	private boolean isKeyboardSelectedPolicy(int index) {
+	    return keyboardSelectionActive && swapmode && keyboardSelectedIndex == index;
+	}
+
+	private void repaintVisibleKeyboardHand() {
+	    normalizeKeyboardSelectionForCurrentHand();
+
+	    if (swapmode) {
+	        if (up != null) {
+	            up.paintCards();
+	            up.revalidate();
+	            up.repaint();
+	        }
+	    } else {
+	        if (user_cards != null) {
+	            user_cards.paintCards();
+	            user_cards.revalidate();
+	            user_cards.repaint();
+	        }
+	    }
+	}
+
+	private void moveKeyboardSelection(int direction) {
+	    int handSize = getVisibleKeyboardHandSize();
+
+	    if (handSize <= 0) {
+	        clearKeyboardSelection();
+	        return;
+	    }
+
+	    if (!keyboardSelectionActive || keyboardSelectedIndex < 0 || keyboardSelectedIndex >= handSize) {
+	        keyboardSelectedIndex = direction < 0 ? handSize - 1 : 0;
+	    } else {
+	        keyboardSelectedIndex = (keyboardSelectedIndex + direction + handSize) % handSize;
+	    }
+
+	    keyboardSelectionActive = true;
+	    repaintVisibleKeyboardHand();
+	}
+
+	private void playKeyboardSelectedCard() {
+	    if (!keyboardSelectionActive) {
+	        return;
+	    }
+
+	    normalizeKeyboardSelectionForCurrentHand();
+
+	    if (keyboardSelectedIndex < 0 || keyboardSelectedIndex >= getVisibleKeyboardHandSize()) {
+	        clearKeyboardSelection();
+	        return;
+	    }
+
+	    if (swapmode) {
+	        playSelectedPolicyFromKeyboard();
+	    } else {
+	        playSelectedPresidentFromKeyboard();
+	    }
+
+	    normalizeKeyboardSelectionForCurrentHand();
+	    repaintVisibleKeyboardHand();
+	}
+
+	private void playSelectedPresidentFromKeyboard() {
+	    List<President> hand = election.getActivePlayer().getHand();
+	    if (keyboardSelectedIndex < 0 || keyboardSelectedIndex >= hand.size()) {
+	        return;
+	    }
+
+	    President selectedPresident = hand.get(keyboardSelectedIndex);
+
+	    if (election.getActivePinCard() != null) {
+	        election.getActivePlayer().add(election.getActivePinCard());
+	    }
+
+	    election.activePinCard(selectedPresident);
+	    election.getActivePlayer().place(selectedPresident);
+
+	    if (keyboardPlayer != null) {
+	        keyboardPlayer.playSoundEffect(prefix + "files/cardplay.MP3");
+	    }
+
+	    if (board != null) {
+	        board.draw();
+	    }
+	}
+
+	private void playSelectedPolicyFromKeyboard() {
+	    List<Policy> hand = election.getActivePlayer().getPolicies();
+	    if (keyboardSelectedIndex < 0 || keyboardSelectedIndex >= hand.size()) {
+	        return;
+	    }
+
+	    Policy selectedPolicy = hand.get(keyboardSelectedIndex);
+
+	    if ((election.getActivePinnedPolicies().get(0) != null
+	            && election.getActivePinnedPolicies().get(0).sameCategory(selectedPolicy))
+	            || (election.getActivePinnedPolicies().get(1) != null
+	            && election.getActivePinnedPolicies().get(1).sameCategory(selectedPolicy))) {
+	        CustomDialog.showCustomDialog(
+	                board.getParent(),
+	                "Error: you can't play the same or opposite policy together!",
+	                prefix + "files/errortitle.PNG",
+	                new String[]{"Ok"},
+	                "error",
+	                0.5,
+	                1.0
+	        );
+	        return;
+	    }
+
+	    if (election.getActivePinnedPolicies().get(0) == null) {
+	        election.pinActivePolicy(election.getActivePlayer().place(selectedPolicy), 0);
+	    } else if (election.getActivePinnedPolicies().get(1) == null) {
+	        election.pinActivePolicy(election.getActivePlayer().place(selectedPolicy), 1);
+	    } else {
+	        Policy removedPolicy = election.pinActivePolicy(election.getActivePlayer().place(selectedPolicy));
+	        if (removedPolicy != null) {
+	            election.getActivePlayer().add(removedPolicy);
+	        }
+	    }
+
+	    if (keyboardPlayer != null) {
+	        keyboardPlayer.playSoundEffect(prefix + "files/cardplay.MP3");
+	    }
+
+	    if (board != null) {
+	        board.draw();
+	    }
+	}
+
+	private void recallCardFromBoardOrClearSelection() {
+	    boolean recalledCard;
+
+	    if (swapmode) {
+	        recalledCard = recallPolicyFromBoard();
+	    } else {
+	        recalledCard = recallPresidentFromBoard();
+	    }
+
+	    clearKeyboardSelection();
+
+	    if (!recalledCard) {
+	        return;
+	    }
+
+	    if (board != null) {
+	        board.draw();
+	    }
+
+	    if (swapmode) {
+	        if (up != null) {
+	            up.paintCards();
+	        }
+	    } else {
+	        if (user_cards != null) {
+	            user_cards.paintCards();
+	        }
+	    }
+	}
+
+	private boolean recallPresidentFromBoard() {
+	    if (election.getActivePinCard() == null) {
+	        return false;
+	    }
+
+	    election.getActivePlayer().add(election.getActivePinCard());
+	    election.activePinCard(null);
+
+	    if (keyboardPlayer != null) {
+	        keyboardPlayer.playSoundEffect(prefix + "files/cardplay.MP3");
+	    }
+
+	    return true;
+	}
+
+	private boolean recallPolicyFromBoard() {
+	    int slotToRecall = -1;
+
+	    // Prefer the bottom policy slot first, then the top slot.
+	    if (election.getActivePinnedPolicies().get(1) != null) {
+	        slotToRecall = 1;
+	    } else if (election.getActivePinnedPolicies().get(0) != null) {
+	        slotToRecall = 0;
+	    }
+
+	    if (slotToRecall == -1) {
+	        return false;
+	    }
+
+	    Policy removedPolicy = election.pinActivePolicy(null, slotToRecall);
+	    if (removedPolicy != null) {
+	        election.getActivePlayer().add(removedPolicy);
+	    }
+
+	    if (keyboardPlayer != null) {
+	        keyboardPlayer.playSoundEffect(prefix + "files/cardplay.MP3");
+	    }
+
+	    return true;
+	}
+
+	private void clearKeyboardSelection() {
+	    boolean hadSelection = keyboardSelectionActive || keyboardSelectedIndex != -1;
+
+	    keyboardSelectionActive = false;
+	    keyboardSelectedIndex = -1;
+
+	    if (hadSelection) {
+	        if (user_cards != null) {
+	            user_cards.paintCards();
+	            user_cards.repaint();
+	        }
+	        if (up != null) {
+	            up.paintCards();
+	            up.repaint();
+	        }
+	    }
 	}
 }

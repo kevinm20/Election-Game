@@ -202,7 +202,11 @@ public class President extends Card {
     
     double getValue() {
     	double av = (.15*experience+.35*influence+.25*policy+.25*nameRec);
-    	return (1.2868*(av*av)-0.6574*av-6.3713)*1000;
+    	return 1000 + 399000 * Math.pow((av - 1.0) / 7.0, 1.5);
+    }
+    
+    double getAv () {
+    	return (.15*experience+.35*influence+.25*policy+.25*nameRec);
     }
 
     // I used this to easily get the file location of all the president cards

@@ -79,26 +79,6 @@ public class CustomDialog extends JDialog {
         }
 
 
-        // Bind the ESC key to close the dialog
-        panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-                "closeDialog");
-        panel.getActionMap().put("closeDialog", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                selectedOption = -1; // Indicate that the dialog was closed without selection
-                setVisible(false); // Close the dialog
-                globalPlayer.playSoundEffect("files/playbutton.MP3");
-            }
-        });
-
-        panel.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-                // Record the current mouse coordinates on the screen
-                mouseX = evt.getX();
-                mouseY = evt.getY();
-            }
-        });
 
         panel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             @Override
@@ -195,6 +175,8 @@ public class CustomDialog extends JDialog {
         buttonHoverIcon = getCachedImage("files/blankbuttonhover.PNG");
         buttonClickedIcon = getCachedImage("files/blankbuttonclicked.PNG");
 
+        List<JButton> dialogButtons = new ArrayList<>();
+
         for (int i = 0; i < options.length; i++) {
             String option = options[i];
             JButton button = new JButton(option);
@@ -253,17 +235,7 @@ public class CustomDialog extends JDialog {
                 }
             });
 
-            if (options.length == 1) {
-                panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
-                        "pressButton");
-                panel.getActionMap().put("pressButton", new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        button.doClick();
-                    }
-                });
-            }
-
+            dialogButtons.add(button);
             buttonPanel.add(button);
         }
 
@@ -310,12 +282,12 @@ public class CustomDialog extends JDialog {
         closeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                selectedOption = -1; // Indicate that the dialog was closed without selection
-                setVisible(false); // Close the dialog
-                globalPlayer.playSoundEffect("files/playbutton.MP3");
+                closeWithoutSelection();
             }
         });
         panel.add(closeButton);
+
+        installKeyboardShortcuts(dialogButtons);
 
         pack();
         setSize((int) (900 * widthRatio * scaleFactor), (int) (600 * heightRatio * scaleFactor)); // Scaled size
@@ -335,6 +307,53 @@ public class CustomDialog extends JDialog {
         setVisible(true); // Automatically show the dialog
     }
 
+    private void closeWithoutSelection() {
+        selectedOption = -1; // Same result as clicking the red X
+        setVisible(false);
+
+        if (globalPlayer != null) {
+            globalPlayer.playSoundEffect("files/playbutton.MP3");
+        }
+    }
+
+    private void installKeyboardShortcuts(final List<JButton> dialogButtons) {
+        JRootPane rootPane = getRootPane();
+
+        // Enter = click the first option button, such as Ok, Yes, Hint, etc.
+        if (dialogButtons != null && !dialogButtons.isEmpty()) {
+            final JButton firstButton = dialogButtons.get(0);
+
+            rootPane.setDefaultButton(firstButton);
+
+            rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                    KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+                    "pressFirstDialogButton"
+            );
+
+            rootPane.getActionMap().put("pressFirstDialogButton", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (firstButton.isShowing() && firstButton.isEnabled()) {
+                        firstButton.doClick();
+                    }
+                }
+            });
+        }
+
+        // Esc = same as clicking the red X
+        rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                "closeDialog"
+        );
+
+        rootPane.getActionMap().put("closeDialog", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                closeWithoutSelection();
+            }
+        });
+    }
+    
     // Static method to set the global SoundtrackPlayer
     public static void setGlobalPlayer(SoundtrackPlayer player) {
         globalPlayer = player;

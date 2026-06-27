@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-public class Pack {
+public class CampaignPack {
 	private List<President> presidents;
 	private int cost;
 	private int count;
@@ -14,7 +14,7 @@ public class Pack {
 	private List<String> tags;
 	// Find some way to make weighted odds
 
-	public Pack(int count, int cost, double minRate, double maxRate, List<President> pres, List<String> tags) {
+	public CampaignPack(int count, int cost, double minRate, double maxRate, List<President> pres, List<String> tags) {
 		// Setup the variables of the pack
 		this.cost = cost;
 		this.count = count;
@@ -64,8 +64,10 @@ public class Pack {
 	public List<President> pull() {
 		Collections.shuffle(presidents);
 		List<President> pulled = new ArrayList<President>();
-		for (int i = 0; i < count; i++) {
-			pulled.add(presidents.get(i));
+		int pullCount = Math.min(count, presidents.size());
+
+		for (int i = 0; i < pullCount; i++) {
+		    pulled.add(presidents.get(i));
 		}
 		return pulled;
 	}
