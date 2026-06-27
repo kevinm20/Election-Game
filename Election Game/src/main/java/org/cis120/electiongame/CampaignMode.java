@@ -52,13 +52,17 @@ public class CampaignMode implements Runnable {
 
     private static final double DUPLICATE_SALE_PERCENT = 0.25;
 
-    private static final String SAVE_VERSION = "CAMPAIGN_CLASH_SAVE_V2";
+    private static final String SAVE_VERSION = "CAMPAIGN_CLASH_SAVE_V3";
+    private static final String SAVE_VERSION_V2 = "CAMPAIGN_CLASH_SAVE_V2";
     private static final String SAVE_VERSION_V1 = "CAMPAIGN_CLASH_SAVE_V1";
     private static final String SAVE_FILE_PATH = "files/campaignsave.TXT";
 
     private CampaignPlayer player;
     private List<President> allPresidents;
     private List<CampaignTournament> eraTournaments;
+
+    private CampaignMatchConfig pendingPlayableMatchConfig;
+    private long pendingPlayableMatchStartedAtMillis;
 
     private CampaignPack starterElitePack;
     private CampaignPack starterMidPack;
@@ -227,6 +231,358 @@ public class CampaignMode implements Runnable {
                 + getCpuDeckDescription(difficulty)
                 + ", win " + formatPC(getMatchWinRewardPC(difficulty))
                 + ", loss " + formatPC(getMatchLossRewardPC(difficulty));
+    }
+
+    /*** V06 CAMPAIGN MATCH BRIDGE METHODS ***/
+
+    /*** V06.8 PENDING PLAYABLE MATCH / ANTI-CHEESE METHODS ***/
+
+    /**
+     * Locks in a playable campaign match before the playable board opens.
+     *
+     * If the app is closed, killed, or crashes before the match result is
+     * returned, the next campaign load will see this pending match and count it
+     * as a forfeit loss with no reward. This prevents re-rolling tournament
+     * rounds by quitting mid-match.
+     */
+    public boolean beginPendingPlayableMatch(CampaignMatchConfig config) {
+        if (config == null) {
+            System.out.println("Could not start playable match: missing match config.");
+            return false;
+        }
+
+        String validationError = config.getValidationError();
+        if (validationError != null && !validationError.isEmpty()) {
+            System.out.println("Could not start playable match: " + validationError);
+            return false;
+        }
+
+        if (!config.isPlayableExecutionMode()) {
+            System.out.println("Could not start playable match: config was not marked playable.");
+            return false;
+        }
+
+        pendingPlayableMatchConfig = config;
+        pendingPlayableMatchStartedAtMillis = System.currentTimeMillis();
+
+        boolean saved = autosaveCampaign();
+        if (saved) {
+            System.out.println("Playable match locked in: " + config.getMatchTitle() + ".");
+            System.out.println("If the app closes before this match finishes, it will count as a forfeit loss.");
+        } else {
+            clearPendingPlayableMatchInMemory();
+            System.out.println("Could not save the pending playable match. Match launch cancelled.");
+        }
+        return saved;
+    }
+
+    /**
+     * Clears an unlaunched pending match, mostly for launch failures before the
+     * playable board actually appears. Normal completed playable matches are
+     * cleared automatically when their result is applied.
+     */
+    public boolean clearPendingPlayableMatch() {
+        if (!hasPendingPlayableMatch()) {
+            return true;
+        }
+        clearPendingPlayableMatchInMemory();
+        boolean saved = autosaveCampaign();
+        if (saved) {
+            System.out.println("Pending playable match cleared.");
+        }
+        return saved;
+    }
+
+    public boolean hasPendingPlayableMatch() {
+        return pendingPlayableMatchConfig != null;
+    }
+
+    public String getPendingPlayableMatchSummary() {
+        if (pendingPlayableMatchConfig == null) {
+            return "No pending playable match.";
+        }
+        return pendingPlayableMatchConfig.getMatchTitle();
+    }
+
+    private void clearPendingPlayableMatchInMemory() {
+        pendingPlayableMatchConfig = null;
+        pendingPlayableMatchStartedAtMillis = 0L;
+    }
+
+    /**
+     * Builds the standard CampaignMatchConfig for a quick-play campaign match.
+     *
+     * This is the key bridge object for v06. Sim mode and playable mode should
+     * both start from the same config, which keeps deck construction, CPU pools,
+     * names, and difficulty rules from drifting apart.
+     */
+    public CampaignMatchConfig buildQuickMatchConfig(String matchDifficulty, boolean playable) {
+        String difficulty = normalizeMatchDifficulty(matchDifficulty);
+        String playerName = player == null ? "Player" : player.getName();
+        List<President> playerDeck = player == null
+                ? new ArrayList<President>()
+                : player.getActiveDeck();
+        List<President> cpuDeck = getCpuPresidentsForQuickMatch(difficulty);
+
+        CampaignMatchConfig config = CampaignMatchConfig.quickPlay(
+                playerName,
+                difficulty,
+                playerDeck,
+                cpuDeck
+        );
+        return config.withExecutionMode(playable
+                ? CampaignMatchConfig.EXECUTION_MODE_PLAYABLE
+                : CampaignMatchConfig.EXECUTION_MODE_SIMULATED);
+    }
+
+    /**
+     * Builds the CampaignMatchConfig for one specific tournament round.
+     *
+     * RunCampaignMode should pass the locked tournament-entry deck here. If the
+     * deck is null, CampaignMode falls back to the current best 10 era cards.
+     */
+    public CampaignMatchConfig buildTournamentRoundConfig(
+            CampaignTournament tournament, int roundNumber,
+            List<President> lockedTournamentDeck, boolean playable
+    ) {
+        if (tournament == null) {
+            throw new IllegalArgumentException("Tournament cannot be null.");
+        }
+
+        List<President> playerDeck = lockedTournamentDeck == null
+                ? getTournamentActiveDeck(tournament)
+                : new ArrayList<President>(lockedTournamentDeck);
+        List<President> cpuDeck = getPresidentsForTournament(tournament);
+        String playerName = player == null ? "Player" : player.getName();
+
+        CampaignMatchConfig config = CampaignMatchConfig.tournamentRound(
+                playerName,
+                tournament,
+                roundNumber,
+                playerDeck,
+                cpuDeck
+        );
+        return config.withExecutionMode(playable
+                ? CampaignMatchConfig.EXECUTION_MODE_PLAYABLE
+                : CampaignMatchConfig.EXECUTION_MODE_SIMULATED);
+    }
+
+    public List<President> getCpuPresidentsForQuickMatch(String matchDifficulty) {
+        String difficulty = normalizeMatchDifficulty(matchDifficulty);
+        List<President> cpuPresidents = CardData.getPresidents("full", null, getCpuMinRating(difficulty));
+        Collections.sort(cpuPresidents, presidentAverageComparator());
+        return cpuPresidents;
+    }
+
+    public String getCpuNameForDifficulty(String matchDifficulty) {
+        return normalizeMatchDifficulty(matchDifficulty) + " CPU";
+    }
+
+    /**
+     * Runs an AI-vs-AI simulation from the same CampaignMatchConfig that a
+     * playable match would use.
+     *
+     * This keeps v06 safe: the GUI can offer both Sim and Play, but both paths
+     * use the same player deck, CPU deck, difficulty, and match metadata.
+     */
+    public CampaignMatchResult simulateCampaignMatchConfig(CampaignMatchConfig config) {
+        if (config == null) {
+            return CampaignMatchResult.error(null, "Campaign match config was missing.");
+        }
+
+        String validationError = config.getValidationError();
+        if (validationError != null && !validationError.isEmpty()) {
+            System.out.println(validationError);
+            return CampaignMatchResult.error(config, validationError);
+        }
+
+        CampaignMatchConfig simulatedConfig = config.withExecutionMode(
+                CampaignMatchConfig.EXECUTION_MODE_SIMULATED
+        );
+
+        MatchResult result = simulateAIMatch(
+                simulatedConfig,
+                getPlayerDeckDescriptionForConfig(simulatedConfig),
+                getCpuDeckDescriptionForConfig(simulatedConfig),
+                calculateDeckStrength(simulatedConfig.getPlayerPresidentDeck())
+        );
+
+        String finalScoreText = "Final score: " + simulatedConfig.getPlayerName() + " "
+                + result.playerRoundsWon + " - " + simulatedConfig.getCpuName() + " "
+                + result.cpuRoundsWon;
+
+        return CampaignMatchResult.builder(simulatedConfig)
+                .resultType(CampaignMatchResult.RESULT_COMPLETED)
+                .playerWon(result.playerWon)
+                .playerRoundsWon(result.playerRoundsWon)
+                .cpuRoundsWon(result.cpuRoundsWon)
+                .finalScoreText(finalScoreText)
+                .message(result.playerWon ? "Campaign match won." : "Campaign match lost.")
+                .build();
+    }
+
+    /**
+     * Applies quick-play rewards from either a simulated result or a future
+     * playable result returned by RunElectionGameCombined.
+     */
+    public boolean applyQuickMatchResult(String matchDifficulty, CampaignMatchResult result) {
+        if (result == null) {
+            System.out.println("No campaign match result was returned.");
+            return false;
+        }
+        if (!result.shouldApplyCampaignResult()) {
+            System.out.println("Campaign match did not finish: " + result.getMessage());
+            clearPendingPlayableMatchInMemory();
+            autosaveCampaign();
+            return false;
+        }
+
+        String difficulty = normalizeMatchDifficulty(matchDifficulty);
+        if (result.getConfig() != null) {
+            difficulty = normalizeMatchDifficulty(result.getConfig().getDifficulty());
+        }
+
+        int reward;
+        if (result.wasResigned()) {
+            // Forfeits/interrupted playable matches count as losses, but do not
+            // pay the normal quick-match consolation reward.
+            reward = 0;
+        } else {
+            reward = result.didPlayerWin()
+                    ? getMatchWinRewardPC(difficulty)
+                    : getMatchLossRewardPC(difficulty);
+        }
+
+        player.recordMatch(result.didPlayerWin());
+        player.addPC(reward);
+
+        System.out.println();
+        if (result.didPlayerWin()) {
+            System.out.println("You won the " + difficulty + " campaign match!");
+        } else if (result.wasResigned()) {
+            System.out.println("You resigned the " + difficulty + " campaign match.");
+        } else {
+            System.out.println("You lost the " + difficulty + " campaign match.");
+        }
+
+        String finalScoreText = result.getFinalScoreText();
+        if (finalScoreText == null || finalScoreText.trim().isEmpty()) {
+            System.out.println("Final score: " + player.getName() + " "
+                    + result.getPlayerRoundsWon() + " - " + getCpuNameForDifficulty(difficulty)
+                    + " " + result.getCpuRoundsWon());
+        } else {
+            System.out.println(finalScoreText);
+        }
+        if (reward > 0) {
+            System.out.println("You earned " + formatPC(reward) + ".");
+        } else {
+            System.out.println("No Political Capital earned for a forfeit.");
+        }
+        System.out.println("Campaign record: " + player.getRecordSummary());
+        printStatus();
+        clearPendingPlayableMatchInMemory();
+        autosaveCampaign();
+        return result.didPlayerWin();
+    }
+
+    /**
+     * Applies one tournament-round result from either sim mode or playable mode.
+     */
+    public boolean applyTournamentRoundResult(
+            CampaignTournament tournament, int roundNumber, CampaignMatchResult result
+    ) {
+        if (tournament == null) {
+            System.out.println("That tournament does not exist.");
+            return false;
+        }
+        if (roundNumber < 1 || roundNumber > 3) {
+            System.out.println("Tournament round must be 1, 2, or 3.");
+            return false;
+        }
+        if (result == null) {
+            System.out.println("No tournament match result was returned.");
+            return false;
+        }
+        if (!result.shouldApplyCampaignResult()) {
+            System.out.println("Tournament match did not finish: " + result.getMessage());
+            clearPendingPlayableMatchInMemory();
+            autosaveCampaign();
+            return false;
+        }
+
+        String difficulty = tournament.getRoundDifficulty(roundNumber);
+        player.recordMatch(result.didPlayerWin());
+
+        System.out.println();
+        if (result.didPlayerWin()) {
+            int pcReward = tournament.getRoundWinPC(roundNumber);
+            player.addPC(pcReward);
+            System.out.println("You won Round " + roundNumber + " of "
+                    + tournament.getTournamentName() + "!");
+            printResultFinalScore(result, difficulty);
+            System.out.println("Round " + roundNumber + " reward: " + formatPC(pcReward)
+                    + " + " + tournament.getSouvenirPackName() + ".");
+
+            awardTournamentSouvenirPack(tournament);
+
+            if (roundNumber == 3) {
+                System.out.println("Tournament clear bonus: "
+                        + tournament.getChampionPackName() + ".");
+                awardTournamentChampionPack(tournament);
+                System.out.println("You cleared " + tournament.getTournamentName() + "!");
+            } else {
+                System.out.println("You advance to Round " + (roundNumber + 1) + ".");
+            }
+        } else {
+            if (result.wasResigned()) {
+                System.out.println("You resigned Round " + roundNumber + " of "
+                        + tournament.getTournamentName() + ".");
+            } else {
+                System.out.println("You lost Round " + roundNumber + " of "
+                        + tournament.getTournamentName() + ".");
+            }
+            printResultFinalScore(result, difficulty);
+            System.out.println("Tournament ended. No reward earned for this round.");
+        }
+
+        System.out.println("Campaign record: " + player.getRecordSummary());
+        printStatus();
+        clearPendingPlayableMatchInMemory();
+        autosaveCampaign();
+        return result.didPlayerWin();
+    }
+
+    private void printResultFinalScore(CampaignMatchResult result, String difficulty) {
+        String finalScoreText = result.getFinalScoreText();
+        if (finalScoreText == null || finalScoreText.trim().isEmpty()) {
+            System.out.println("Final score: " + player.getName() + " "
+                    + result.getPlayerRoundsWon() + " - " + difficulty + " CPU "
+                    + result.getCpuRoundsWon());
+        } else {
+            System.out.println(finalScoreText);
+        }
+    }
+
+    private String getPlayerDeckDescriptionForConfig(CampaignMatchConfig config) {
+        if (config != null && config.isTournamentMatch()) {
+            String eraName = config.getTournamentEraName().isEmpty()
+                    ? "era"
+                    : config.getTournamentEraName();
+            return "Player sim: Medium AI using tournament-entry " + eraName + " deck";
+        }
+        return "Player sim: Medium AI using Active Deck";
+    }
+
+    private String getCpuDeckDescriptionForConfig(CampaignMatchConfig config) {
+        if (config != null && config.isTournamentMatch()) {
+            String eraName = config.getTournamentEraName().isEmpty()
+                    ? "era"
+                    : config.getTournamentEraName();
+            return "CPU sim: " + config.getDifficulty() + " AI using full "
+                    + eraName + " card pool";
+        }
+        String difficulty = config == null ? "Medium" : normalizeMatchDifficulty(config.getDifficulty());
+        return "CPU sim: " + difficulty + " AI using " + getCpuDeckDescription(difficulty);
     }
 
     public static String getSaveFilePath() {
@@ -465,9 +821,7 @@ public class CampaignMode implements Runnable {
     }
 
     /**
-     * Plays one round of an era tournament. This is the GUI-friendly v5 hook:
-     * RunCampaignMode can show a tournament dashboard, then call this once for
-     * Round 1, Round 2, and Round 3 as the player advances.
+     * Plays one round of an era tournament through the v06 config/result bridge.
      *
      * The overload without a supplied deck auto-builds the current best 10-card
      * era deck. The overload with a supplied deck lets the GUI freeze the deck
@@ -512,7 +866,7 @@ public class CampaignMode implements Runnable {
             return false;
         }
 
-        if (cpuEraPool.size() < 5) {
+        if (cpuEraPool.size() < CampaignMatchConfig.DEFAULT_STARTING_HAND_SIZE) {
             System.out.println("Not enough eligible CPU cards exist for this tournament yet.");
             System.out.println("Eligible CPU cards found: " + cpuEraPool.size());
             return false;
@@ -524,64 +878,22 @@ public class CampaignMode implements Runnable {
         System.out.println("Tournament Deck Strength: "
                 + String.format("%.2f", calculateDeckStrength(usableTournamentDeck)));
 
-        MatchResult result = simulateAIMatch(
-                difficulty,
+        CampaignMatchConfig config = buildTournamentRoundConfig(
+                tournament,
+                roundNumber,
                 usableTournamentDeck,
-                cpuEraPool,
-                tournament.getTournamentName() + " Round " + roundNumber,
-                "Player sim: Medium AI using tournament-entry "
-                        + tournament.getEraName() + " deck",
-                "CPU sim: " + difficulty + " AI using full "
-                        + tournament.getEraName() + " card pool",
-                calculateDeckStrength(usableTournamentDeck)
+                false
         );
-
-        player.recordMatch(result.playerWon);
-
-        System.out.println();
-        if (result.playerWon) {
-            int pcReward = tournament.getRoundWinPC(roundNumber);
-            player.addPC(pcReward);
-            System.out.println("You won Round " + roundNumber + " of "
-                    + tournament.getTournamentName() + "!");
-            System.out.println("Final score: " + player.getName() + " "
-                    + result.playerRoundsWon + " - " + difficulty + " CPU "
-                    + result.cpuRoundsWon);
-            System.out.println("Round " + roundNumber + " reward: " + formatPC(pcReward)
-                    + " + " + tournament.getSouvenirPackName() + ".");
-
-            awardTournamentSouvenirPack(tournament);
-
-            if (roundNumber == 3) {
-                System.out.println("Tournament clear bonus: "
-                        + tournament.getChampionPackName() + ".");
-                awardTournamentChampionPack(tournament);
-                System.out.println("You cleared " + tournament.getTournamentName() + "!");
-            } else {
-                System.out.println("You advance to Round " + (roundNumber + 1) + ".");
-            }
-        } else {
-            System.out.println("You lost Round " + roundNumber + " of "
-                    + tournament.getTournamentName() + ".");
-            System.out.println("Final score: " + player.getName() + " "
-                    + result.playerRoundsWon + " - " + difficulty + " CPU "
-                    + result.cpuRoundsWon);
-            System.out.println("Tournament ended. No reward earned for this round.");
-        }
-
-        System.out.println("Campaign record: " + player.getRecordSummary());
-        printStatus();
-        autosaveCampaign();
-        return result.playerWon;
+        CampaignMatchResult result = simulateCampaignMatchConfig(config);
+        return applyTournamentRoundResult(tournament, roundNumber, result);
     }
 
     /**
-     * Plays a v5 era tournament: a single-elimination Easy/Medium/Hard gauntlet.
+     * Plays a full v5 era tournament in console/sim mode.
      *
-     * The player must own 10 cards from the tournament era. The player's best
-     * 10 owned era cards are auto-selected as the tournament deck. CPU opponents
-     * use the same era's full card pool, with the AI difficulty increasing each
-     * round. There are no rating filters in v5 tournament matches.
+     * The GUI uses playTournamentRound(...) directly so it can show a dashboard
+     * between rounds. This console helper now uses the same round-by-round bridge
+     * path, which keeps tournament rewards consistent with future playable mode.
      */
     public void playTournament(CampaignTournament tournament) {
         if (tournament == null) {
@@ -590,7 +902,6 @@ public class CampaignMode implements Runnable {
         }
 
         List<President> tournamentDeck = getTournamentActiveDeck(tournament);
-        List<President> cpuEraPool = getPresidentsForTournament(tournament);
 
         System.out.println();
         System.out.println("Entering " + tournament.getTournamentName());
@@ -606,12 +917,6 @@ public class CampaignMode implements Runnable {
             return;
         }
 
-        if (cpuEraPool.size() < 5) {
-            System.out.println("Not enough eligible CPU cards exist for this tournament yet.");
-            System.out.println("Eligible CPU cards found: " + cpuEraPool.size());
-            return;
-        }
-
         System.out.println("Tournament Deck:");
         for (President president : tournamentDeck) {
             System.out.println("  - " + president.toString() + " "
@@ -621,67 +926,18 @@ public class CampaignMode implements Runnable {
                 + String.format("%.2f", calculateDeckStrength(tournamentDeck)));
 
         int roundsWon = 0;
-        boolean eliminated = false;
-
-        for (int round = 1; round <= 3 && !eliminated; round++) {
-            String difficulty = tournament.getRoundDifficulty(round);
-            System.out.println();
-            System.out.println("=== " + tournament.getTournamentName()
-                    + " | Round " + round + " (" + difficulty + ") ===");
-
-            MatchResult result = simulateAIMatch(
-                    difficulty,
-                    tournamentDeck,
-                    cpuEraPool,
-                    tournament.getTournamentName() + " Round " + round,
-                    "Player sim: Medium AI using best 10 owned "
-                            + tournament.getEraName() + " cards",
-                    "CPU sim: " + difficulty + " AI using full "
-                            + tournament.getEraName() + " card pool",
-                    calculateDeckStrength(tournamentDeck)
-            );
-
-            player.recordMatch(result.playerWon);
-
-            System.out.println();
-            if (result.playerWon) {
-                roundsWon++;
-                int pcReward = tournament.getRoundWinPC(round);
-                player.addPC(pcReward);
-                System.out.println("You won Round " + round + " of "
-                        + tournament.getTournamentName() + "!");
-                System.out.println("Final score: " + player.getName() + " "
-                        + result.playerRoundsWon + " - " + difficulty + " CPU "
-                        + result.cpuRoundsWon);
-                System.out.println("Round " + round + " reward: " + formatPC(pcReward)
-                        + " + " + tournament.getSouvenirPackName() + ".");
-
-                awardTournamentSouvenirPack(tournament);
-
-                if (round == 3) {
-                    System.out.println("Tournament clear bonus: "
-                            + tournament.getChampionPackName() + ".");
-                    awardTournamentChampionPack(tournament);
-                    System.out.println("You cleared " + tournament.getTournamentName() + "!");
-                } else {
-                    System.out.println("You advance to Round " + (round + 1) + ".");
-                }
-            } else {
-                eliminated = true;
-                System.out.println("You lost Round " + round + " of "
-                        + tournament.getTournamentName() + ".");
-                System.out.println("Final score: " + player.getName() + " "
-                        + result.playerRoundsWon + " - " + difficulty + " CPU "
-                        + result.cpuRoundsWon);
-                System.out.println("Tournament ended. No reward earned for this round.");
+        for (int round = 1; round <= 3; round++) {
+            boolean wonRound = playTournamentRound(tournament, round, tournamentDeck);
+            if (!wonRound) {
+                break;
             }
+            roundsWon++;
         }
 
         System.out.println();
         System.out.println(tournament.getTournamentName() + " Result: " + roundsWon + "/3 rounds won.");
         System.out.println("Campaign record: " + player.getRecordSummary());
         printStatus();
-        autosaveCampaign();
     }
 
     private void awardTournamentSouvenirPack(CampaignTournament tournament) {
@@ -752,59 +1008,40 @@ public class CampaignMode implements Runnable {
             return;
         }
 
-        MatchResult result = simulateAIMatch(difficulty);
-        int reward = result.playerWon
-                ? getMatchWinRewardPC(difficulty)
-                : getMatchLossRewardPC(difficulty);
-        player.recordMatch(result.playerWon);
-        player.addPC(reward);
-
-        System.out.println();
-        if (result.playerWon) {
-            System.out.println("You won the " + difficulty + " AI-simulated match!");
-        } else {
-            System.out.println("You lost the " + difficulty + " AI-simulated match.");
-        }
-
-        System.out.println("Final score: " + player.getName() + " " + result.playerRoundsWon
-                + " - " + difficulty + " CPU " + result.cpuRoundsWon);
-        System.out.println("You earned " + formatPC(reward) + ".");
-        System.out.println("Campaign record: " + player.getRecordSummary());
-        printStatus();
-        autosaveCampaign();
+        CampaignMatchConfig config = buildQuickMatchConfig(difficulty, false);
+        CampaignMatchResult result = simulateCampaignMatchConfig(config);
+        applyQuickMatchResult(difficulty, result);
     }
 
     /**
      * Runs the actual ElectionGame model with AI-vs-AI decisions.
+     *
+     * Backward-compatible helper retained for older console/debug callers. New
+     * v06 code should prefer simulateCampaignMatchConfig(...).
      */
     private MatchResult simulateAIMatch(String difficulty) {
-        return simulateAIMatch(
-                difficulty,
-                player.getActiveDeck(),
-                CardData.getPresidents("full", null, getCpuMinRating(difficulty)),
-                difficulty + " Campaign Match",
-                "Player sim: Medium AI using Active Deck",
-                "CPU sim: " + difficulty + " AI using " + getCpuDeckDescription(difficulty),
-                player.getActiveDeckStrength()
+        CampaignMatchConfig config = buildQuickMatchConfig(difficulty, false);
+        CampaignMatchResult result = simulateCampaignMatchConfig(config);
+        return new MatchResult(
+                result.didPlayerWin(),
+                result.getPlayerRoundsWon(),
+                result.getCpuRoundsWon()
         );
     }
 
     /**
-     * Shared AI-vs-AI match runner used by both normal campaign matches and era
-     * tournaments. Normal matches pass the player's active deck and the global
-     * CPU pool. Era tournaments pass a temporary era-restricted player deck and
-     * an era-restricted CPU pool.
+     * Shared AI-vs-AI runner for configs. This mirrors the future playable path:
+     * exact President decks come from CampaignMatchConfig, then ElectionGame does
+     * the normal best-of-five match work.
      */
     private MatchResult simulateAIMatch(
-            String difficulty, List<President> playerPresidents,
-            List<President> cpuPresidents, String matchLabel,
-            String playerDeckDescription, String cpuDeckDescription,
-            double displayedDeckStrength
+            CampaignMatchConfig config, String playerDeckDescription,
+            String cpuDeckDescription, double displayedDeckStrength
     ) {
+        String difficulty = normalizeMatchDifficulty(config.getDifficulty());
+
         ElectionGame match = new ElectionGame();
-        match.reset("full", null, 0.0, 5);
-        match.namePlayer(player.getName());
-        match.namePlayer2(difficulty + " CPU");
+        match.resetForCampaignMatch(config);
         match.setAIDifficulty(difficulty);
 
         AI playerAI = (AI) match.getPlayer1();
@@ -812,17 +1049,12 @@ public class CampaignMode implements Runnable {
         playerAI.setDifficulty(PLAYER_SIM_AI_DIFFICULTY);
         cpuAI.setDifficulty(getCpuAIDifficulty(difficulty));
 
-        Deck playerPresidentDeck = buildPresidentDeck(playerPresidents);
-        Deck cpuPresidentDeck = buildPresidentDeck(cpuPresidents);
-        Deck policyDeck = buildPolicyDeck();
-
-        playerAI.reset();
-        cpuAI.reset();
-        playerAI.drawInit(playerPresidentDeck, policyDeck, 5);
-        cpuAI.drawInit(cpuPresidentDeck, policyDeck, 5);
+        Deck playerPresidentDeck = match.getPlayer1PresidentDeck();
+        Deck cpuPresidentDeck = match.getPlayer2PresidentDeck();
+        Deck policyDeck = match.getPol();
 
         System.out.println();
-        System.out.println("Simulating " + matchLabel);
+        System.out.println("Simulating " + config.getMatchTitle());
         System.out.println("  " + playerDeckDescription);
         System.out.println("  " + cpuDeckDescription);
         System.out.println("Deck Strength: " + String.format("%.2f", displayedDeckStrength));
@@ -1038,6 +1270,7 @@ public class CampaignMode implements Runnable {
             writer.write("CARDS=");
             writeCardCsvRow(writer, player.getPresidentCollection());
             writer.newLine();
+            writePendingPlayableMatchFields(writer);
 
             if (printMessage) {
                 System.out.println("Campaign saved to " + SAVE_FILE_PATH + ".");
@@ -1075,6 +1308,33 @@ public class CampaignMode implements Runnable {
         }
     }
 
+    private void writePendingPlayableMatchFields(BufferedWriter writer) throws IOException {
+        if (pendingPlayableMatchConfig == null) {
+            writer.write("PENDING_PLAYABLE_MATCH=false");
+            writer.newLine();
+            return;
+        }
+
+        writer.write("PENDING_PLAYABLE_MATCH=true");
+        writer.newLine();
+        writer.write("PENDING_MATCH_ID=" + pendingPlayableMatchConfig.getMatchId());
+        writer.newLine();
+        writer.write("PENDING_MATCH_TITLE=" + pendingPlayableMatchConfig.getMatchTitle());
+        writer.newLine();
+        writer.write("PENDING_MATCH_TYPE=" + pendingPlayableMatchConfig.getMatchType());
+        writer.newLine();
+        writer.write("PENDING_DIFFICULTY=" + pendingPlayableMatchConfig.getDifficulty());
+        writer.newLine();
+        writer.write("PENDING_TOURNAMENT_ID=" + pendingPlayableMatchConfig.getTournamentId());
+        writer.newLine();
+        writer.write("PENDING_TOURNAMENT_NAME=" + pendingPlayableMatchConfig.getTournamentName());
+        writer.newLine();
+        writer.write("PENDING_TOURNAMENT_ROUND=" + pendingPlayableMatchConfig.getTournamentRound());
+        writer.newLine();
+        writer.write("PENDING_STARTED_AT=" + pendingPlayableMatchStartedAtMillis);
+        writer.newLine();
+    }
+
     /**
      * Loads campaign progress from the save file, if one exists.
      */
@@ -1090,7 +1350,7 @@ public class CampaignMode implements Runnable {
             reader = new BufferedReader(new FileReader(saveFile));
             String version = reader.readLine();
 
-            if (SAVE_VERSION.equals(version)) {
+            if (SAVE_VERSION.equals(version) || SAVE_VERSION_V2.equals(version)) {
                 return loadCurrentSaveFormat(reader);
             } else if (SAVE_VERSION_V1.equals(version)) {
                 return loadLegacyV1SaveFormat(reader);
@@ -1134,7 +1394,66 @@ public class CampaignMode implements Runnable {
         int savedLosses = parseNonNegativeInt(fields.containsKey("LOSSES") ? fields.get("LOSSES") : "0", "LOSSES");
         String cardCsvRow = fields.containsKey("CARDS") ? fields.get("CARDS") : "";
 
-        return applyLoadedCampaign(savedName, savedPC, savedWins, savedLosses, cardCsvRow, false);
+        boolean loaded = applyLoadedCampaign(savedName, savedPC, savedWins, savedLosses, cardCsvRow, false);
+        if (loaded) {
+            applyAbandonedPendingPlayableMatchIfNeeded(fields);
+        }
+        return loaded;
+    }
+
+    private void applyAbandonedPendingPlayableMatchIfNeeded(Map<String, String> fields) {
+        if (fields == null || !parseSaveBoolean(fields.get("PENDING_PLAYABLE_MATCH"))) {
+            clearPendingPlayableMatchInMemory();
+            return;
+        }
+
+        String matchTitle = cleanSaveField(fields.get("PENDING_MATCH_TITLE"), "Playable Campaign Match");
+        String matchType = cleanSaveField(fields.get("PENDING_MATCH_TYPE"), "");
+        String difficulty = normalizeMatchDifficulty(fields.get("PENDING_DIFFICULTY"));
+        String tournamentName = cleanSaveField(fields.get("PENDING_TOURNAMENT_NAME"), "Era Tournament");
+        int roundNumber = parseOptionalPositiveInt(fields.get("PENDING_TOURNAMENT_ROUND"), 0);
+
+        System.out.println();
+        System.out.println("Previous playable match was abandoned: " + matchTitle + ".");
+        System.out.println("It has been counted as a forfeit loss with no reward.");
+
+        player.recordMatch(false);
+
+        if (CampaignMatchConfig.MATCH_TYPE_TOURNAMENT.equals(matchType)) {
+            System.out.println("Tournament result: " + tournamentName
+                    + (roundNumber > 0 ? " Round " + roundNumber : "")
+                    + " ended by forfeit. No tournament reward earned.");
+        } else {
+            System.out.println("Quick match result: " + difficulty
+                    + " campaign match forfeited. No Political Capital earned.");
+        }
+
+        clearPendingPlayableMatchInMemory();
+        printStatus();
+        autosaveCampaign();
+    }
+
+    private boolean parseSaveBoolean(String text) {
+        return text != null && text.trim().equalsIgnoreCase("true");
+    }
+
+    private int parseOptionalPositiveInt(String text, int defaultValue) {
+        if (text == null || text.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            int value = Integer.parseInt(text.trim());
+            return value < 0 ? defaultValue : value;
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private String cleanSaveField(String text, String defaultValue) {
+        if (text == null || text.trim().isEmpty()) {
+            return defaultValue;
+        }
+        return text.trim();
     }
 
     private boolean loadLegacyV1SaveFormat(BufferedReader reader) throws IOException {

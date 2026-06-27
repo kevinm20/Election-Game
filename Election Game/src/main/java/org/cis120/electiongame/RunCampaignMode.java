@@ -36,6 +36,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -50,13 +51,15 @@ import javax.swing.border.EmptyBorder;
 /**
  * Barebones Swing UI for Campaign Mode.
  *
- * This is still intentionally simple for v5.3: card-image active deck,
+ * This is still intentionally simple for v6.8: card-image active deck,
  * collection/store screens, central pack-result displays, dashboard match
  * difficulty choices, cached collection image loading, era tournaments, and a
- * filterable owned/missing collection browser are included, but no playable
- * match bridge yet. It wraps
- * the CampaignMode engine in a Swing dashboard and uses the same CustomDialog
- * style as the main game for menus, confirmations, and short messages.
+ * filterable owned/missing collection browser are included. It also has
+ * a Sim / Play toggle so Campaign Mode can either use the existing simulation
+ * path or launch a playable match through CampaignMatchLauncher when a host
+ * game shell provides one. v6.8 adds window choreography: when a playable
+ * campaign match launches, this Campaign Mode window hides, and it returns to
+ * the front after the playable match reports its result.
  */
 public class RunCampaignMode implements Runnable {
 
@@ -105,6 +108,21 @@ public class RunCampaignMode implements Runnable {
 
     private CampaignTournament activeTournament;
     private List<President> activeTournamentDeck;
+
+    private CampaignMatchLauncher campaignMatchLauncher;
+    private boolean playableMatchMode = false;
+
+    public RunCampaignMode() {
+        this(null);
+    }
+
+    public RunCampaignMode(CampaignMatchLauncher campaignMatchLauncher) {
+        this.campaignMatchLauncher = campaignMatchLauncher;
+    }
+
+    public void setCampaignMatchLauncher(CampaignMatchLauncher campaignMatchLauncher) {
+        this.campaignMatchLauncher = campaignMatchLauncher;
+    }
 
     @Override
     public void run() {
@@ -302,7 +320,7 @@ public class RunCampaignMode implements Runnable {
         buttonPanel.setOpaque(false);
         buttonPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-        JButton playMatchButton = makeButton("Play Sim Match");
+        JButton playMatchButton = makeButton("Play Match");
         playMatchButton.addActionListener(e -> displayMatchOptionsDashboard());
 
         JButton tournamentsButton = makeButton("Tournaments");
@@ -450,13 +468,24 @@ public class RunCampaignMode implements Runnable {
         wrapper.setBorder(new EmptyBorder(30, 30, 30, 30));
 
         JLabel intro = new JLabel(
-                "<html><center>Pick a simulated campaign match. "
-                        + "Your active deck is piloted by Medium AI; the CPU gets stronger decks and better AI at higher difficulties.</center></html>",
+                "<html><center>Pick a campaign match. "
+                        + "Sim mode keeps using the existing AI-vs-AI engine; Play mode launches "
+                        + "the real Campaign Clash board with your active deck.</center></html>",
                 SwingConstants.CENTER
         );
         intro.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
         intro.setForeground(new Color(35, 35, 35));
-        wrapper.add(intro, BorderLayout.NORTH);
+
+        JPanel topPanel = new JPanel(new BorderLayout(8, 8));
+        topPanel.setOpaque(false);
+        topPanel.add(intro, BorderLayout.CENTER);
+        topPanel.add(buildMatchModePanel(new Runnable() {
+            @Override
+            public void run() {
+                displayMatchOptionsDashboard();
+            }
+        }), BorderLayout.SOUTH);
+        wrapper.add(topPanel, BorderLayout.NORTH);
 
         JPanel choices = new JPanel(new GridLayout(1, 3, 24, 24));
         choices.setOpaque(false);
@@ -491,11 +520,56 @@ public class RunCampaignMode implements Runnable {
         details.setForeground(new Color(20, 35, 65));
         panel.add(details, BorderLayout.CENTER);
 
-        JButton playButton = makeDashboardButton("Play " + difficulty);
-        playButton.addActionListener(e -> playSimulatedMatchFromUI(difficulty));
+        JButton playButton = makeDashboardButton(getMatchActionVerb() + " " + difficulty);
+        playButton.addActionListener(e -> playCampaignMatchFromUI(difficulty));
         panel.add(playButton, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    private JPanel buildMatchModePanel(final Runnable refreshAfterChange) {
+        JPanel modePanel = new JPanel(new BorderLayout(8, 4));
+        modePanel.setOpaque(false);
+        modePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 190, 145), 1),
+                new EmptyBorder(8, 10, 8, 10)
+        ));
+
+        String modeText = shouldUsePlayableMatches()
+                ? "Current Mode: Playable matches"
+                : "Current Mode: Simulated matches";
+        JLabel modeLabel = new JLabel(modeText, SwingConstants.CENTER);
+        modeLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        modeLabel.setForeground(new Color(20, 35, 65));
+
+        JCheckBox playableToggle = new JCheckBox("Play matches manually through the Campaign Clash board");
+        playableToggle.setOpaque(false);
+        playableToggle.setHorizontalAlignment(SwingConstants.CENTER);
+        playableToggle.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
+        playableToggle.setForeground(new Color(35, 35, 35));
+        playableToggle.setSelected(playableMatchMode && campaignMatchLauncher != null);
+        playableToggle.setEnabled(campaignMatchLauncher != null);
+        if (campaignMatchLauncher == null) {
+            playableToggle.setText("Play matches manually through the Campaign Clash board (available from main game shell)");
+        }
+        playableToggle.addActionListener(e -> {
+            playableMatchMode = playableToggle.isSelected();
+            if (refreshAfterChange != null) {
+                refreshAfterChange.run();
+            }
+        });
+
+        modePanel.add(modeLabel, BorderLayout.NORTH);
+        modePanel.add(playableToggle, BorderLayout.CENTER);
+        return modePanel;
+    }
+
+    private boolean shouldUsePlayableMatches() {
+        return playableMatchMode && campaignMatchLauncher != null;
+    }
+
+    private String getMatchActionVerb() {
+        return shouldUsePlayableMatches() ? "Play" : "Sim";
     }
 
     private JButton makeDashboardButton(String text) {
@@ -520,6 +594,137 @@ public class RunCampaignMode implements Runnable {
 
         button.addActionListener(e -> playButtonSound());
         return button;
+    }
+
+    private void hideCampaignWindowForPlayableMatch() {
+        if (frame == null) {
+            return;
+        }
+
+        frame.setVisible(false);
+    }
+
+    private void restoreCampaignWindowAfterPlayableMatch() {
+        if (frame == null) {
+            return;
+        }
+
+        if (!frame.isVisible()) {
+            frame.setVisible(true);
+        }
+
+        applyFullScreenSizing();
+        frame.toFront();
+        frame.requestFocus();
+        frame.requestFocusInWindow();
+    }
+
+    private void showPlayableLaunchFailure(String title, String message, Runnable fallback) {
+        restoreCampaignWindowAfterPlayableMatch();
+        setActionButtonsEnabled(true);
+        showShortDialog(title, message, true);
+        if (fallback != null) {
+            fallback.run();
+        }
+    }
+
+    private void playCampaignMatchFromUI(String difficulty) {
+        if (shouldUsePlayableMatches()) {
+            playPlayableMatchFromUI(difficulty);
+        } else {
+            playSimulatedMatchFromUI(difficulty);
+        }
+    }
+
+    private void playPlayableMatchFromUI(final String difficulty) {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (campaignMatchLauncher == null) {
+            showShortDialog(
+                    "Playable Match Unavailable",
+                    "Playable matches require Campaign Mode to be launched from the main Campaign Clash shell.\n"
+                            + "Use Sim mode for now, or launch Campaign Mode from the home screen once v6.5 is installed.",
+                    true
+            );
+            return;
+        }
+
+        CampaignPlayer player = campaign.getPlayer();
+        if (player.getActiveDeckSize() < player.getActiveDeckMaxSize()) {
+            showShortDialog(
+                    "Active Deck Not Ready",
+                    "Your active deck needs " + player.getActiveDeckMaxSize()
+                            + " Presidents before you can play a match.\nCurrent active deck: "
+                            + player.getActiveDeckSize() + "/" + player.getActiveDeckMaxSize()
+                            + "\nOpen more packs first.",
+                    true
+            );
+            return;
+        }
+
+        final CampaignMatchConfig config = campaign.buildQuickMatchConfig(difficulty, true);
+        String validationError = config.getValidationError();
+        if (validationError != null && !validationError.isEmpty()) {
+            showShortDialog("Playable Match Error", validationError, true);
+            return;
+        }
+
+        setActionButtonsEnabled(false);
+
+        OperationResult pendingResult = captureBooleanOutput(() -> campaign.beginPendingPlayableMatch(config));
+        appendLog(pendingResult.output);
+        if (!pendingResult.success) {
+            setActionButtonsEnabled(true);
+            displayMatchOptionsDashboard();
+            showShortDialog(
+                    "Playable Match Error",
+                    "Could not save the pending playable match. The match was not launched.",
+                    true
+            );
+            return;
+        }
+
+        appendLog("\nLaunching playable " + difficulty + " campaign match...\n");
+        displayPlayableMatchInProgress(config);
+        hideCampaignWindowForPlayableMatch();
+
+        try {
+            campaignMatchLauncher.launchCampaignMatch(config, new CampaignMatchCallback() {
+                @Override
+                public void onCampaignMatchComplete(final CampaignMatchResult result) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            restoreCampaignWindowAfterPlayableMatch();
+                            handlePlayableQuickMatchResult(difficulty, result);
+                        }
+                    });
+                }
+            });
+        } catch (Exception ex) {
+            OperationResult clearResult = captureBooleanOutput(() -> campaign.clearPendingPlayableMatch());
+            appendLog(clearResult.output);
+            showPlayableLaunchFailure(
+                    "Playable Match Error",
+                    "Could not launch playable match:\n" + ex.getMessage(),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            displayMatchOptionsDashboard();
+                        }
+                    }
+            );
+        }
+    }
+
+    private void handlePlayableQuickMatchResult(String difficulty, CampaignMatchResult result) {
+        OperationResult applyResult = captureBooleanOutput(() -> campaign.applyQuickMatchResult(difficulty, result));
+        appendLog(applyResult.output);
+        refreshDashboard();
+        displayMatchResult(difficulty, applyResult.output);
+        setActionButtonsEnabled(true);
     }
 
     private void playSimulatedMatchFromUI(String difficulty) {
@@ -566,6 +771,26 @@ public class RunCampaignMode implements Runnable {
             }
         };
         worker.execute();
+    }
+
+    private void displayPlayableMatchInProgress(CampaignMatchConfig config) {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        String title = config == null ? "Playable Match" : config.getMatchTitle();
+        displayTitleLabel.setText(title);
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+        displayPanel.add(makeCenteredDisplayMessage(
+                "Launching playable match...\nFinish the match on the Campaign Clash board to return here."
+        ), BorderLayout.CENTER);
+        updateDisplayPanel();
     }
 
     private void displayMatchInProgress(String difficulty) {
@@ -764,13 +989,22 @@ public class RunCampaignMode implements Runnable {
         );
         details.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
         details.setForeground(new Color(20, 35, 65));
-        wrapper.add(details, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout(8, 8));
+        topPanel.setOpaque(false);
+        topPanel.add(details, BorderLayout.CENTER);
+        topPanel.add(buildMatchModePanel(new Runnable() {
+            @Override
+            public void run() {
+                displayTournamentRunDashboard(tournament, nextRound);
+            }
+        }), BorderLayout.SOUTH);
+        wrapper.add(topPanel, BorderLayout.NORTH);
 
         wrapper.add(buildActiveTournamentDeckPanel(), BorderLayout.CENTER);
 
         JPanel buttons = new JPanel(new GridLayout(1, 2, 18, 0));
         buttons.setOpaque(false);
-        JButton playButton = makeDashboardButton("Play Round " + nextRound);
+        JButton playButton = makeDashboardButton(getMatchActionVerb() + " Round " + nextRound);
         playButton.addActionListener(e -> playTournamentRoundFromUI(tournament, nextRound));
         JButton backButton = makeDashboardButton("Back to Tournaments");
         backButton.addActionListener(e -> displayTournamentsDashboard());
@@ -882,6 +1116,117 @@ public class RunCampaignMode implements Runnable {
 
 
     private void playTournamentRoundFromUI(CampaignTournament tournament, int roundNumber) {
+        if (shouldUsePlayableMatches()) {
+            playPlayableTournamentRoundFromUI(tournament, roundNumber);
+        } else {
+            playSimulatedTournamentRoundFromUI(tournament, roundNumber);
+        }
+    }
+
+    private void playPlayableTournamentRoundFromUI(final CampaignTournament tournament, final int roundNumber) {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (campaignMatchLauncher == null) {
+            showShortDialog(
+                    "Playable Match Unavailable",
+                    "Playable tournament rounds require Campaign Mode to be launched from the main Campaign Clash shell.\n"
+                            + "Use Sim mode for now, or launch Campaign Mode from the home screen once v6.5 is installed.",
+                    true
+            );
+            return;
+        }
+        if (tournament == null) {
+            showShortDialog("Tournament Error", "That tournament does not exist.", true);
+            return;
+        }
+        if (!campaign.canEnterTournament(tournament)) {
+            showShortDialog("Tournament Locked", campaign.getTournamentEligibilityText(tournament), true);
+            return;
+        }
+        if (activeTournament == null || !activeTournament.equals(tournament)
+                || activeTournamentDeck == null || activeTournamentDeck.isEmpty()) {
+            activeTournament = tournament;
+            activeTournamentDeck = campaign.getTournamentActiveDeck(tournament);
+        }
+
+        final CampaignMatchConfig config;
+        try {
+            config = campaign.buildTournamentRoundConfig(tournament, roundNumber, activeTournamentDeck, true);
+        } catch (Exception ex) {
+            showShortDialog("Tournament Error", "Could not build playable round:\n" + ex.getMessage(), true);
+            return;
+        }
+
+        String validationError = config.getValidationError();
+        if (validationError != null && !validationError.isEmpty()) {
+            showShortDialog("Playable Round Error", validationError, true);
+            return;
+        }
+
+        setActionButtonsEnabled(false);
+
+        OperationResult pendingResult = captureBooleanOutput(() -> campaign.beginPendingPlayableMatch(config));
+        appendLog(pendingResult.output);
+        if (!pendingResult.success) {
+            setActionButtonsEnabled(true);
+            displayTournamentRunDashboard(tournament, roundNumber);
+            showShortDialog(
+                    "Playable Round Error",
+                    "Could not save the pending playable round. The round was not launched.",
+                    true
+            );
+            return;
+        }
+
+        appendLog("\nLaunching playable " + tournament.getTournamentName()
+                + " Round " + roundNumber + "...\n");
+        displayPlayableTournamentRoundInProgress(config);
+        hideCampaignWindowForPlayableMatch();
+
+        try {
+            campaignMatchLauncher.launchCampaignMatch(config, new CampaignMatchCallback() {
+                @Override
+                public void onCampaignMatchComplete(final CampaignMatchResult result) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            restoreCampaignWindowAfterPlayableMatch();
+                            handlePlayableTournamentRoundResult(tournament, roundNumber, result);
+                        }
+                    });
+                }
+            });
+        } catch (Exception ex) {
+            OperationResult clearResult = captureBooleanOutput(() -> campaign.clearPendingPlayableMatch());
+            appendLog(clearResult.output);
+            showPlayableLaunchFailure(
+                    "Playable Round Error",
+                    "Could not launch playable round:\n" + ex.getMessage(),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            displayTournamentRunDashboard(tournament, roundNumber);
+                        }
+                    }
+            );
+        }
+    }
+
+    private void handlePlayableTournamentRoundResult(
+            CampaignTournament tournament, int roundNumber, CampaignMatchResult result
+    ) {
+        OperationResult applyResult = captureBooleanOutput(
+                () -> campaign.applyTournamentRoundResult(tournament, roundNumber, result)
+        );
+        appendLog(applyResult.output);
+        refreshDashboard();
+        displayTournamentRoundResult(tournament, roundNumber, applyResult.output, applyResult.success);
+        setActionButtonsEnabled(true);
+    }
+
+    private void playSimulatedTournamentRoundFromUI(CampaignTournament tournament, int roundNumber) {
         if (campaign == null || campaign.getPlayer() == null) {
             showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
             return;
@@ -901,7 +1246,7 @@ public class RunCampaignMode implements Runnable {
         }
 
         setActionButtonsEnabled(false);
-        appendLog("\nPlaying " + tournament.getTournamentName() + " Round " + roundNumber + "...\n");
+        appendLog("\nSimulating " + tournament.getTournamentName() + " Round " + roundNumber + "...\n");
         displayTournamentRoundInProgress(tournament, roundNumber);
 
         SwingWorker<OperationResult, Void> worker = new SwingWorker<OperationResult, Void>() {
@@ -927,6 +1272,26 @@ public class RunCampaignMode implements Runnable {
             }
         };
         worker.execute();
+    }
+
+    private void displayPlayableTournamentRoundInProgress(CampaignMatchConfig config) {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        String title = config == null ? "Playable Tournament Round" : config.getMatchTitle();
+        displayTitleLabel.setText(title);
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+        displayPanel.add(makeCenteredDisplayMessage(
+                "Launching playable tournament round...\nFinish the match on the Campaign Clash board to return here."
+        ), BorderLayout.CENTER);
+        updateDisplayPanel();
     }
 
     private void displayTournamentRoundInProgress(CampaignTournament tournament, int roundNumber) {
@@ -1889,7 +2254,8 @@ public class RunCampaignMode implements Runnable {
     }
 
     private JLabel makeCenteredDisplayMessage(String message) {
-        JLabel label = new JLabel(message, SwingConstants.CENTER);
+        String safeMessage = escapeHtml(message == null ? "" : message).replace("\n", "<br>");
+        JLabel label = new JLabel("<html><center>" + safeMessage + "</center></html>", SwingConstants.CENTER);
         label.setFont(new Font("Dialog", Font.BOLD, Math.max(18, (int) (22 * (cardSize / 275.0)))));
         label.setForeground(new Color(90, 80, 65));
         return label;

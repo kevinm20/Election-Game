@@ -44,9 +44,24 @@ import javax.swing.border.LineBorder;
 
 
 /**
- * This class sets up the top-level frame and widgets for the GUI.
+ * This class sets up the top-level frame and widgets for the GUI. v6.6 hardens Campaign Mode playable-match containment.
  */
-public class RunElectionGameCombined implements Runnable {
+public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher {
+
+    private JFrame frame;
+    private BackgroundPanel loadingScreen;
+    private JPanel loadingButtonPanel;
+    private GridBagConstraints loadingButtonConstraints;
+    private BackgroundPanel aiCardsPanel;
+    private JScrollPane userPoliciesScrollPane;
+    private BackgroundPanel controlPanel;
+    private JLabel statusLabel;
+
+    private boolean activeCampaignMatchMode = false;
+    private boolean activeCampaignMatchResultSent = false;
+    private CampaignMatchConfig activeCampaignMatchConfig = null;
+    private CampaignMatchCallback activeCampaignMatchCallback = null;
+    private SoundtrackPlayer soundtrackPlayer = null;
 
 	private ElectionGame election = new ElectionGame();
 	private boolean starting = true;
@@ -137,7 +152,7 @@ public class RunElectionGameCombined implements Runnable {
 		long startTime = System.nanoTime();
 
 		// Top-level frame in which game components live
-	    final JFrame frame = new JFrame("Campaign Clash");
+	    frame = new JFrame("Campaign Clash");
 	    
 	    // Get the screen size
 	    Dimension fullScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -155,7 +170,7 @@ public class RunElectionGameCombined implements Runnable {
 	    */
 
 	    // Create a loading screen panel with the desired background image
-	    BackgroundPanel loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
+	    loadingScreen = new BackgroundPanel(prefix + "files/loadingscreen.PNG");
 
 	    // Set up the layout and add the loading screen to the frame
 	    frame.setLayout(new BorderLayout());
@@ -208,6 +223,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	 	// Create the SoundtrackPlayer instance
 	 		SoundtrackPlayer player = new SoundtrackPlayer(tracks);
+	 		soundtrackPlayer = player;
 	 		keyboardPlayer = player;
 
 	 		// Separate thread to manage playback when not muted
@@ -259,11 +275,12 @@ public class RunElectionGameCombined implements Runnable {
 
 	    // Create a panel for buttons and set its layout
 	    JPanel buttonPanel = new JPanel();
+        loadingButtonPanel = buttonPanel;
 	    buttonPanel.setOpaque(false); // Make the button panel transparent
-	    buttonPanel.setLayout(new GridLayout(4, 1, 0, (int) (cardSize / 275.0 * 80))); // 4 rows, 1 column, 20px horizontal and vertical gaps
+	    buttonPanel.setLayout(new GridLayout(5, 1, 0, (int) (cardSize / 275.0 * 55))); // 5 rows, 1 column; tighter gap now that Campaign Mode is on the home screen
 
 	    // Define the button titles
-	    String[] buttonTitles = {"Continue", "Edit Account", "1-Player", "2-Players"};
+	    String[] buttonTitles = {"Continue", "Edit Account", "1-Player", "2-Players", "Campaign Mode"};
 	    JButton[] buttons = new JButton[buttonTitles.length];
 
 	    // Define the preferred size for the buttons
@@ -338,7 +355,8 @@ public class RunElectionGameCombined implements Runnable {
 	    // Add the button panel to the loading screen (centered on the screen)
 	    loadingScreen.setLayout(new GridBagLayout());
 	    GridBagConstraints buttonConstraints = new GridBagConstraints();
-	    buttonConstraints.insets = new Insets(0, 0, (int) (cardSize / 275.0 * 150), 0); // Adds some vertical spacing at the bottom
+        loadingButtonConstraints = buttonConstraints;
+	    buttonConstraints.insets = new Insets(0, 0, (int) (cardSize / 275.0 * 90), 0); // Adds vertical spacing at the bottom
 	    buttonConstraints.anchor = GridBagConstraints.SOUTH; // Anchor the buttons to the bottom of the screen
 	    buttonConstraints.weighty = 1.0; // Push the buttons down by using weight
 
@@ -360,7 +378,13 @@ public class RunElectionGameCombined implements Runnable {
 	        // For non-macOS systems (e.g., Windows), use the regular full-screen method
 	        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 	    }
-	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	    frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+	    frame.addWindowListener(new WindowAdapter() {
+	        @Override
+	        public void windowClosing(WindowEvent e) {
+	            handleMainFrameWindowClosing();
+	        }
+	    });
 	    frame.setVisible(true);
 	    frame.requestFocus();
 
@@ -407,6 +431,7 @@ public class RunElectionGameCombined implements Runnable {
 
 	    JScrollPane userPolicies = new JScrollPane(up, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
 	            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        userPoliciesScrollPane = userPolicies;
 	    userPolicies.getHorizontalScrollBar().setUnitIncrement(100);
 
 	    // Set the background color to brown
@@ -437,6 +462,7 @@ public class RunElectionGameCombined implements Runnable {
 		double aiCardStartYRatio = 0.0; // Start cropping from the very top of the image
 
 		BackgroundPanel ai_cards = new BackgroundPanel(prefix + "files/backgroundfull.PNG", aiCardHeightRatio, aiCardStartYRatio, aiCardWidthRatio, aiCardStartXRatio);
+        aiCardsPanel = ai_cards;
 		frame.add(ai_cards, BorderLayout.NORTH);
 
 		for (int i = 0; i < 5; i++) {
@@ -475,6 +501,7 @@ public class RunElectionGameCombined implements Runnable {
 
 		// Create the status JLabel for displaying the score
 		final JLabel status = new JLabel("<html><body>" + election.p1Score() + "<br><br>" + election.p2Score() + "</body></html>", SwingConstants.CENTER);
+        statusLabel = status;
 
 		// Set up the status label (font, color, alignment)
 		status.setFont(new Font("Dialog", Font.BOLD, (int)(cardSize/275.0*20))); // Set font size and style
@@ -514,6 +541,7 @@ public class RunElectionGameCombined implements Runnable {
 		    controlPanelWidthRatio, 
 		    controlPanelStartXRatio
 		);
+        controlPanel = control_panel;
 		
 		control_panel.setLayout(new GridBagLayout()); // Set layout after initializing the panel
 		
@@ -563,6 +591,9 @@ public class RunElectionGameCombined implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				// Play the button click sound
 		        player.playSoundEffect(prefix + "files/playbutton.MP3");
+		        if (activeCampaignMatchResultSent) {
+		            return;
+		        }
 		        board.unzoom();
 		        clearKeyboardSelection();
 		        
@@ -582,12 +613,12 @@ public class RunElectionGameCombined implements Runnable {
 					if (!twoplayermode) {
 						// election.printGameState();
 
-						election.getPlayer1().draw(election.getPres());
+						election.getPlayer1().draw(election.getPlayer1PresidentDeck());
 						election.getPlayer1().drawPols(election.getPol());
 
 						AI ai = (AI) election.getPlayer2();
 
-						President cpuplay = ai.play(election.getPres(), election.getElection());
+						President cpuplay = ai.play(election.getPlayer2PresidentDeck(), election.getElection());
 
 						election.player2PlayCard(cpuplay);
 						election.pinAIPolicies(ai.playPolicies(cpuplay, election.getPol()));
@@ -636,10 +667,10 @@ public class RunElectionGameCombined implements Runnable {
 								);
 							board.flipUser();
 
-							election.getPlayer2().draw(election.getPres());
+							election.getPlayer2().draw(election.getPlayer2PresidentDeck());
 							election.getPlayer2().drawPols(election.getPol());
 
-							election.getPlayer1().draw(election.getPres());
+							election.getPlayer1().draw(election.getPlayer1PresidentDeck());
 							election.getPlayer1().drawPols(election.getPol());
 
 
@@ -695,6 +726,10 @@ public class RunElectionGameCombined implements Runnable {
 								    new String[] { "Ok" },  // Single "Ok" button directly in the method call
 								    "round"  // Dialog type indicating it's a round result
 								);
+                            if (isActiveCampaignMatch()) {
+                                finishActiveCampaignMatch(false);
+                                return;
+                            }
 							if (twoplayermode) {
 								CustomDialog.showCustomDialog(
 									    frame,
@@ -722,6 +757,10 @@ public class RunElectionGameCombined implements Runnable {
 								    new String[] { "Ok" },  // Single "Ok" button directly in the method call
 								    "round"  // Dialog type indicating it's a round result
 								);
+                            if (isActiveCampaignMatch()) {
+                                finishActiveCampaignMatch(false);
+                                return;
+                            }
 							if (twoplayermode) {
 								CustomDialog.showCustomDialog(
 									    frame,
@@ -795,7 +834,14 @@ public class RunElectionGameCombined implements Runnable {
 		reset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
+				if (activeCampaignMatchResultSent) {
+					return;
+				}
 				clearKeyboardSelection();
+				if (isActiveCampaignMatch()) {
+					confirmForfeitCampaignMatch(false);
+					return;
+				}
 				
 				if (!askToResign) {
 					cumulativeGames++;
@@ -1056,6 +1102,10 @@ public class RunElectionGameCombined implements Runnable {
 		settings.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				player.playSoundEffect(prefix + "files/playbutton.MP3");
+				if (isActiveCampaignMatch() || activeCampaignMatchResultSent) {
+					showCampaignMatchSettingsMenu();
+					return;
+				}
 
 				long endTime = System.nanoTime();
 				long totalTime = endTime - startTime;
@@ -2285,6 +2335,18 @@ public class RunElectionGameCombined implements Runnable {
 		    	    frame.repaint();
 		    }
 		});
+
+        // Campaign Mode from the main home screen.
+        // This opens the Campaign Mode UI with this RunElectionGameCombined instance
+        // wired in as the playable-match launcher. In Sim mode, Campaign Mode still
+        // uses its own internal simulation path; in Play mode, it calls back into
+        // launchCampaignMatch(...) below to start a real playable match.
+        buttons[4].addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openCampaignModeFromHome();
+            }
+        });
 		
 	}
 
@@ -3276,6 +3338,356 @@ public class RunElectionGameCombined implements Runnable {
 			}
 		}
 
+
+
+    private void openCampaignModeFromHome() {
+        Runnable openTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    RunCampaignMode campaignMode = new RunCampaignMode(RunElectionGameCombined.this);
+                    campaignMode.run();
+                } catch (RuntimeException ex) {
+                    String message = ex.getMessage();
+                    if (message == null || message.trim().isEmpty()) {
+                        message = ex.toString();
+                    }
+                    CustomDialog.showCustomDialog(
+                            frame,
+                            "Campaign Mode could not be opened.\n" + message,
+                            "files/errortitle.PNG",
+                            new String[] { "Ok" },
+                            "error",
+                            0.75,
+                            1.15
+                    );
+                }
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            openTask.run();
+        } else {
+            SwingUtilities.invokeLater(openTask);
+        }
+    }
+
+
+    @Override
+    public void launchCampaignMatch(final CampaignMatchConfig config, final CampaignMatchCallback callback) {
+        if (config == null) {
+            if (callback != null) {
+                callback.onCampaignMatchComplete(CampaignMatchResult.error(null, "Campaign match config was null."));
+            }
+            return;
+        }
+
+        Runnable launchTask = new Runnable() {
+            @Override
+            public void run() {
+                String validationError = config.getValidationError();
+                if (validationError != null && !validationError.isEmpty()) {
+                    if (callback != null) {
+                        callback.onCampaignMatchComplete(CampaignMatchResult.error(config, validationError));
+                    }
+                    return;
+                }
+
+                if (frame == null || board == null || user_cards == null || up == null) {
+                    if (callback != null) {
+                        callback.onCampaignMatchComplete(CampaignMatchResult.error(
+                                config,
+                                "Campaign match UI is not initialized yet."
+                        ));
+                    }
+                    return;
+                }
+
+                try {
+                    activeCampaignMatchMode = true;
+                    activeCampaignMatchResultSent = false;
+                    activeCampaignMatchConfig = config;
+                    activeCampaignMatchCallback = callback;
+                    twoplayermode = false;
+                    swapmode = false;
+                    deckSet = "campaign";
+                    clearKeyboardSelection();
+
+                    election.resetForCampaignMatch(config);
+
+                    starting = false;
+                    user_cards.reset();
+                    up.reset();
+                    board.reset();
+                    if (statusLabel != null) {
+                        setLabel(statusLabel);
+                        statusLabel.repaint();
+                    }
+
+                    showGameplayPanelsForCampaignMatch();
+                } catch (RuntimeException ex) {
+                    activeCampaignMatchMode = false;
+                    activeCampaignMatchResultSent = false;
+                    activeCampaignMatchConfig = null;
+                    activeCampaignMatchCallback = null;
+                    if (callback != null) {
+                        callback.onCampaignMatchComplete(CampaignMatchResult.error(config, ex.getMessage()));
+                    }
+                }
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            launchTask.run();
+        } else {
+            SwingUtilities.invokeLater(launchTask);
+        }
+    }
+
+    private boolean isActiveCampaignMatch() {
+        return activeCampaignMatchMode && !activeCampaignMatchResultSent
+                && activeCampaignMatchConfig != null
+                && election != null && election.isCampaignMatchMode();
+    }
+
+    private boolean hasCampaignMatchContext() {
+        return (activeCampaignMatchMode || activeCampaignMatchResultSent)
+                && activeCampaignMatchConfig != null;
+    }
+
+    private void finishActiveCampaignMatch(boolean resigned) {
+        finishActiveCampaignMatch(resigned, null);
+    }
+
+    private void finishActiveCampaignMatch(boolean resigned, String overrideMessage) {
+        if (!isActiveCampaignMatch()) {
+            return;
+        }
+
+        activeCampaignMatchResultSent = true;
+
+        CampaignMatchResult result;
+        try {
+            result = election.buildCampaignMatchResult(resigned);
+            if (overrideMessage != null && !overrideMessage.trim().isEmpty()) {
+                result = CampaignMatchResult.builder(activeCampaignMatchConfig)
+                        .resultType(resigned ? CampaignMatchResult.RESULT_RESIGNED
+                                : CampaignMatchResult.RESULT_COMPLETED)
+                        .playerWon(result.didPlayerWin())
+                        .resigned(resigned)
+                        .playerRoundsWon(result.getPlayerRoundsWon())
+                        .cpuRoundsWon(result.getCpuRoundsWon())
+                        .finalScoreText(result.getFinalScoreText())
+                        .matchLog(result.getMatchLog())
+                        .message(overrideMessage)
+                        .build();
+            }
+        } catch (RuntimeException ex) {
+            result = CampaignMatchResult.error(activeCampaignMatchConfig, ex.getMessage());
+        }
+
+        CampaignMatchCallback callback = activeCampaignMatchCallback;
+        activeCampaignMatchMode = false;
+        activeCampaignMatchConfig = null;
+        activeCampaignMatchCallback = null;
+
+        hideCampaignMatchFrameAfterResult();
+
+        if (callback != null) {
+            callback.onCampaignMatchComplete(result);
+        } else {
+            CustomDialog.showCustomDialog(
+                    frame,
+                    "Campaign match finished, but no Campaign Mode callback was registered.\n"
+                            + result.getSummaryLine(),
+                    "files/errortitle.PNG",
+                    new String[] { "Ok" },
+                    "error",
+                    0.75,
+                    1.15
+            );
+        }
+    }
+
+    private void hideCampaignMatchFrameAfterResult() {
+        if (frame == null) {
+            return;
+        }
+
+        clearKeyboardSelection();
+        if (board != null) {
+            board.unzoom();
+        }
+        frame.getContentPane().removeAll();
+        frame.revalidate();
+        frame.repaint();
+        frame.setVisible(false);
+    }
+
+    private void showCampaignMatchSettingsMenu() {
+        String matchTitle = activeCampaignMatchConfig == null
+                ? "Campaign Match"
+                : activeCampaignMatchConfig.getMatchTitle();
+
+        String[] options;
+        if (isActiveCampaignMatch()) {
+            options = new String[] { "Audio", "Forfeit and Return", "Forfeit and Exit Game", "Cancel" };
+        } else {
+            options = new String[] { "Audio", "Return to Campaign Mode", "Cancel" };
+        }
+
+        int choice = CustomDialog.showCustomDialog(
+                frame,
+                "Campaign match mode: " + matchTitle
+                        + "\nDeck and difficulty changes are locked during Campaign Mode matches.",
+                prefix + "files/settingstitle.PNG",
+                options,
+                "settings",
+                0.95,
+                1.15
+        );
+
+        if (choice == 0) {
+            runCampaignAudioSettingsDialog();
+        } else if (isActiveCampaignMatch() && choice == 1) {
+            confirmForfeitCampaignMatch(false);
+        } else if (isActiveCampaignMatch() && choice == 2) {
+            confirmForfeitCampaignMatch(true);
+        } else if (!isActiveCampaignMatch() && activeCampaignMatchResultSent && choice == 1) {
+            hideCampaignMatchFrameAfterResult();
+        }
+    }
+
+    private void runCampaignAudioSettingsDialog() {
+        SoundtrackPlayer player = soundtrackPlayer == null ? keyboardPlayer : soundtrackPlayer;
+        if (player == null) {
+            CustomDialog.showCustomDialog(
+                    frame,
+                    "Audio controls are not available yet.",
+                    prefix + "files/settingstitle.PNG",
+                    new String[] { "Ok" },
+                    "settings",
+                    0.65,
+                    1.0
+            );
+            return;
+        }
+
+        int audioChoice;
+        do {
+            String currentTrackMessage = player.isMuted() ? "Muted"
+                    : "Current track: " + player.getCurrentTrackName();
+            String muteLabel = player.isMuted() ? "Unmute" : "Mute";
+            String[] audioOptions = { "Previous Track", "Next Track", muteLabel, "Ok" };
+
+            audioChoice = CustomDialog.showCustomDialog(
+                    frame,
+                    currentTrackMessage,
+                    prefix + "files/settingstitle.PNG",
+                    audioOptions,
+                    "settings"
+            );
+
+            if (audioChoice == 0) {
+                player.playPreviousTrack();
+            } else if (audioChoice == 1) {
+                player.playNextTrack();
+            } else if (audioChoice == 2) {
+                player.toggleMute();
+            }
+        } while (audioChoice != 3 && audioChoice != -1);
+    }
+
+    private void confirmForfeitCampaignMatch(boolean exitAfterForfeit) {
+        if (!isActiveCampaignMatch()) {
+            if (exitAfterForfeit) {
+                System.exit(0);
+            }
+            return;
+        }
+
+        int confirmation = CustomDialog.showCustomDialog(
+                frame,
+                "Leaving this Campaign Mode match will count as a loss. Continue?",
+                prefix + "files/resigntitle.PNG",
+                new String[] { "Forfeit", "Cancel" },
+                "resign",
+                0.85,
+                1.1
+        );
+
+        if (confirmation == 0) {
+            finishActiveCampaignMatch(true, "Campaign match forfeited/interrupted.");
+            if (exitAfterForfeit) {
+                System.exit(0);
+            }
+        }
+    }
+
+    private void handleMainFrameWindowClosing() {
+        if (isActiveCampaignMatch()) {
+            confirmForfeitCampaignMatch(false);
+            return;
+        }
+
+        if (hasCampaignMatchContext()) {
+            hideCampaignMatchFrameAfterResult();
+            return;
+        }
+
+        frame.dispose();
+        System.exit(0);
+    }
+
+    private void showGameplayPanelsForCampaignMatch() {
+        if (frame == null) {
+            return;
+        }
+
+        frame.getContentPane().removeAll();
+
+        if (aiCardsPanel != null) {
+            frame.add(aiCardsPanel, BorderLayout.NORTH);
+        }
+        if (decks != null) {
+            frame.add(decks, BorderLayout.WEST);
+        }
+        if (controlPanel != null) {
+            frame.add(controlPanel, BorderLayout.EAST);
+        }
+        if (board != null) {
+            frame.add(board, BorderLayout.CENTER);
+        }
+        if (user_cards != null) {
+            frame.add(user_cards, BorderLayout.SOUTH);
+        }
+
+        if (decks != null) {
+            int frameWidth = Math.max(1, frame.getWidth());
+            deckWidthRatio = (double) decks.getWidth() / (double) frameWidth;
+            decks.setBackgroundImage(prefix + "files/backgroundfull.PNG",
+                    697.0 / 1200.0, 106.0 / 1200.0, deckWidthRatio, 0.0);
+        }
+        if (controlPanel != null) {
+            int frameWidth = Math.max(1, frame.getWidth());
+            controlPanelWidthRatio = (double) controlPanel.getWidth() / (double) frameWidth;
+            controlPanelStartXRatio = 1.0 - controlPanelWidthRatio;
+            controlPanel.setBackgroundImage(prefix + "files/backgroundfull.PNG",
+                    controlPanelHeightRatio, controlPanelStartYRatio,
+                    controlPanelWidthRatio, controlPanelStartXRatio);
+        }
+        if (board != null && decks != null) {
+            board.setRefs((double) decks.getWidth(), (double) Math.max(1, frame.getWidth()));
+            board.draw();
+        }
+
+        frame.setVisible(true);
+        frame.setState(Frame.NORMAL);
+        frame.revalidate();
+        frame.repaint();
+        frame.toFront();
+        frame.requestFocus();
+    }
 
 	private void setLabel(JLabel j) {
 		j.setText("<html><body>" + election.p1Score() + "<br><br>" + election.p2Score() + "</body></html>");

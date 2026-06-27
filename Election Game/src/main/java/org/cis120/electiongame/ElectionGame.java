@@ -11,6 +11,12 @@ public class ElectionGame {
 
     private Deck presidentDeck = new Deck();
     private Deck singlePresidentDeck = new Deck();
+
+    // v06 bridge support: Campaign Mode needs exact player/CPU President decks.
+    // Classic mode can still use presidentDeck as the old shared President deck.
+    private Deck player1PresidentDeck = new Deck();
+    private Deck player2PresidentDeck = new Deck();
+
     private Deck electionDeck = new Deck();
     private Deck policyDeck = new Deck();
 
@@ -30,6 +36,11 @@ public class ElectionGame {
 
     private Player activePlayer = player1;
     private boolean turn = true;
+
+    // v06 bridge support. These fields are only set while a Campaign Mode
+    // playable match is using this ElectionGame instance.
+    private boolean campaignMatchMode = false;
+    private CampaignMatchConfig campaignMatchConfig = null;
     
     public int p1score = 0;
     public int p2score = 0;
@@ -108,6 +119,54 @@ public class ElectionGame {
     public Deck getPres() {
         return presidentDeck;
     }
+
+    /**
+     * v06 campaign bridge getter. In normal Classic Mode this returns the same
+     * shared President deck as getPres(). In Campaign Match Mode it returns the
+     * exact player-side deck supplied by CampaignMode.
+     */
+    public Deck getPlayer1PresidentDeck() {
+        if (campaignMatchMode) {
+            return player1PresidentDeck;
+        }
+        return presidentDeck;
+    }
+
+    /**
+     * v06 campaign bridge getter. In normal Classic Mode this returns the same
+     * shared President deck as getPres(). In Campaign Match Mode it returns the
+     * exact CPU-side deck supplied by CampaignMode.
+     */
+    public Deck getPlayer2PresidentDeck() {
+        if (campaignMatchMode) {
+            return player2PresidentDeck;
+        }
+        return presidentDeck;
+    }
+
+    public Deck getActivePresidentDeck() {
+        if (turn) {
+            return getPlayer1PresidentDeck();
+        }
+        return getPlayer2PresidentDeck();
+    }
+
+    public boolean isCampaignMatchMode() {
+        return campaignMatchMode;
+    }
+
+    public CampaignMatchConfig getCampaignMatchConfig() {
+        return campaignMatchConfig;
+    }
+
+    public int getPlayer1RoundsWon() {
+        return player1.getWins();
+    }
+
+    public int getPlayer2RoundsWon() {
+        return player2.getWins();
+    }
+
     public Deck getSinglePres() {
         return singlePresidentDeck;
     }
@@ -142,6 +201,8 @@ public class ElectionGame {
      * reset (re-)sets the game state to start a new game.
      */
     public void reset() {
+    	campaignMatchMode = false;
+    	campaignMatchConfig = null;
     	hint = "";
     	hintIndex = 1;
     	
@@ -157,6 +218,9 @@ public class ElectionGame {
         pinnedPolicies2.add(null);
 
         presidentDeck.clear();
+        singlePresidentDeck.clear();
+        player1PresidentDeck.clear();
+        player2PresidentDeck.clear();
         electionDeck.clear();
         policyDeck.clear();
 
@@ -194,6 +258,8 @@ public class ElectionGame {
      * This is the correct method to use
      */
     public void reset(String preset, String[] tags, double minRate, int presCount) {
+    	campaignMatchMode = false;
+    	campaignMatchConfig = null;
     	hint = "";
     	hintIndex = 1;
     	
@@ -209,6 +275,9 @@ public class ElectionGame {
         pinnedPolicies2.add(null);
 
         presidentDeck.clear();
+        singlePresidentDeck.clear();
+        player1PresidentDeck.clear();
+        player2PresidentDeck.clear();
         electionDeck.clear();
         policyDeck.clear();
 
@@ -246,9 +315,58 @@ public class ElectionGame {
         turn = true;
     }
 
-    // This is the exact same as reset, except it doesn't shuffle, so I can use this
-    // for testing.
-    public void riggedReset() {
+    /**
+     * v06 Campaign Mode bridge reset.
+     *
+     * This prepares the normal ElectionGame model for a playable Campaign Mode
+     * match using exact President decks supplied by CampaignMode. It does not
+     * apply rewards or update campaign progress; it only sets up the playable
+     * match state. RunElectionGameCombined will later call this before showing
+     * the board, and then return a CampaignMatchResult when the match ends.
+     */
+    public void resetForCampaignMatch(CampaignMatchConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("Campaign match config cannot be null.");
+        }
+
+        String validationError = config.getValidationError();
+        if (validationError != null && !validationError.isEmpty()) {
+            throw new IllegalArgumentException(validationError);
+        }
+
+        resetWithCustomPresidentDecks(
+                config.getPlayerPresidentDeck(),
+                config.getCpuPresidentDeck(),
+                config.getStartingHandSize()
+        );
+
+        campaignMatchMode = true;
+        campaignMatchConfig = config;
+        deckPreset = "campaign";
+
+        namePlayer(config.getPlayerName());
+        namePlayer2(config.getCpuName());
+        setAIDifficulty(config.getDifficulty());
+
+        message = "Starting " + config.getMatchTitle() + ".";
+    }
+
+    /**
+     * Low-level exact-deck reset for future bridge/testing uses.
+     *
+     * Normal reset(String, ...) is still the right method for Classic Mode. This
+     * one exists so Campaign Mode can say: "use exactly these 10 player cards"
+     * and "use exactly this CPU pool" without going through preset/tag filters.
+     */
+    public void resetWithCustomPresidentDecks(
+            List<President> player1Presidents, List<President> player2Presidents,
+            int presCount
+    ) {
+        validateCustomPresidentDecks(player1Presidents, player2Presidents, presCount);
+
+        hint = "";
+        hintIndex = 1;
+
         player1play = null;
         player2play = null;
 
@@ -261,6 +379,153 @@ public class ElectionGame {
         pinnedPolicies2.add(null);
 
         presidentDeck.clear();
+        singlePresidentDeck.clear();
+        player1PresidentDeck.clear();
+        player2PresidentDeck.clear();
+        electionDeck.clear();
+        policyDeck.clear();
+
+        // Legacy fallback deck: future v06 RunElectionGameCombined should use
+        // getPlayer1PresidentDeck() and getPlayer2PresidentDeck(), but keeping a
+        // merged shared deck here makes old/debug callers less fragile.
+        presidentDeck.fillPres(buildMergedPresidentList(player1Presidents, player2Presidents));
+        player1PresidentDeck.fillPres(new ArrayList<President>(player1Presidents));
+        player2PresidentDeck.fillPres(new ArrayList<President>(player2Presidents));
+
+        electionDeck.fillElec(CardData.getElections());
+        policyDeck.fillPol(CardData.getPolicies());
+
+        presidentDeck.shuffle();
+        player1PresidentDeck.shuffle();
+        player2PresidentDeck.shuffle();
+        electionDeck.shuffle();
+        policyDeck.shuffle();
+
+        player1.reset();
+        player2.reset();
+
+        player1.drawInit(player1PresidentDeck, policyDeck, presCount);
+        player2.drawInit(player2PresidentDeck, policyDeck, presCount);
+
+        current = (Election) electionDeck.draw();
+
+        message = "Starting.";
+        activePlayer = player1;
+        turn = true;
+
+        campaignMatchMode = false;
+        campaignMatchConfig = null;
+    }
+
+    private void validateCustomPresidentDecks(
+            List<President> player1Presidents, List<President> player2Presidents,
+            int presCount
+    ) {
+        if (presCount <= 0) {
+            throw new IllegalArgumentException("Starting hand size must be positive.");
+        }
+        if (player1Presidents == null || player1Presidents.size() < presCount) {
+            int size = player1Presidents == null ? 0 : player1Presidents.size();
+            throw new IllegalArgumentException("Player deck has only " + size
+                    + " cards; at least " + presCount + " are required.");
+        }
+        if (player2Presidents == null || player2Presidents.size() < presCount) {
+            int size = player2Presidents == null ? 0 : player2Presidents.size();
+            throw new IllegalArgumentException("CPU deck has only " + size
+                    + " cards; at least " + presCount + " are required.");
+        }
+    }
+
+    private List<President> buildMergedPresidentList(
+            List<President> player1Presidents, List<President> player2Presidents
+    ) {
+        ArrayList<President> merged = new ArrayList<President>();
+        addUniquePresidents(merged, player1Presidents);
+        addUniquePresidents(merged, player2Presidents);
+        return merged;
+    }
+
+    private void addUniquePresidents(List<President> target, List<President> source) {
+        if (target == null || source == null) {
+            return;
+        }
+
+        for (President president : source) {
+            if (president == null || containsPresidentByName(target, president)) {
+                continue;
+            }
+            target.add(president);
+        }
+    }
+
+    private boolean containsPresidentByName(List<President> presidents, President target) {
+        if (presidents == null || target == null || target.getName() == null) {
+            return false;
+        }
+
+        for (President president : presidents) {
+            if (president != null && president.getName() != null
+                    && president.getName().equalsIgnoreCase(target.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Helper for the future RunElectionGameCombined bridge. Classic mode does not
+     * need this, but Campaign Mode can use it to turn the current ElectionGame
+     * winner state into the standard bridge result object.
+     */
+    public CampaignMatchResult buildCampaignMatchResult(boolean resigned) {
+        if (campaignMatchConfig == null) {
+            return CampaignMatchResult.error(null, "No campaign match config is active.");
+        }
+
+        int playerRoundsWon = player1.getWins();
+        int cpuRoundsWon = player2.getWins();
+
+        if (resigned) {
+            return CampaignMatchResult.resigned(
+                    campaignMatchConfig,
+                    playerRoundsWon,
+                    cpuRoundsWon,
+                    finalScore(false)
+            );
+        }
+
+        int winnerId = checkWinner();
+        boolean playerWon = winnerId == 1;
+        return CampaignMatchResult.completed(
+                campaignMatchConfig,
+                playerWon,
+                playerRoundsWon,
+                cpuRoundsWon,
+                finalScore(playerWon)
+        );
+    }
+
+    // This is the exact same as reset, except it doesn't shuffle, so I can use this
+    // for testing.
+    public void riggedReset() {
+        campaignMatchMode = false;
+        campaignMatchConfig = null;
+
+        player1play = null;
+        player2play = null;
+
+        pinnedPolicies1.clear();
+        pinnedPolicies2.clear();
+
+        pinnedPolicies1.add(null);
+        pinnedPolicies1.add(null);
+        pinnedPolicies2.add(null);
+        pinnedPolicies2.add(null);
+
+        presidentDeck.clear();
+        singlePresidentDeck.clear();
+        player1PresidentDeck.clear();
+        player2PresidentDeck.clear();
         electionDeck.clear();
         policyDeck.clear();
 
