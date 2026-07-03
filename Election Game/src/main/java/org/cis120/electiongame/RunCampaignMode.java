@@ -47,14 +47,16 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 /**
  * Swing UI for Campaign Mode.
  *
- * v8.0 adds Campaign Mode save slots. The normal opening flow keeps Continue
- * Campaign as the default path, while Load Campaign exposes the three-slot
- * save manager for testing and alternate campaigns.
+ * v8.4 polishes the Active Deck view/edit split and adds a saved total
+ * play-time counter. The Active Deck view stays clean by default, with
+ * editing available behind an Edit button. Tournament decks remain auto-built
+ * by era.
  */
 public class RunCampaignMode implements Runnable {
 
@@ -83,12 +85,14 @@ public class RunCampaignMode implements Runnable {
     private JLabel collectionLabel;
     private JLabel activeDeckLabel;
     private JLabel deckStrengthLabel;
+    private Timer playTimeUiTimer;
 
     private JPanel displayPanel;
     private JLabel displayTitleLabel;
     private JScrollPane displayScrollPane;
     private boolean showingActiveDeckCards = false;
     private boolean showingCollectionCards = false;
+    private boolean activeDeckEditMode = false;
 
     private java.util.List<JButton> actionButtons;
 
@@ -105,8 +109,11 @@ public class RunCampaignMode implements Runnable {
     private String collectionEraFilterId = COLLECTION_ERA_ALL;
     private String collectionOwnershipFilter = COLLECTION_OWNERSHIP_OWNED;
 
+    private java.util.List<President> activeDeckDraft = new ArrayList<President>();
+
     private CampaignTournament activeTournament;
     private List<President> activeTournamentDeck;
+    private int activeTournamentNextRound = 1;
 
     private CampaignMatchLauncher campaignMatchLauncher;
 
@@ -169,6 +176,7 @@ public class RunCampaignMode implements Runnable {
         }
 
         refreshDashboard();
+        startPlayTimeUiTimer();
         displayActiveDeckCards();
         return true;
     }
@@ -193,6 +201,7 @@ public class RunCampaignMode implements Runnable {
         }
 
         refreshDashboard();
+        startPlayTimeUiTimer();
         displayActiveDeckCards();
     }
 
@@ -323,8 +332,8 @@ public class RunCampaignMode implements Runnable {
         pcLabel = makeStatusLabel("Political Capital: ");
         recordLabel = makeStatusLabel("Record: ");
         collectionLabel = makeStatusLabel("Collection: ");
-        activeDeckLabel = makeStatusLabel("Active Deck: ");
-        deckStrengthLabel = makeStatusLabel("Deck Strength: ");
+        activeDeckLabel = makeStatusLabel("Time Played: ");
+        deckStrengthLabel = makeStatusLabel("Active Deck Strength: ");
 
         statusPanel.add(nameLabel);
         statusPanel.add(pcLabel);
@@ -392,7 +401,7 @@ public class RunCampaignMode implements Runnable {
         JButton collectionButton = makeButton("View Collection");
         collectionButton.addActionListener(e -> displayCollectionCards());
 
-        JButton activeDeckButton = makeButton("View Active Deck");
+        JButton activeDeckButton = makeButton("Active Deck");
         activeDeckButton.addActionListener(e -> displayActiveDeckCards());
 
         JButton quitButton = makeButton(embeddedMode ? "Campaign Menu" : "Save and Quit");
@@ -463,7 +472,6 @@ public class RunCampaignMode implements Runnable {
                     OperationResult result = captureBooleanOutput(() -> campaign.loadCampaignFromSlot(defaultSlot));
                     appendLog(result.output);
                     if (result.success) {
-                        showLongTextDialog("Campaign Loaded", result.output);
                         return true;
                     }
                     showShortDialog("Load Failed", "Load failed. You can load another save, start a new campaign, or quit.", true);
@@ -599,7 +607,6 @@ public class RunCampaignMode implements Runnable {
                 OperationResult result = captureBooleanOutput(() -> campaign.loadCampaignFromSlot(slot));
                 appendLog(result.output);
                 if (result.success) {
-                    showLongTextDialog("Campaign Loaded", result.output);
                     refreshDashboard();
                     displayActiveDeckCards();
                     return true;
@@ -974,14 +981,13 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
-        CampaignPlayer player = campaign.getPlayer();
-        if (player.getActiveDeckSize() < player.getActiveDeckMaxSize()) {
+        if (campaign.getActiveDeckSize() < campaign.getActiveDeckMaxSize()) {
             showShortDialog(
                     "Active Deck Not Ready",
-                    "Your active deck needs " + player.getActiveDeckMaxSize()
+                    "Your active deck needs " + campaign.getActiveDeckMaxSize()
                             + " Presidents before you can play a match.\nCurrent active deck: "
-                            + player.getActiveDeckSize() + "/" + player.getActiveDeckMaxSize()
-                            + "\nOpen more packs first.",
+                            + campaign.getActiveDeckSize() + "/" + campaign.getActiveDeckMaxSize()
+                            + "\nOpen more packs first or complete your custom deck.",
                     true
             );
             return;
@@ -1056,14 +1062,13 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
-        CampaignPlayer player = campaign.getPlayer();
-        if (player.getActiveDeckSize() < player.getActiveDeckMaxSize()) {
+        if (campaign.getActiveDeckSize() < campaign.getActiveDeckMaxSize()) {
             showShortDialog(
                     "Active Deck Not Ready",
-                    "Your active deck needs " + player.getActiveDeckMaxSize()
+                    "Your active deck needs " + campaign.getActiveDeckMaxSize()
                             + " Presidents before you can play a match.\nCurrent active deck: "
-                            + player.getActiveDeckSize() + "/" + player.getActiveDeckMaxSize()
-                            + "\nOpen more packs first.",
+                            + campaign.getActiveDeckSize() + "/" + campaign.getActiveDeckMaxSize()
+                            + "\nOpen more packs first or complete your custom deck.",
                     true
             );
             return;
@@ -1182,12 +1187,16 @@ public class RunCampaignMode implements Runnable {
 
         JPanel wrapper = new JPanel(new BorderLayout(16, 16));
         wrapper.setOpaque(false);
-        wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
+        wrapper.setBorder(new EmptyBorder(20, 24, 24, 24));
 
+        String activeEras = campaign == null ? "" : campaign.getActiveEraNamesText();
+        String nextRotation = campaign == null ? "" : campaign.getTournamentRotationCountdownText();
         JLabel intro = new JLabel(
-                "<html><center>Enter an era tournament with your best 10 owned cards from that era. "
-                        + "Each tournament is a single-elimination Easy / Medium / Hard gauntlet. "
-                        + "Click into a tournament first, then play each match one at a time.</center></html>",
+                "<html><center>Three era tournaments are active at a time and rotate every 3 real-world hours. "
+                        + "Tournament decks are still auto-built from your best 10 owned cards in that era."
+                        + "<br><br><b>Active now:</b> " + escapeHtml(activeEras)
+                        + "<br><b>Next rotation:</b> " + escapeHtml(nextRotation)
+                        + "</center></html>",
                 SwingConstants.CENTER
         );
         intro.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
@@ -1202,48 +1211,103 @@ public class RunCampaignMode implements Runnable {
             choices.add(buildTournamentChoicePanel(tournament));
         }
 
+        int bottomButtonCount = activeTournament == null || activeTournamentDeck == null
+                || activeTournamentDeck.isEmpty() ? 2 : 3;
+        JPanel bottomButtons = new JPanel(new GridLayout(1, bottomButtonCount, 18, 0));
+        bottomButtons.setOpaque(false);
+        bottomButtons.setBorder(new EmptyBorder(18, 0, 0, 0));
+
+        if (bottomButtonCount == 3) {
+            JButton continueRunButton = makeDashboardButton("Continue Current Run");
+            continueRunButton.addActionListener(e -> displayTournamentRunDashboard(
+                    activeTournament, Math.max(1, Math.min(3, activeTournamentNextRound))
+            ));
+            bottomButtons.add(continueRunButton);
+        }
+
+        JButton trophyButton = makeDashboardButton("Trophy Cabinet");
+        trophyButton.addActionListener(e -> displayTrophyCabinet());
+        JButton refreshButton = makeDashboardButton("Refresh Rotation");
+        refreshButton.addActionListener(e -> displayTournamentsDashboard());
+        bottomButtons.add(trophyButton);
+        bottomButtons.add(refreshButton);
+
         wrapper.add(choices, BorderLayout.CENTER);
+        wrapper.add(bottomButtons, BorderLayout.SOUTH);
         displayPanel.add(wrapper, BorderLayout.NORTH);
         updateDisplayPanel();
     }
 
     private JPanel buildTournamentChoicePanel(CampaignTournament tournament) {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBackground(new Color(255, 250, 235));
+        boolean active = campaign.isTournamentActive(tournament);
+        panel.setBackground(active ? new Color(255, 250, 235) : new Color(242, 238, 226));
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(180, 160, 120), 2),
+                BorderFactory.createLineBorder(active ? new Color(180, 160, 120) : new Color(150, 145, 130), 2),
                 new EmptyBorder(14, 14, 14, 14)
         ));
 
         int owned = campaign.getOwnedCountForTournament(tournament);
         int required = tournament.getRequiredEraCards();
-        boolean ready = campaign.canEnterTournament(tournament);
-        String readinessText = ready
-                ? "Ready: " + owned + "/" + required + " owned"
+        boolean eligible = campaign.canEnterTournament(tournament);
+        boolean ready = campaign.canStartTournament(tournament);
+        boolean hasCurrentRun = activeTournament != null
+                && activeTournamentDeck != null
+                && !activeTournamentDeck.isEmpty();
+        boolean currentRunForThisTournament = hasCurrentRun && activeTournament.equals(tournament);
+        boolean currentRunForOtherTournament = hasCurrentRun && !activeTournament.equals(tournament);
+        CampaignTournamentRecord record = campaign.getTournamentRecord(tournament);
+        String activeText = currentRunForThisTournament
+                ? "Current run"
+                : (active ? "Active now" : "Rotated out");
+        String readinessText = eligible
+                ? "Eligible: " + owned + "/" + required + " owned"
                 : "Locked: " + owned + "/" + required + " owned";
-        String deckStrengthText = ready
+        String deckStrengthText = eligible
                 ? "<br>Deck Strength: " + String.format("%.2f", campaign.getTournamentDeckStrength(tournament))
                 : "<br>Need " + (required - owned) + " more " + tournament.getEraName() + " cards";
 
         JLabel details = new JLabel(
                 "<html><center>"
                         + "<b>" + escapeHtml(tournament.getTournamentName()) + "</b><br>"
-                        + escapeHtml(tournament.getEraName()) + "<br><br>"
+                        + escapeHtml(tournament.getEraName()) + " | Elections "
+                        + escapeHtml(tournament.getElectionYearRangeText())
+                        + "<br><b>" + escapeHtml(activeText) + "</b><br><br>"
                         + escapeHtml(readinessText)
                         + deckStrengthText
-                        + "<br><br>Round 1: Easy / 40k + Souvenir Pack"
-                        + "<br>Round 2: Medium / 75k + Souvenir Pack"
-                        + "<br>Final: Hard / 200k + Souvenir + Champion Pack"
+                        + "<br>Best Finish: " + escapeHtml(record.getBestFinishLabel())
+                        + " | Titles: " + record.getTitles()
+                        + "<br><br>Round 1: Easy / " + CampaignMode.formatPC(tournament.getRoundWinPC(1))
+                        + " + Souvenir Pack"
+                        + "<br>Round 2: Medium / " + CampaignMode.formatPC(tournament.getRoundWinPC(2))
+                        + " + Souvenir Pack"
+                        + "<br>Final: Hard / " + CampaignMode.formatPC(tournament.getRoundWinPC(3))
+                        + " + Souvenir + Champion Pack"
+                        + "<br>First Title: +" + CampaignMode.formatPC(campaign.getFirstTournamentTitleBonusPC())
+                        + " + extra Champion Pack"
                         + "<br><br>" + escapeHtml(tournament.getDescription())
                         + "</center></html>",
                 SwingConstants.CENTER
         );
         details.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
-        details.setForeground(new Color(20, 35, 65));
+        details.setForeground(active ? new Color(20, 35, 65) : new Color(85, 85, 85));
         panel.add(details, BorderLayout.CENTER);
 
-        JButton enterButton = makeDashboardButton(ready ? "Enter" : "Locked");
-        enterButton.setEnabled(ready);
+        String buttonText;
+        boolean buttonEnabled;
+        if (currentRunForThisTournament) {
+            buttonText = "Continue Run";
+            buttonEnabled = true;
+        } else if (currentRunForOtherTournament) {
+            buttonText = "Current Run Active";
+            buttonEnabled = false;
+        } else {
+            buttonText = ready ? "Enter" : (active ? "Locked" : "Rotated Out");
+            buttonEnabled = ready;
+        }
+
+        JButton enterButton = makeDashboardButton(buttonText);
+        enterButton.setEnabled(buttonEnabled);
         enterButton.addActionListener(e -> playTournamentFromUI(tournament));
         panel.add(enterButton, BorderLayout.SOUTH);
 
@@ -1259,6 +1323,36 @@ public class RunCampaignMode implements Runnable {
             showShortDialog("Tournament Error", "That tournament does not exist.", true);
             return;
         }
+
+        if (activeTournament != null
+                && activeTournamentDeck != null
+                && !activeTournamentDeck.isEmpty()) {
+            if (activeTournament.equals(tournament)) {
+                displayTournamentRunDashboard(
+                        activeTournament,
+                        Math.max(1, Math.min(3, activeTournamentNextRound))
+                );
+            } else {
+                showShortDialog(
+                        "Current Run Active",
+                        "Finish your current " + activeTournament.getTournamentName()
+                                + " run before starting another tournament.",
+                        true
+                );
+            }
+            return;
+        }
+
+        if (!campaign.isTournamentActive(tournament)) {
+            showShortDialog(
+                    "Tournament Rotated Out",
+                    tournament.getTournamentName() + " is not active right now.\n\n"
+                            + "Active eras: " + campaign.getActiveEraNamesText()
+                            + "\nNext rotation: " + campaign.getTournamentRotationCountdownText(),
+                    true
+            );
+            return;
+        }
         if (!campaign.canEnterTournament(tournament)) {
             showShortDialog(
                     "Tournament Locked",
@@ -1268,8 +1362,19 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
+        if (campaign.isTournamentRotationClose()) {
+            showShortDialog(
+                    "Rotation Soon",
+                    "The tournament rotation changes in " + campaign.getTournamentRotationCountdownText()
+                            + ".\n\nStarting now is safe: this tournament run will stay locked in until you finish, lose, or forfeit it.",
+                    false
+            );
+        }
+
         activeTournament = tournament;
         activeTournamentDeck = campaign.getTournamentActiveDeck(tournament);
+        activeTournamentNextRound = 1;
+        campaign.recordTournamentAttemptStarted(tournament);
         displayTournamentRunDashboard(tournament, 1);
     }
 
@@ -1294,7 +1399,9 @@ public class RunCampaignMode implements Runnable {
         JLabel details = new JLabel(
                 "<html><center>"
                         + "<b>" + escapeHtml(tournament.getTournamentName()) + "</b><br>"
-                        + escapeHtml(tournament.getEraName()) + "<br><br>"
+                        + escapeHtml(tournament.getEraName())
+                        + " | Elections " + escapeHtml(tournament.getElectionYearRangeText())
+                        + "<br><br>"
                         + "Tournament deck locked at entry: "
                         + getActiveTournamentDeckSize() + "/" + tournament.getRequiredEraCards() + " cards"
                         + "<br>Deck Strength: " + String.format("%.2f", getActiveTournamentDeckStrength())
@@ -1304,7 +1411,9 @@ public class RunCampaignMode implements Runnable {
                         + "Round 2: Medium / " + CampaignMode.formatPC(tournament.getRoundWinPC(2))
                         + " + Souvenir Pack<br>"
                         + "Final: Hard / " + CampaignMode.formatPC(tournament.getRoundWinPC(3))
-                        + " + Souvenir + Champion Pack<br><br>"
+                        + " + Souvenir + Champion Pack<br>"
+                        + "First Title: +" + CampaignMode.formatPC(campaign.getFirstTournamentTitleBonusPC())
+                        + " + extra Champion Pack<br><br>"
                         + "Next match: Round " + nextRound + " ("
                         + escapeHtml(tournament.getRoundDifficulty(nextRound)) + ")"
                         + "</center></html>",
@@ -1675,6 +1784,15 @@ public class RunCampaignMode implements Runnable {
         ));
         resultPanel.add(resultArea, BorderLayout.CENTER);
 
+        if (roundWon && roundNumber < 3) {
+            activeTournament = tournament;
+            activeTournamentNextRound = roundNumber + 1;
+        } else {
+            activeTournament = null;
+            activeTournamentDeck = null;
+            activeTournamentNextRound = 1;
+        }
+
         JPanel followUpButtons = new JPanel(new GridLayout(1, 2, 18, 0));
         followUpButtons.setOpaque(false);
         followUpButtons.setBorder(new EmptyBorder(4, 0, 0, 0));
@@ -1698,6 +1816,93 @@ public class RunCampaignMode implements Runnable {
         resultPanel.add(followUpButtons, BorderLayout.SOUTH);
         displayPanel.add(resultPanel, BorderLayout.CENTER);
         updateDisplayPanel();
+    }
+
+
+    private void displayTrophyCabinet() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("Trophy Cabinet");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(16, 16));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
+
+        int completed = campaign.getCompletedTournamentEraCount();
+        int total = campaign.getEraTournaments().size();
+        JLabel summary = new JLabel(
+                "<html><center><b>Trophy Cabinet</b><br>"
+                        + "Completed Eras: " + completed + "/" + total
+                        + " | Total Titles: " + campaign.getTotalTournamentTitles()
+                        + " | Attempts: " + campaign.getTotalTournamentAttempts()
+                        + "<br>First championship in each era awards +"
+                        + CampaignMode.formatPC(campaign.getFirstTournamentTitleBonusPC())
+                        + " and an extra Era Champion Pack."
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        summary.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
+        summary.setForeground(new Color(20, 35, 65));
+        wrapper.add(summary, BorderLayout.NORTH);
+
+        JPanel recordsPanel = new JPanel(new GridLayout(0, 2, 20, 20));
+        recordsPanel.setOpaque(false);
+
+        for (CampaignTournament tournament : campaign.getEraTournaments()) {
+            recordsPanel.add(buildTrophyRecordPanel(tournament));
+        }
+
+        wrapper.add(recordsPanel, BorderLayout.CENTER);
+
+        JPanel buttons = new JPanel(new GridLayout(1, 2, 18, 0));
+        buttons.setOpaque(false);
+        buttons.setBorder(new EmptyBorder(16, 0, 0, 0));
+        JButton backButton = makeDashboardButton("Back to Tournaments");
+        backButton.addActionListener(e -> displayTournamentsDashboard());
+        JButton storeButton = makeDashboardButton("Store");
+        storeButton.addActionListener(e -> displayStoreDashboard());
+        buttons.add(backButton);
+        buttons.add(storeButton);
+        wrapper.add(buttons, BorderLayout.SOUTH);
+
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildTrophyRecordPanel(CampaignTournament tournament) {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        boolean champion = campaign.getTournamentRecord(tournament).hasWonTitle();
+        panel.setBackground(champion ? new Color(255, 248, 220) : new Color(255, 250, 235));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(champion ? new Color(190, 150, 50) : new Color(180, 160, 120), 2),
+                new EmptyBorder(14, 14, 14, 14)
+        ));
+
+        CampaignTournamentRecord record = campaign.getTournamentRecord(tournament);
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>" + escapeHtml(tournament.getTournamentName()) + "</b><br>"
+                        + escapeHtml(tournament.getEraName()) + "<br><br>"
+                        + "Best Finish: <b>" + escapeHtml(record.getBestFinishLabel()) + "</b><br>"
+                        + "Titles: " + record.getTitles() + "<br>"
+                        + "Attempts: " + record.getAttempts() + "<br>"
+                        + "Last Result: " + escapeHtml(record.getLastResult())
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+        return panel;
     }
 
     private void displayStoreDashboard() {
@@ -1775,9 +1980,9 @@ public class RunCampaignMode implements Runnable {
                 "<html><center>"
                         + "<b>Era Prospect Pack</b><br><br>"
                         + "5 Presidents<br>"
-                        + "Chosen era, 0.0-3.99 rating<br>"
+                        + "Active era only, 0.0-3.99 rating<br>"
                         + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
-                        + "Targeted era progress for unlocking tournaments."
+                        + "Targeted progress for currently active tournaments."
                         + affordText
                         + "</center></html>",
                 SwingConstants.CENTER
@@ -1812,8 +2017,11 @@ public class RunCampaignMode implements Runnable {
         wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
 
         JLabel intro = new JLabel(
-                "<html><center>Choose an era. Era Prospect Packs give 5 cards from that era, "
-                        + "rated 0.0-3.99, and are designed to build tournament eligibility.</center></html>",
+                "<html><center>Choose an active era. Era Prospect Packs give 5 cards from that era, "
+                        + "rated 0.0-3.99, and rotate with tournaments every 3 real-world hours."
+                        + "<br>Active now: " + escapeHtml(campaign.getActiveEraNamesText())
+                        + " | Next rotation: " + escapeHtml(campaign.getTournamentRotationCountdownText())
+                        + "</center></html>",
                 SwingConstants.CENTER
         );
         intro.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
@@ -1822,7 +2030,7 @@ public class RunCampaignMode implements Runnable {
 
         JPanel choices = new JPanel(new GridLayout(0, 2, 22, 22));
         choices.setOpaque(false);
-        for (CampaignTournament tournament : campaign.getEraTournaments()) {
+        for (CampaignTournament tournament : campaign.getActiveEraTournaments()) {
             choices.add(buildEraProspectChoicePanel(tournament));
         }
 
@@ -2060,7 +2268,7 @@ public class RunCampaignMode implements Runnable {
 
         JButton backToStoreButton = makeDashboardButton("Back to Store");
         backToStoreButton.addActionListener(e -> displayStoreDashboard());
-        JButton viewDeckButton = makeDashboardButton("View Active Deck");
+        JButton viewDeckButton = makeDashboardButton("Active Deck");
         viewDeckButton.addActionListener(e -> displayActiveDeckCards());
 
         followUpButtons.add(backToStoreButton);
@@ -2154,6 +2362,16 @@ public class RunCampaignMode implements Runnable {
         cancelCollectionLoadWorker();
         showingActiveDeckCards = true;
         showingCollectionCards = false;
+        activeDeckEditMode = false;
+        refreshActiveDeckCards();
+    }
+
+    private void displayActiveDeckEditorCards() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = true;
+        showingCollectionCards = false;
+        activeDeckEditMode = true;
+        resetActiveDeckDraftFromCampaign();
         refreshActiveDeckCards();
     }
 
@@ -2384,7 +2602,7 @@ public class RunCampaignMode implements Runnable {
         } else {
             JPanel cardGrid = new JPanel(new GridLayout(0, columns, 20, 20));
             cardGrid.setBackground(new Color(255, 253, 245));
-            cardGrid.setBorder(new EmptyBorder(18, 18, 18, 18));
+            cardGrid.setBorder(new EmptyBorder(8, 18, 8, 18));
 
             for (CardIconData cardData : loadedCards) {
                 cardGrid.add(buildPresidentCardPanel(
@@ -2515,9 +2733,19 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void refreshActiveDeckCards() {
+        if (activeDeckEditMode) {
+            refreshActiveDeckEditorCards();
+        } else {
+            refreshActiveDeckViewCards();
+        }
+    }
+
+    private void refreshActiveDeckViewCards() {
         if (displayPanel == null) {
             return;
         }
+
+        cancelCollectionLoadWorker();
 
         displayPanel.removeAll();
         displayPanel.setLayout(new BorderLayout());
@@ -2530,32 +2758,26 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
-        CampaignPlayer player = campaign.getPlayer();
-        List<President> activeDeck = player.getActiveDeck();
-        displayTitleLabel.setText("Active Deck - " + player.getActiveDeckSize()
-                + "/" + player.getActiveDeckMaxSize()
-                + " | Strength: " + String.format("%.2f", player.getActiveDeckStrength()));
+        List<President> activeDeck = campaign.getActiveDeck();
+        displayTitleLabel.setText("Active Deck - " + campaign.getActiveDeckModeLabel()
+                + " | " + campaign.getActiveDeckSize() + "/" + campaign.getActiveDeckMaxSize()
+                + " | Strength: " + String.format("%.2f", campaign.getActiveDeckStrength()));
+
+        JPanel wrapper = new JPanel(new BorderLayout(12, 12));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(10, 14, 12, 14));
+        wrapper.add(buildActiveDeckViewTopPanel(), BorderLayout.NORTH);
 
         if (activeDeck == null || activeDeck.isEmpty()) {
-            displayPanel.add(makeCenteredDisplayMessage("No active deck cards yet. Open starter packs first."), BorderLayout.CENTER);
+            wrapper.add(makeCenteredDisplayMessage("No active deck cards yet. Open starter packs first."), BorderLayout.CENTER);
+            displayPanel.add(wrapper, BorderLayout.NORTH);
             updateDisplayPanel();
             return;
         }
 
-        JPanel wrapper = new JPanel(new BorderLayout(10, 10));
-        wrapper.setOpaque(false);
-
-        JLabel guidance = new JLabel(
-                "<html><center>Your best 10 owned Presidents are automatically selected as your active deck.</center></html>",
-                SwingConstants.CENTER
-        );
-        guidance.setFont(new Font("Dialog", Font.PLAIN, Math.max(14, (int) (16 * (cardSize / 275.0)))));
-        guidance.setForeground(new Color(70, 70, 70));
-        wrapper.add(guidance, BorderLayout.NORTH);
-
-        JPanel cardGrid = new JPanel(new GridLayout(0, 5, 22, 22));
+        JPanel cardGrid = new JPanel(new GridLayout(0, 5, 20, 14));
         cardGrid.setBackground(new Color(255, 253, 245));
-        cardGrid.setBorder(new EmptyBorder(18, 18, 18, 18));
+        cardGrid.setBorder(new EmptyBorder(8, 18, 8, 18));
 
         int imageWidth = getLargeCardImageWidth();
         for (President president : activeDeck) {
@@ -2565,6 +2787,497 @@ public class RunCampaignMode implements Runnable {
         wrapper.add(cardGrid, BorderLayout.CENTER);
         displayPanel.add(wrapper, BorderLayout.NORTH);
         updateDisplayPanel();
+    }
+
+    private JPanel buildActiveDeckViewTopPanel() {
+        JPanel topPanel = new JPanel(new BorderLayout(18, 0));
+        topPanel.setOpaque(false);
+        topPanel.setBorder(new EmptyBorder(0, 8, 4, 8));
+
+        JLabel guidance = new JLabel(
+                "<html><b>Quick Match Lineup</b><br>"
+                        + "Mode: " + escapeHtml(campaign.getActiveDeckModeLabel())
+                        + " | Cards: " + campaign.getActiveDeckSize() + "/" + campaign.getActiveDeckMaxSize()
+                        + " | Strength: " + String.format("%.2f", campaign.getActiveDeckStrength())
+                        + "</html>",
+                SwingConstants.LEFT
+        );
+        guidance.setFont(new Font("Dialog", Font.PLAIN, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        guidance.setForeground(new Color(70, 70, 70));
+        topPanel.add(guidance, BorderLayout.CENTER);
+
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        controls.setOpaque(false);
+
+        JButton editButton = makeDashboardButton("Edit");
+        editButton.addActionListener(e -> displayActiveDeckEditorCards());
+        controls.add(editButton);
+
+        topPanel.add(controls, BorderLayout.EAST);
+        return topPanel;
+    }
+
+    private void refreshActiveDeckEditorCards() {
+        if (displayPanel == null) {
+            return;
+        }
+
+        cancelCollectionLoadWorker();
+
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        if (campaign == null || campaign.getPlayer() == null) {
+            displayTitleLabel.setText("Active Deck Editor");
+            displayPanel.add(makeCenteredDisplayMessage("No campaign loaded."), BorderLayout.CENTER);
+            updateDisplayPanel();
+            return;
+        }
+
+        CampaignPlayer player = campaign.getPlayer();
+        ensureActiveDeckDraftInitialized();
+
+        displayTitleLabel.setText("Active Deck Editor - " + campaign.getActiveDeckModeLabel()
+                + " | " + campaign.getActiveDeckSize() + "/" + campaign.getActiveDeckMaxSize()
+                + " | Strength: " + String.format("%.2f", campaign.getActiveDeckStrength()));
+
+        List<President> ownedCards = player.getPresidentCollection();
+        Collections.sort(ownedCards, presidentAverageComparator());
+
+        final int ownedImageWidth = getActiveDeckManagerCollectionCardImageWidth();
+        final int ownedImageHeight = getCardImageHeight(ownedImageWidth);
+        final int columns = getActiveDeckManagerCollectionColumnCount(ownedImageWidth);
+        final long requestId = ++collectionLoadRequestId;
+
+        displayPanel.add(makeCenteredDisplayMessage(
+                "Loading Active Deck editor images... " + ownedCards.size() + " owned cards"
+        ), BorderLayout.CENTER);
+        updateDisplayPanel();
+
+        collectionLoadWorker = new SwingWorker<List<CardIconData>, Void>() {
+            @Override
+            protected List<CardIconData> doInBackground() {
+                List<CardIconData> loadedCards = new ArrayList<CardIconData>();
+                for (President president : ownedCards) {
+                    if (isCancelled()) {
+                        return loadedCards;
+                    }
+
+                    ImageIcon icon = loadScaledIcon(president.getImageURL(), ownedImageWidth, ownedImageHeight);
+                    loadedCards.add(new CardIconData(president, ownedImageWidth, icon, true));
+                }
+                return loadedCards;
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled() || requestId != collectionLoadRequestId || !showingActiveDeckCards) {
+                    return;
+                }
+
+                try {
+                    displayLoadedActiveDeckManager(get(), columns);
+                } catch (Exception e) {
+                    displayPanel.removeAll();
+                    displayPanel.setLayout(new BorderLayout());
+                    displayPanel.add(makeCenteredDisplayMessage(
+                            "Could not load Active Deck editor images. Try reopening Active Deck."
+                    ), BorderLayout.CENTER);
+                    updateDisplayPanel();
+                }
+            }
+        };
+        collectionLoadWorker.execute();
+    }
+
+    private void displayLoadedActiveDeckManager(List<CardIconData> loadedOwnedCards, int collectionColumns) {
+        if (displayPanel == null || !showingActiveDeckCards) {
+            return;
+        }
+
+        ensureActiveDeckDraftInitialized();
+
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(14, 14));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(18, 18, 18, 18));
+
+        wrapper.add(buildActiveDeckManagerTopPanel(), BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new BorderLayout(18, 18));
+        centerPanel.setOpaque(false);
+        centerPanel.add(buildActiveDeckDraftPanel(), BorderLayout.NORTH);
+        centerPanel.add(buildActiveDeckOwnedCollectionPanel(loadedOwnedCards, collectionColumns), BorderLayout.CENTER);
+        wrapper.add(centerPanel, BorderLayout.CENTER);
+
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildActiveDeckManagerTopPanel() {
+        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+        topPanel.setOpaque(false);
+
+        int maxSize = campaign.getActiveDeckMaxSize();
+        int draftSize = activeDeckDraft == null ? 0 : activeDeckDraft.size();
+        double draftStrength = calculateDeckStrength(activeDeckDraft);
+
+        String statusText = "<html><center><b>Active Deck Editor</b><br>"
+                + "Current Mode: " + escapeHtml(campaign.getActiveDeckModeLabel())
+                + " | Draft: " + draftSize + "/" + maxSize
+                + " | Draft Strength: " + String.format("%.2f", draftStrength)
+                + "<br>Click cards below to add/remove them. Save Custom Deck requires exactly "
+                + maxSize + " cards. Era tournament decks are still auto-built by era."
+                + "</center></html>";
+
+        JLabel guidance = new JLabel(statusText, SwingConstants.CENTER);
+        guidance.setFont(new Font("Dialog", Font.PLAIN, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        guidance.setForeground(new Color(70, 70, 70));
+        topPanel.add(guidance, BorderLayout.NORTH);
+
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 4));
+        controls.setOpaque(false);
+
+        JButton viewButton = makeDashboardButton("View Active Deck");
+        viewButton.addActionListener(e -> displayActiveDeckCards());
+        controls.add(viewButton);
+
+        JButton autoModeButton = makeDashboardButton("Use Auto-Best");
+        autoModeButton.addActionListener(e -> setAutoBestActiveDeckFromUI());
+        controls.add(autoModeButton);
+
+        JButton buildBestButton = makeDashboardButton("Draft Best 10");
+        buildBestButton.addActionListener(e -> autoBuildBestActiveDeckDraft());
+        controls.add(buildBestButton);
+
+        JButton clearButton = makeDashboardButton("Clear Draft");
+        clearButton.addActionListener(e -> clearActiveDeckDraft());
+        controls.add(clearButton);
+
+        JButton saveCustomButton = makeDashboardButton("Save Custom");
+        saveCustomButton.addActionListener(e -> saveCustomActiveDeckDraft());
+        controls.add(saveCustomButton);
+
+        topPanel.add(controls, BorderLayout.SOUTH);
+        return topPanel;
+    }
+
+    private JPanel buildActiveDeckDraftPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setOpaque(false);
+
+        JLabel title = new JLabel("Selected Active Deck Draft", SwingConstants.CENTER);
+        title.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (18 * (cardSize / 275.0)))));
+        title.setForeground(new Color(20, 35, 65));
+        panel.add(title, BorderLayout.NORTH);
+
+        JPanel cardGrid = new JPanel(new GridLayout(0, 5, 18, 18));
+        cardGrid.setBackground(new Color(255, 253, 245));
+        cardGrid.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        int imageWidth = getActiveDeckManagerSelectedCardImageWidth();
+        int maxSize = campaign.getActiveDeckMaxSize();
+        for (int i = 0; i < maxSize; i++) {
+            if (activeDeckDraft != null && i < activeDeckDraft.size()) {
+                President president = activeDeckDraft.get(i);
+                ImageIcon icon = loadScaledIcon(president.getImageURL(), imageWidth, getCardImageHeight(imageWidth));
+                cardGrid.add(buildActiveDeckDraftCardButton(president, imageWidth, icon));
+            } else {
+                cardGrid.add(buildActiveDeckEmptySlotPanel(i + 1, imageWidth));
+            }
+        }
+
+        panel.add(cardGrid, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel buildActiveDeckOwnedCollectionPanel(List<CardIconData> loadedOwnedCards, int columns) {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setOpaque(false);
+
+        JLabel title = new JLabel("Owned Collection - Click Image to Add/Remove", SwingConstants.CENTER);
+        title.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (18 * (cardSize / 275.0)))));
+        title.setForeground(new Color(20, 35, 65));
+        panel.add(title, BorderLayout.NORTH);
+
+        if (loadedOwnedCards == null || loadedOwnedCards.isEmpty()) {
+            panel.add(makeCenteredDisplayMessage("No owned cards yet. Open packs first."), BorderLayout.CENTER);
+            return panel;
+        }
+
+        JPanel cardGrid = new JPanel(new GridLayout(0, columns, 20, 20));
+        cardGrid.setBackground(new Color(255, 253, 245));
+        cardGrid.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        for (CardIconData cardData : loadedOwnedCards) {
+            cardGrid.add(buildActiveDeckCollectionCardButton(cardData));
+        }
+
+        panel.add(cardGrid, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private String buildPresidentRatingToolTip(President president) {
+        if (president == null) {
+            return "";
+        }
+        return president.getName() + " | Avg: " + String.format("%.2f", president.getAv());
+    }
+
+    private JPanel buildActiveDeckDraftCardButton(President president, int imageWidth, ImageIcon icon) {
+        JPanel cardPanel = new JPanel(new BorderLayout(0, 4));
+        cardPanel.setOpaque(false);
+
+        JButton imageButton = buildCardImageButton(president, imageWidth, icon);
+        imageButton.setToolTipText(buildPresidentRatingToolTip(president));
+        imageButton.addActionListener(e -> removePresidentFromActiveDeckDraft(president));
+        cardPanel.add(imageButton, BorderLayout.CENTER);
+
+        JLabel actionLabel = new JLabel("Remove", SwingConstants.CENTER);
+        actionLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(11, (int) (13 * (cardSize / 275.0)))));
+        actionLabel.setForeground(new Color(110, 50, 45));
+        cardPanel.add(actionLabel, BorderLayout.SOUTH);
+
+        return cardPanel;
+    }
+
+    private JPanel buildActiveDeckCollectionCardButton(CardIconData cardData) {
+        President president = cardData.getPresident();
+        boolean inDraft = isPresidentInActiveDeckDraft(president);
+
+        JPanel cardPanel = new JPanel(new BorderLayout(0, 4));
+        cardPanel.setOpaque(false);
+        cardPanel.setBorder(BorderFactory.createLineBorder(
+                inDraft ? new Color(30, 95, 45) : new Color(180, 160, 120),
+                inDraft ? 3 : 1
+        ));
+
+        JButton imageButton = buildCardImageButton(president, cardData.getImageWidth(), cardData.getIcon());
+        imageButton.setToolTipText(buildPresidentRatingToolTip(president));
+        imageButton.addActionListener(e -> togglePresidentInActiveDeckDraft(president));
+        cardPanel.add(imageButton, BorderLayout.CENTER);
+
+        JLabel actionLabel = new JLabel(inDraft ? "In Deck" : "Add", SwingConstants.CENTER);
+        actionLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(11, (int) (13 * (cardSize / 275.0)))));
+        actionLabel.setForeground(inDraft ? new Color(30, 95, 45) : new Color(20, 35, 65));
+        cardPanel.add(actionLabel, BorderLayout.SOUTH);
+
+        return cardPanel;
+    }
+
+    private JButton buildCardImageButton(President president, int imageWidth, ImageIcon icon) {
+        int imageHeight = getCardImageHeight(imageWidth);
+        JButton imageButton = new JButton();
+        imageButton.setFocusPainted(false);
+        imageButton.setContentAreaFilled(false);
+        imageButton.setOpaque(false);
+        imageButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        imageButton.setPreferredSize(new Dimension(imageWidth, imageHeight));
+        imageButton.setBorder(BorderFactory.createLineBorder(new Color(120, 100, 70), 1));
+
+        if (icon != null) {
+            imageButton.setIcon(icon);
+        } else {
+            imageButton.setText("<html><center>Image not found<br>" + escapeHtml(president.getName()) + "</center></html>");
+            imageButton.setFont(new Font("Dialog", Font.BOLD, Math.max(10, (int) (12 * (cardSize / 275.0)))));
+        }
+        return imageButton;
+    }
+
+    private JPanel buildActiveDeckEmptySlotPanel(int slotNumber, int imageWidth) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setPreferredSize(new Dimension(imageWidth, getCardImageHeight(imageWidth)));
+        panel.setBorder(BorderFactory.createDashedBorder(new Color(170, 150, 115), 3, 4));
+
+        JLabel label = new JLabel("<html><center>Empty Slot<br>" + slotNumber + "</center></html>", SwingConstants.CENTER);
+        label.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
+        label.setForeground(new Color(110, 95, 70));
+        panel.add(label, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void resetActiveDeckDraftFromCampaign() {
+        if (campaign == null) {
+            activeDeckDraft = new ArrayList<President>();
+            return;
+        }
+        activeDeckDraft = new ArrayList<President>(campaign.getActiveDeck());
+    }
+
+    private void ensureActiveDeckDraftInitialized() {
+        if (activeDeckDraft == null) {
+            activeDeckDraft = new ArrayList<President>();
+        }
+    }
+
+    private boolean isPresidentInActiveDeckDraft(President president) {
+        if (president == null || activeDeckDraft == null) {
+            return false;
+        }
+        for (President draftCard : activeDeckDraft) {
+            if (draftCard != null && draftCard.getName().equalsIgnoreCase(president.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void togglePresidentInActiveDeckDraft(President president) {
+        if (isPresidentInActiveDeckDraft(president)) {
+            removePresidentFromActiveDeckDraft(president);
+        } else {
+            addPresidentToActiveDeckDraft(president);
+        }
+    }
+
+    private void addPresidentToActiveDeckDraft(President president) {
+        if (president == null || campaign == null) {
+            return;
+        }
+        ensureActiveDeckDraftInitialized();
+        if (isPresidentInActiveDeckDraft(president)) {
+            return;
+        }
+        if (activeDeckDraft.size() >= campaign.getActiveDeckMaxSize()) {
+            showShortDialog(
+                    "Deck Full",
+                    "Your custom Active Deck draft already has " + campaign.getActiveDeckMaxSize()
+                            + " Presidents. Remove someone first.",
+                    true
+            );
+            return;
+        }
+        activeDeckDraft.add(president);
+        refreshActiveDeckCards();
+    }
+
+    private void removePresidentFromActiveDeckDraft(President president) {
+        if (president == null || activeDeckDraft == null) {
+            return;
+        }
+        for (int i = activeDeckDraft.size() - 1; i >= 0; i--) {
+            President draftCard = activeDeckDraft.get(i);
+            if (draftCard != null && draftCard.getName().equalsIgnoreCase(president.getName())) {
+                activeDeckDraft.remove(i);
+            }
+        }
+        refreshActiveDeckCards();
+    }
+
+    private void autoBuildBestActiveDeckDraft() {
+        if (campaign == null) {
+            return;
+        }
+        activeDeckDraft = new ArrayList<President>(campaign.getBestOwnedPresidents(campaign.getActiveDeckMaxSize()));
+        refreshActiveDeckCards();
+    }
+
+    private void clearActiveDeckDraft() {
+        activeDeckDraft = new ArrayList<President>();
+        refreshActiveDeckCards();
+    }
+
+    private void setAutoBestActiveDeckFromUI() {
+        if (campaign == null) {
+            return;
+        }
+        OperationResult result = captureBooleanOutput(() -> campaign.setActiveDeckAutoMode());
+        appendLog(result.output);
+        refreshDashboard();
+        resetActiveDeckDraftFromCampaign();
+        refreshActiveDeckCards();
+        showShortDialog(
+                result.success ? "Auto-Best Enabled" : "Deck Save Failed",
+                result.success
+                        ? "Quick matches will use your best 10 owned Presidents automatically."
+                        : "Could not save Auto-Best deck mode.",
+                !result.success
+        );
+    }
+
+    private void saveCustomActiveDeckDraft() {
+        if (campaign == null) {
+            return;
+        }
+        ensureActiveDeckDraftInitialized();
+        if (activeDeckDraft.size() != campaign.getActiveDeckMaxSize()) {
+            showShortDialog(
+                    "Custom Deck Incomplete",
+                    "A custom Active Deck needs exactly " + campaign.getActiveDeckMaxSize()
+                            + " Presidents. Current draft: " + activeDeckDraft.size()
+                            + "/" + campaign.getActiveDeckMaxSize() + ".",
+                    true
+            );
+            return;
+        }
+
+        final List<President> savedDraft = new ArrayList<President>(activeDeckDraft);
+        OperationResult result = captureBooleanOutput(() -> campaign.setCustomActiveDeck(savedDraft));
+        appendLog(result.output);
+        refreshDashboard();
+        resetActiveDeckDraftFromCampaign();
+        refreshActiveDeckCards();
+        showShortDialog(
+                result.success ? "Custom Deck Saved" : "Deck Save Failed",
+                result.success
+                        ? "Quick matches will use this custom Active Deck. Tournament decks remain auto-built by era."
+                        : "Could not save that custom Active Deck.",
+                !result.success
+        );
+    }
+
+    private double calculateDeckStrength(List<President> deck) {
+        if (deck == null || deck.isEmpty()) {
+            return 0.0;
+        }
+
+        List<President> sortedDeck = new ArrayList<President>(deck);
+        Collections.sort(sortedDeck, presidentAverageComparator());
+
+        int topCount = Math.min(5, sortedDeck.size());
+        double topFiveTotal = 0.0;
+        for (int i = 0; i < topCount; i++) {
+            topFiveTotal += sortedDeck.get(i).getAv();
+        }
+
+        double fullTotal = 0.0;
+        for (President president : sortedDeck) {
+            if (president != null) {
+                fullTotal += president.getAv();
+            }
+        }
+
+        double topFiveAverage = topCount == 0 ? 0.0 : topFiveTotal / topCount;
+        double fullAverage = sortedDeck.isEmpty() ? 0.0 : fullTotal / sortedDeck.size();
+        return (0.70 * topFiveAverage) + (0.30 * fullAverage);
+    }
+
+    private int getActiveDeckManagerSelectedCardImageWidth() {
+        int frameWidth = frame == null ? 1600 : frame.getWidth();
+        int availableWidth = Math.max(900, frameWidth - 160);
+        int widthFromScreen = (availableWidth - 4 * 18 - 36) / 5;
+        int widthFromScale = (int) (170 * (cardSize / 275.0));
+        return Math.max(120, Math.min(widthFromScreen, Math.max(155, widthFromScale)));
+    }
+
+    private int getActiveDeckManagerCollectionCardImageWidth() {
+        int frameWidth = frame == null ? 1600 : frame.getWidth();
+        int availableWidth = Math.max(700, frameWidth - 120);
+        int widthFromScreen = (availableWidth - 5 * 20 - 36) / 6;
+        int widthFromScale = (int) (205 * (cardSize / 275.0));
+        return Math.max(145, Math.min(widthFromScreen, Math.max(195, widthFromScale)));
+    }
+
+    private int getActiveDeckManagerCollectionColumnCount(int imageWidth) {
+        int frameWidth = frame == null ? 1600 : frame.getWidth();
+        int availableWidth = Math.max(700, frameWidth - 120);
+        int columns = availableWidth / Math.max(1, imageWidth + 24);
+        return Math.max(3, Math.min(6, columns));
     }
 
     private JLabel makeCenteredDisplayMessage(String message) {
@@ -2586,8 +3299,8 @@ public class RunCampaignMode implements Runnable {
         // Active deck is 5 columns. Use the available width, but cap it so the
         // cards are big without becoming cartoonishly huge on ultrawide screens.
         int widthFromScreen = (availableWidth - 4 * 22 - 36) / 5;
-        int widthFromScale = (int) (210 * (cardSize / 275.0));
-        return Math.max(150, Math.min(widthFromScreen, Math.max(210, widthFromScale)));
+        int widthFromScale = (int) (232 * (cardSize / 275.0));
+        return Math.max(165, Math.min(widthFromScreen, Math.max(230, widthFromScale)));
     }
 
     private int getCollectionCardImageWidth() {
@@ -2920,6 +3633,7 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void returnToMainHomeScreen() {
+        stopPlayTimeUiTimer(true);
         if (navigationHost != null) {
             navigationHost.showMainHomeScreen();
             return;
@@ -2930,6 +3644,7 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void exitFullApplication() {
+        stopPlayTimeUiTimer(true);
         if (navigationHost != null) {
             navigationHost.exitApplication();
             return;
@@ -2939,14 +3654,48 @@ public class RunCampaignMode implements Runnable {
         }
     }
 
+    private void startPlayTimeUiTimer() {
+        stopPlayTimeUiTimer(false);
+        playTimeUiTimer = new Timer(60000, e -> {
+            if (campaign != null) {
+                campaign.flushPlayTimeToPlayer();
+            }
+            refreshPlayTimeLabel();
+        });
+        playTimeUiTimer.setInitialDelay(60000);
+        playTimeUiTimer.start();
+        refreshPlayTimeLabel();
+    }
+
+    private void stopPlayTimeUiTimer(boolean flushTime) {
+        if (flushTime && campaign != null) {
+            campaign.flushPlayTimeToPlayer();
+        }
+        if (playTimeUiTimer != null) {
+            playTimeUiTimer.stop();
+            playTimeUiTimer = null;
+        }
+    }
+
+    private void refreshPlayTimeLabel() {
+        if (activeDeckLabel == null) {
+            return;
+        }
+        if (campaign == null || campaign.getPlayer() == null) {
+            activeDeckLabel.setText("Time Played: ");
+            return;
+        }
+        activeDeckLabel.setText("Time Played: " + campaign.getFormattedPlayTime());
+    }
+
     private void refreshDashboard() {
         if (campaign == null || campaign.getPlayer() == null) {
             nameLabel.setText("Name: ");
             pcLabel.setText("Political Capital: ");
             recordLabel.setText("Record: ");
             collectionLabel.setText("Collection: ");
-            activeDeckLabel.setText("Active Deck: ");
-            deckStrengthLabel.setText("Deck Strength: ");
+            activeDeckLabel.setText("Time Played: ");
+            deckStrengthLabel.setText("Active Deck Strength: ");
             return;
         }
 
@@ -2960,10 +3709,9 @@ public class RunCampaignMode implements Runnable {
         recordLabel.setText("Record: " + player.getRecordSummary());
         collectionLabel.setText("Collection: " + ownedPresidents + "/" + totalPresidents
                 + " (" + String.format("%.1f", completionPct) + "%)");
-        activeDeckLabel.setText("Active Deck: " + player.getActiveDeckSize()
-                + "/" + player.getActiveDeckMaxSize());
-        deckStrengthLabel.setText("Deck Strength: "
-                + String.format("%.2f", player.getActiveDeckStrength()));
+        refreshPlayTimeLabel();
+        deckStrengthLabel.setText("Active Deck Strength: "
+                + String.format("%.2f", campaign.getActiveDeckStrength()));
 
         if (showingActiveDeckCards) {
             refreshActiveDeckCards();
@@ -2987,12 +3735,13 @@ public class RunCampaignMode implements Runnable {
                 + "Name: " + player.getName() + "\n"
                 + "Political Capital: " + CampaignMode.formatPC(player.getPC()) + "\n"
                 + "Record: " + player.getRecordSummary() + "\n"
+                + "Time Played: " + campaign.getFormattedPlayTime() + "\n"
                 + "Presidents owned: " + ownedPresidents + "/" + totalPresidents
                 + " (" + String.format("%.1f", completionPct) + "%)\n"
-                + "Active Deck: " + player.getActiveDeckSize() + "/"
-                + player.getActiveDeckMaxSize() + "\n"
+                + "Active Deck: " + campaign.getActiveDeckModeLabel() + " " + campaign.getActiveDeckSize() + "/"
+                + campaign.getActiveDeckMaxSize() + "\n"
                 + "Active Deck Strength: "
-                + String.format("%.2f", player.getActiveDeckStrength()) + "\n"
+                + String.format("%.2f", campaign.getActiveDeckStrength()) + "\n"
                 + "Easy rewards: " + CampaignMode.formatPC(campaign.getEasyWinRewardPC())
                 + " win / " + CampaignMode.formatPC(campaign.getEasyLossRewardPC()) + " loss\n"
                 + "Medium rewards: " + CampaignMode.formatPC(campaign.getMediumWinRewardPC())

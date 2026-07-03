@@ -3,7 +3,9 @@ package org.cis120.electiongame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Stores the player's persistent Campaign Mode progress.
@@ -14,6 +16,9 @@ import java.util.List;
  */
 public class CampaignPlayer {
 
+    public static final String ACTIVE_DECK_MODE_AUTO = "AUTO";
+    public static final String ACTIVE_DECK_MODE_CUSTOM = "CUSTOM";
+
     private static final int ACTIVE_DECK_SIZE = 10;
     private static final int STARTING_HAND_SIZE = 5;
 
@@ -23,6 +28,10 @@ public class CampaignPlayer {
     private int losses;
     private List<President> presidentCollection;
     private List<President> activeDeck;
+    private List<President> customActiveDeck;
+    private String activeDeckMode;
+    private long totalPlayTimeMillis;
+    private Map<String, CampaignTournamentRecord> tournamentRecords;
 
     /**
      * Creates a campaign player with 0 starting PC.
@@ -41,6 +50,10 @@ public class CampaignPlayer {
         this.losses = 0;
         this.presidentCollection = new ArrayList<President>();
         this.activeDeck = new ArrayList<President>();
+        this.customActiveDeck = new ArrayList<President>();
+        this.activeDeckMode = ACTIVE_DECK_MODE_AUTO;
+        this.totalPlayTimeMillis = 0L;
+        this.tournamentRecords = new HashMap<String, CampaignTournamentRecord>();
     }
 
     /*** BASIC GETTERS / SETTERS ***/
@@ -179,6 +192,161 @@ public class CampaignPlayer {
         return wins + "-" + losses + " (" + String.format("%.1f", getWinPercentage()) + "%)";
     }
 
+    /*** PLAY TIME METHODS ***/
+
+    public long getTotalPlayTimeMillis() {
+        return Math.max(0L, totalPlayTimeMillis);
+    }
+
+    public long getTotalPlayTimeMinutes() {
+        return getTotalPlayTimeMillis() / 60000L;
+    }
+
+    public void setTotalPlayTimeMillis(long totalPlayTimeMillis) {
+        this.totalPlayTimeMillis = Math.max(0L, totalPlayTimeMillis);
+    }
+
+    public void addPlayTimeMillis(long additionalMillis) {
+        if (additionalMillis <= 0L) {
+            return;
+        }
+        totalPlayTimeMillis = Math.max(0L, totalPlayTimeMillis + additionalMillis);
+    }
+
+    public String getFormattedPlayTime() {
+        return formatPlayTime(totalPlayTimeMillis);
+    }
+
+    public static String formatPlayTime(long millis) {
+        long totalMinutes = Math.max(0L, millis) / 60000L;
+        long hours = totalMinutes / 60L;
+        long minutes = totalMinutes % 60L;
+        if (hours <= 0L) {
+            return totalMinutes + " min";
+        }
+        return hours + "h " + minutes + "m";
+    }
+
+
+    /*** TOURNAMENT RECORD METHODS ***/
+
+    public CampaignTournamentRecord getTournamentRecord(String tournamentId) {
+        String cleanId = cleanTournamentId(tournamentId);
+        if (cleanId.isEmpty()) {
+            return new CampaignTournamentRecord("");
+        }
+
+        CampaignTournamentRecord record = tournamentRecords.get(cleanId);
+        if (record == null) {
+            record = new CampaignTournamentRecord(cleanId);
+            tournamentRecords.put(cleanId, record);
+        }
+        return record;
+    }
+
+    public List<CampaignTournamentRecord> getTournamentRecords() {
+        return new ArrayList<CampaignTournamentRecord>(tournamentRecords.values());
+    }
+
+    public void setTournamentRecords(List<CampaignTournamentRecord> records) {
+        tournamentRecords.clear();
+        if (records == null) {
+            return;
+        }
+        for (CampaignTournamentRecord record : records) {
+            if (record == null || record.getTournamentId() == null
+                    || record.getTournamentId().trim().isEmpty()) {
+                continue;
+            }
+            tournamentRecords.put(cleanTournamentId(record.getTournamentId()), record);
+        }
+    }
+
+    public void recordTournamentAttemptStarted(String tournamentId) {
+        getTournamentRecord(tournamentId).recordAttemptStarted();
+    }
+
+    public void recordTournamentRoundWin(String tournamentId, int roundNumber) {
+        getTournamentRecord(tournamentId).recordRoundWin(roundNumber);
+    }
+
+    public void recordTournamentRoundLoss(String tournamentId, int roundNumber, boolean forfeited) {
+        getTournamentRecord(tournamentId).recordRoundLoss(roundNumber, forfeited);
+    }
+
+    public boolean hasTournamentTitle(String tournamentId) {
+        return getTournamentRecord(tournamentId).hasWonTitle();
+    }
+
+    public int getTournamentTitleCount() {
+        int titles = 0;
+        for (CampaignTournamentRecord record : tournamentRecords.values()) {
+            if (record != null && record.getTitles() > 0) {
+                titles++;
+            }
+        }
+        return titles;
+    }
+
+    public int getTotalTournamentAttempts() {
+        int attempts = 0;
+        for (CampaignTournamentRecord record : tournamentRecords.values()) {
+            if (record != null) {
+                attempts += record.getAttempts();
+            }
+        }
+        return attempts;
+    }
+
+    public int getTotalTournamentTitles() {
+        int titles = 0;
+        for (CampaignTournamentRecord record : tournamentRecords.values()) {
+            if (record != null) {
+                titles += record.getTitles();
+            }
+        }
+        return titles;
+    }
+
+    public String getTournamentRecordsSaveString() {
+        StringBuilder builder = new StringBuilder();
+        boolean first = true;
+        ArrayList<String> ids = new ArrayList<String>(tournamentRecords.keySet());
+        Collections.sort(ids);
+        for (String id : ids) {
+            CampaignTournamentRecord record = tournamentRecords.get(id);
+            if (record == null) {
+                continue;
+            }
+            if (!first) {
+                builder.append(";");
+            }
+            builder.append(record.toSaveString());
+            first = false;
+        }
+        return builder.toString();
+    }
+
+    public void loadTournamentRecordsFromSaveString(String saveString) {
+        tournamentRecords.clear();
+        if (saveString == null || saveString.trim().isEmpty()) {
+            return;
+        }
+
+        String[] rows = saveString.split(";");
+        for (String row : rows) {
+            CampaignTournamentRecord record = CampaignTournamentRecord.fromSaveString(row);
+            if (record != null && record.getTournamentId() != null
+                    && !record.getTournamentId().trim().isEmpty()) {
+                tournamentRecords.put(cleanTournamentId(record.getTournamentId()), record);
+            }
+        }
+    }
+
+    private String cleanTournamentId(String tournamentId) {
+        return tournamentId == null ? "" : tournamentId.trim().toUpperCase();
+    }
+
     /*** PRESIDENT COLLECTION METHODS ***/
 
     /**
@@ -311,11 +479,19 @@ public class CampaignPlayer {
     /*** ACTIVE DECK METHODS ***/
 
     /**
-     * For now, the active deck is auto-built from the player's best 10 Presidents.
-     * Later, this can become manually editable once Campaign Mode has deck-building.
+     * Rebuilds the current active deck from the selected deck mode. Auto mode
+     * always uses the player's best 10 owned Presidents. Custom mode uses the
+     * saved custom deck and only falls back to a smaller/incomplete deck if the
+     * custom list itself is incomplete.
      */
     private void updateActiveDeck() {
         activeDeck.clear();
+
+        if (isCustomActiveDeckMode()) {
+            syncCustomActiveDeckWithCollection();
+            activeDeck.addAll(customActiveDeck);
+            return;
+        }
 
         List<President> bestPresidents = getBestPresidents(ACTIVE_DECK_SIZE);
         activeDeck.addAll(bestPresidents);
@@ -325,15 +501,142 @@ public class CampaignPlayer {
      * Returns a defensive copy of the current active deck.
      */
     public List<President> getActiveDeck() {
+        updateActiveDeck();
         return new ArrayList<President>(activeDeck);
     }
 
     public int getActiveDeckSize() {
+        updateActiveDeck();
         return activeDeck.size();
     }
 
     public int getActiveDeckMaxSize() {
         return ACTIVE_DECK_SIZE;
+    }
+
+    public String getActiveDeckMode() {
+        return activeDeckMode;
+    }
+
+    public String getActiveDeckModeLabel() {
+        return isCustomActiveDeckMode() ? "Custom" : "Auto-Best";
+    }
+
+    public boolean isAutoActiveDeckMode() {
+        return ACTIVE_DECK_MODE_AUTO.equals(activeDeckMode);
+    }
+
+    public boolean isCustomActiveDeckMode() {
+        return ACTIVE_DECK_MODE_CUSTOM.equals(activeDeckMode);
+    }
+
+    public void setActiveDeckAutoMode() {
+        activeDeckMode = ACTIVE_DECK_MODE_AUTO;
+        updateActiveDeck();
+    }
+
+    public boolean setActiveDeckMode(String mode) {
+        if (mode == null || mode.trim().isEmpty()
+                || ACTIVE_DECK_MODE_AUTO.equalsIgnoreCase(mode.trim())) {
+            setActiveDeckAutoMode();
+            return true;
+        }
+
+        if (ACTIVE_DECK_MODE_CUSTOM.equalsIgnoreCase(mode.trim())) {
+            if (customActiveDeck.size() != ACTIVE_DECK_SIZE) {
+                return false;
+            }
+            activeDeckMode = ACTIVE_DECK_MODE_CUSTOM;
+            updateActiveDeck();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Saves an exact custom active deck. The deck must contain 10 unique owned
+     * Presidents. This protects quick matches from accidentally launching with
+     * invalid cards or duplicates.
+     */
+    public boolean setCustomActiveDeck(List<President> presidents) {
+        if (presidents == null || presidents.size() != ACTIVE_DECK_SIZE) {
+            return false;
+        }
+
+        ArrayList<President> cleanedDeck = new ArrayList<President>();
+        for (President president : presidents) {
+            if (president == null || !ownsPresident(president) || containsPresident(cleanedDeck, president)) {
+                return false;
+            }
+            cleanedDeck.add(president);
+        }
+
+        customActiveDeck.clear();
+        customActiveDeck.addAll(cleanedDeck);
+        activeDeckMode = ACTIVE_DECK_MODE_CUSTOM;
+        updateActiveDeck();
+        return true;
+    }
+
+    public List<President> getCustomActiveDeck() {
+        syncCustomActiveDeckWithCollection();
+        return new ArrayList<President>(customActiveDeck);
+    }
+
+    public String getCustomActiveDeckCsv() {
+        syncCustomActiveDeckWithCollection();
+        StringBuilder builder = new StringBuilder();
+        for (President president : customActiveDeck) {
+            if (president == null) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(",");
+            }
+            builder.append(president.getName());
+        }
+        return builder.toString();
+    }
+
+    private void syncCustomActiveDeckWithCollection() {
+        if (customActiveDeck == null) {
+            customActiveDeck = new ArrayList<President>();
+        }
+
+        ArrayList<President> syncedDeck = new ArrayList<President>();
+        for (President customCard : customActiveDeck) {
+            President ownedCard = findOwnedPresident(customCard == null ? null : customCard.getName());
+            if (ownedCard != null && !containsPresident(syncedDeck, ownedCard)) {
+                syncedDeck.add(ownedCard);
+            }
+        }
+        customActiveDeck = syncedDeck;
+    }
+
+    private President findOwnedPresident(String presidentName) {
+        if (presidentName == null) {
+            return null;
+        }
+
+        for (President owned : presidentCollection) {
+            if (owned != null && presidentName.equalsIgnoreCase(owned.getName())) {
+                return owned;
+            }
+        }
+        return null;
+    }
+
+    private boolean containsPresident(List<President> presidents, President target) {
+        if (presidents == null || target == null) {
+            return false;
+        }
+        for (President president : presidents) {
+            if (samePresident(president, target)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -348,19 +651,24 @@ public class CampaignPlayer {
     }
 
     /**
-     * First-pass Campaign Mode deck strength.
+     * Campaign Mode Active Deck strength.
      *
-     * This makes stars matter most, but also gives value to depth:
+     * This rewards full 10-card roster depth while still giving extra weight to
+     * the cards most likely to decide rounds:
      *   30% = average of best 5 cards
      *   70% = average of full active deck, up to 10 cards
      */
     public double getActiveDeckStrength() {
+        updateActiveDeck();
         if (activeDeck.isEmpty()) {
             return 0.0;
         }
 
-        double topFiveAverage = averagePresidentRating(activeDeck, Math.min(STARTING_HAND_SIZE, activeDeck.size()));
-        double fullDeckAverage = averagePresidentRating(activeDeck, activeDeck.size());
+        List<President> strengthDeck = new ArrayList<President>(activeDeck);
+        Collections.sort(strengthDeck, presidentAverageComparator());
+
+        double topFiveAverage = averagePresidentRating(strengthDeck, Math.min(STARTING_HAND_SIZE, strengthDeck.size()));
+        double fullDeckAverage = averagePresidentRating(strengthDeck, strengthDeck.size());
 
         return (0.30 * topFiveAverage) + (0.70 * fullDeckAverage);
     }
@@ -373,8 +681,10 @@ public class CampaignPlayer {
     }
 
     public String getActiveDeckSummary() {
+        updateActiveDeck();
         StringBuilder summary = new StringBuilder();
         summary.append(name).append("'s Active Deck (")
+                .append(getActiveDeckModeLabel()).append(", ")
                 .append(activeDeck.size()).append("/")
                 .append(ACTIVE_DECK_SIZE).append("):");
 
@@ -405,8 +715,10 @@ public class CampaignPlayer {
                 "name='" + name + '\'' +
                 ", pc=" + pc +
                 ", presidentCollection=" + presidentCollection.size() + " cards" +
-                ", activeDeck=" + activeDeck.size() + "/" + ACTIVE_DECK_SIZE +
+                ", activeDeckMode=" + getActiveDeckModeLabel() +
+                ", activeDeck=" + getActiveDeckSize() + "/" + ACTIVE_DECK_SIZE +
                 ", record=" + wins + "-" + losses +
+                ", playTime=" + getFormattedPlayTime() +
                 '}';
     }
 

@@ -201,8 +201,9 @@ public class President extends Card {
     }
     
     double getValue() {
-    	double av = (.15*experience+.35*influence+.25*policy+.25*nameRec);
-    	return 1000 + 399000 * Math.pow((av - 1.0) / 7.0, 1.5);
+        double av = (.15 * experience + .35 * influence + .25 * policy + .25 * nameRec);
+        double value = 1356.44 * av * av + 1934.93 * av - 2291.37;
+        return Math.max(1000.0, value);
     }
     
     double getAv () {

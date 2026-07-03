@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class CampaignEconomySimulator {
 
-    private static final int STARTING_POLITICAL_CAPITAL = 100000;
+    private static final int STARTING_POLITICAL_CAPITAL = 25000;
 
     private static final double DUPLICATE_SALE_PERCENT = 0.25;
 
@@ -53,9 +53,9 @@ public class CampaignEconomySimulator {
     }
 
     private enum MatchTier {
-        EASY("Easy", 0.50, 0.0, 65000, 25000),
-        MEDIUM("Medium", 0.65, 3.0, 95000, 30000),
-        HARD("Hard", 0.80, 5.0, 185000, 35000);
+        EASY("Easy", 0.50, 0.0, 15000, 5000),
+        MEDIUM("Medium", 0.65, 3.0, 25000, 10000),
+        HARD("Hard", 0.80, 5.0, 50000, 10000);
 
         private String label;
         private double cpuAIDifficulty;
@@ -235,22 +235,22 @@ public class CampaignEconomySimulator {
     private static CampaignPack createTargetPack(Strategy strategy, List<President> allPresidents) {
         if (strategy == Strategy.CAMPAIGN_TRAIL_ONLY) {
             // Campaign Trail Pack: 1 card, 90k PC, any rating.
-            return new CampaignPack(1, 90000, 0.0, 10.0, allPresidents, null);
+            return new CampaignPack(1, 25000, 0.0, 10.0, allPresidents, null);
         }
 
         if (strategy == Strategy.STAR_ONLY) {
             // Star Pack: 1 card, 200k PC, 3.5+ rating.
-            return new CampaignPack(1, 200000, 3.5, 10.0, allPresidents, null);
+            return new CampaignPack(1, 55000, 3.5, 10.0, allPresidents, null);
         }
 
         if (strategy == Strategy.STANDARD_ONLY) {
             // Standard Pack: 5 cards, 400k PC, 2.0+ rating.
-            return new CampaignPack(5, 400000, 2.0, 10.0, allPresidents, null);
+            return new CampaignPack(5, 100000, 2.0, 10.0, allPresidents, null);
         }
 
         if (strategy == Strategy.ELITE_ONLY) {
             // Elite Pack: 3 cards, 700k PC, 4.0+ rating.
-            return new CampaignPack(3, 700000, 4.0, 10.0, allPresidents, null);
+            return new CampaignPack(3, 185000, 4.0, 10.0, allPresidents, null);
         }
 
         throw new IllegalArgumentException("Unknown strategy: " + strategy);

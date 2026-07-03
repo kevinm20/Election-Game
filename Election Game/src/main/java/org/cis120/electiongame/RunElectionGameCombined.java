@@ -47,6 +47,9 @@ import javax.swing.border.LineBorder;
  * This class sets up the top-level frame and widgets for the GUI.
  *
  * v7.2 wraps the playable match UI in an internal match screen panel.
+ * v9.1 adds a two-choice home screen: Quick Play and Campaign Mode.
+ * v9.2 vertically centers the first-level home buttons.
+ * v9.3 offsets home-menu buttons slightly downward for better banner spacing.
  * Home, Campaign Mode, and playable matches now swap as screens inside the
  * single main Campaign Clash JFrame instead of directly adding/removing match
  * widgets all over the frame.
@@ -57,6 +60,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
     private BackgroundPanel loadingScreen;
     private JPanel loadingButtonPanel;
     private GridBagConstraints loadingButtonConstraints;
+    private JButton[] loadingHomeButtons;
     private BackgroundPanel aiCardsPanel;
     private JScrollPane userPoliciesScrollPane;
     private BackgroundPanel controlPanel;
@@ -286,11 +290,12 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	    JPanel buttonPanel = new JPanel();
         loadingButtonPanel = buttonPanel;
 	    buttonPanel.setOpaque(false); // Make the button panel transparent
-	    buttonPanel.setLayout(new GridLayout(5, 1, 0, (int) (cardSize / 275.0 * 55))); // 5 rows, 1 column; tighter gap now that Campaign Mode is on the home screen
+	    buttonPanel.setLayout(new GridLayout(2, 1, 0, (int) (cardSize / 275.0 * 55))); // v9.1: first-level menu has Quick Play + Campaign Mode
 
-	    // Define the button titles
-	    String[] buttonTitles = {"Continue", "Edit Account", "1-Player", "2-Players", "Campaign Mode"};
+	    // Define the button titles. v9.1 keeps the base-game options inside Quick Play.
+	    String[] buttonTitles = {"Quick Play", "Campaign Mode", "Continue", "Edit Account", "1-Player", "2-Players", "Back"};
 	    JButton[] buttons = new JButton[buttonTitles.length];
+        loadingHomeButtons = buttons;
 
 	    // Define the preferred size for the buttons
 	    int loadingButtonWidth = 400;
@@ -353,21 +358,27 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	            }
 	        });
 
-	        // Add each button to the button panel
-	        buttonPanel.add(buttons[index]);
+	        // Buttons are added by menu state below.
 	    }
+	    
+	    showHomeRootMenu(buttonPanel, buttons);
 	    
 	    // Revalidate and repaint the panel to ensure layout is updated
 	    buttonPanel.revalidate();
 	    buttonPanel.repaint();
 
-	    // Add the button panel to the loading screen (centered on the screen)
+	    // Add the button panel to the loading screen, vertically centered.
+        // v9.2: the first-level Quick Play / Campaign Mode menu should sit in the
+        // middle of the screen instead of being pushed toward the bottom.
 	    loadingScreen.setLayout(new GridBagLayout());
 	    GridBagConstraints buttonConstraints = new GridBagConstraints();
         loadingButtonConstraints = buttonConstraints;
-	    buttonConstraints.insets = new Insets(0, 0, (int) (cardSize / 275.0 * 90), 0); // Adds vertical spacing at the bottom
-	    buttonConstraints.anchor = GridBagConstraints.SOUTH; // Anchor the buttons to the bottom of the screen
-	    buttonConstraints.weighty = 1.0; // Push the buttons down by using weight
+	    // v9.3: keep the root home buttons close to center, but nudge the menu
+	    // slightly downward so it feels anchored under the title art.
+	    buttonConstraints.insets = new Insets((int) Math.round(cardSize / 275.0 * 55), 0, 0, 0);
+	    buttonConstraints.anchor = GridBagConstraints.CENTER;
+	    buttonConstraints.weightx = 1.0;
+	    buttonConstraints.weighty = 1.0;
 
 	    loadingScreen.add(buttonPanel, buttonConstraints);
 
@@ -1535,7 +1546,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 		accountSettingsArray = accountSettings.split(",");
 
 		// Continue as active account
-		buttons[0].addActionListener(new ActionListener() {
+		buttons[2].addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
 				// User continues as active account
@@ -1578,7 +1589,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 
 		// Edit account
-		buttons[1].addActionListener(new ActionListener() {
+		buttons[3].addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
 		    	// User changes account. The following functions can be heavily refactored, and
@@ -1827,7 +1838,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 							String[] customTags = { "President","Founding Era",
 							        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-							        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Present Era" };
+							        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Trump Era" };
 
 							List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
@@ -1995,7 +2006,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 		 **********************/
 		
 		// 1-player mode
-		buttons[2].addActionListener(new ActionListener() {
+		buttons[4].addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {					
 		    		if (loginMode == 3) {
@@ -2085,7 +2096,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 		    				String[] customTags = { "President","Founding Era",
 		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-		    				        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Present Era" };
+		    				        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Trump Era" };
 
 		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/settingstitle.PNG");
 
@@ -2156,7 +2167,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 		});
 		
 		// Start 2-player mode
-		buttons[3].addActionListener(new ActionListener() {
+		buttons[5].addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
 		        twoplayermode = true;
@@ -2245,7 +2256,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 		    				String[] customTags = { "President","Founding Era",
 		    				        "Jacksonian Era", "Civil War Era", "Reconstruction Era", "Progressive Era",
-		    				        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Present Era" };
+		    				        "New Deal Era", "Cold War Era", "Reagan Era", "Modern Era", "Trump Era" };
 
 		    				List<String> selectedTags = CustomDialog.showCheckboxDialog(frame, "Select tags:", customTags, "files/setuptitle.PNG");
 
@@ -2320,14 +2331,73 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
         // wired in as the playable-match launcher. In Sim mode, Campaign Mode still
         // uses its own internal simulation path; in Play mode, it calls back into
         // launchCampaignMatch(...) below to start a real playable match.
-        buttons[4].addActionListener(new ActionListener() {
+        buttons[0].addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showQuickPlayHomeMenu(buttonPanel, buttons);
+            }
+        });
+
+        buttons[1].addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openCampaignModeFromHome();
             }
         });
+
+        buttons[6].addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showHomeRootMenu(buttonPanel, buttons);
+            }
+        });
 		
 	}
+
+
+    private void showHomeRootMenu(JPanel buttonPanel, JButton[] buttons) {
+        if (buttonPanel == null || buttons == null || buttons.length < 2) {
+            return;
+        }
+        buttonPanel.removeAll();
+        buttonPanel.setLayout(new GridLayout(2, 1, 0, (int) (cardSize / 275.0 * 55)));
+        setLoadingMenuVerticalOffset(55); // v9.3: root menu sits slightly below exact center.
+        buttonPanel.add(buttons[0]); // Quick Play
+        buttonPanel.add(buttons[1]); // Campaign Mode
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
+    }
+
+    private void showQuickPlayHomeMenu(JPanel buttonPanel, JButton[] buttons) {
+        if (buttonPanel == null || buttons == null || buttons.length < 7) {
+            return;
+        }
+        buttonPanel.removeAll();
+        buttonPanel.setLayout(new GridLayout(5, 1, 0, (int) (cardSize / 275.0 * 55)));
+        setLoadingMenuVerticalOffset(115); // v9.3: lower the taller Quick Play stack below the banner.
+        buttonPanel.add(buttons[2]); // Continue
+        buttonPanel.add(buttons[3]); // Edit Account
+        buttonPanel.add(buttons[4]); // 1-Player
+        buttonPanel.add(buttons[5]); // 2-Players
+        buttonPanel.add(buttons[6]); // Back
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
+    }
+
+    private void setLoadingMenuVerticalOffset(int basePixels) {
+        if (loadingButtonPanel == null || loadingButtonConstraints == null) {
+            return;
+        }
+        int topOffset = (int) Math.round(cardSize / 275.0 * basePixels);
+        loadingButtonConstraints.insets = new Insets(topOffset, 0, 0, 0);
+
+        Container parent = loadingButtonPanel.getParent();
+        if (parent != null && parent.getLayout() instanceof GridBagLayout) {
+            ((GridBagLayout) parent.getLayout()).setConstraints(loadingButtonPanel, loadingButtonConstraints);
+            parent.revalidate();
+            parent.repaint();
+        }
+    }
 
 	/*
 	 * This is my first inner class used to represent the deck of the user. It does
@@ -3386,6 +3456,9 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
                 activeCampaignMatchCallback = null;
 
                 frame.getContentPane().removeAll();
+                if (loadingButtonPanel != null && loadingHomeButtons != null) {
+                    showHomeRootMenu(loadingButtonPanel, loadingHomeButtons);
+                }
                 if (loadingButtonPanel != null && loadingButtonPanel.getParent() != loadingScreen) {
                     loadingScreen.add(loadingButtonPanel, loadingButtonConstraints);
                 }

@@ -1,8 +1,10 @@
 package org.cis120.electiongame;
 
-import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /*
  * This is the model of my game
@@ -337,7 +339,8 @@ public class ElectionGame {
         resetWithCustomPresidentDecks(
                 config.getPlayerPresidentDeck(),
                 config.getCpuPresidentDeck(),
-                config.getStartingHandSize()
+                config.getStartingHandSize(),
+                config
         );
 
         campaignMatchMode = true;
@@ -361,6 +364,13 @@ public class ElectionGame {
     public void resetWithCustomPresidentDecks(
             List<President> player1Presidents, List<President> player2Presidents,
             int presCount
+    ) {
+        resetWithCustomPresidentDecks(player1Presidents, player2Presidents, presCount, null);
+    }
+
+    private void resetWithCustomPresidentDecks(
+            List<President> player1Presidents, List<President> player2Presidents,
+            int presCount, CampaignMatchConfig config
     ) {
         validateCustomPresidentDecks(player1Presidents, player2Presidents, presCount);
 
@@ -392,7 +402,7 @@ public class ElectionGame {
         player1PresidentDeck.fillPres(new ArrayList<President>(player1Presidents));
         player2PresidentDeck.fillPres(new ArrayList<President>(player2Presidents));
 
-        electionDeck.fillElec(CardData.getElections());
+        electionDeck.fillElec(getCampaignElectionDeckForConfig(config));
         policyDeck.fillPol(CardData.getPolicies());
 
         presidentDeck.shuffle();
@@ -415,6 +425,36 @@ public class ElectionGame {
 
         campaignMatchMode = false;
         campaignMatchConfig = null;
+    }
+
+
+    private List<Election> getCampaignElectionDeckForConfig(CampaignMatchConfig config) {
+        ArrayList<Election> allElections = new ArrayList<Election>(CardData.getElections());
+        if (config == null || !config.shouldUseEraElectionDeck()) {
+            return allElections;
+        }
+
+        ArrayList<Election> filteredElections = new ArrayList<Election>();
+        int startYear = config.getElectionStartYear();
+        int endYear = config.getElectionEndYear();
+
+        for (Election election : allElections) {
+            if (election == null) {
+                continue;
+            }
+            int year = election.getYear();
+            if (year >= startYear && year <= endYear) {
+                filteredElections.add(election);
+            }
+        }
+
+        // Safety fallback: if a thin era does not have enough election cards yet,
+        // use the normal election deck rather than risking an empty/too-small game.
+        int minimumUsableElections = Math.max(5, config.getStartingHandSize());
+        if (filteredElections.size() < minimumUsableElections) {
+            return allElections;
+        }
+        return filteredElections;
     }
 
     private void validateCustomPresidentDecks(
@@ -959,149 +999,777 @@ public class ElectionGame {
     }
 
     public static void main(String[] args) {
+        runCampaignMultiContextMarginalCardStudy();
+    }
 
-    	
-    	List<President> preses = CardData.getPresidents("expanded", null, 0);
-    	
-    	List<String> imageNames = new ArrayList<>();
-        
-        // Specify the directory where the images are stored
-        String path = "files/";  // Adjust path as necessary
-        
-        // Load image filenames from the directory into the list
-        File dir = new File(path);
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    imageNames.add(file.getName());
-                }
+    /*** V10 ECONOMY / MULTI-CONTEXT MARGINAL CARD FULL-MATCH STUDY HELPERS ***/
+
+    private static final int MULTI_CONTEXT_MATCHES_PER_ROW = 10000;
+    private static final int MULTI_CONTEXT_DECK_SIZE = 10;
+    private static final int MULTI_CONTEXT_BASELINE_CARDS = 9;
+    private static final int MULTI_CONTEXT_STARTING_HAND_SIZE = 5;
+    private static final double MULTI_CONTEXT_PLAYER_AI_DIFFICULTY = 0.65;
+
+    private static final double EASY_CONTEXT_MIN_RATING = 1.0;
+    private static final double MEDIUM_CONTEXT_MIN_RATING = 3.0;
+    private static final double HARD_CONTEXT_MIN_RATING = 5.0;
+
+    private static final double EASY_CONTEXT_CPU_AI_DIFFICULTY = 0.50;
+    private static final double MEDIUM_CONTEXT_CPU_AI_DIFFICULTY = 0.65;
+    private static final double HARD_CONTEXT_CPU_AI_DIFFICULTY = 0.80;
+
+    /**
+     * V10 economy test harness.
+     *
+     * Goal: estimate the full-match marginal value of adding one extra card of a
+     * given rating bucket across three Campaign Mode contexts:
+     *   Easy context   = baseline/CPU decks sampled from 1.0+ pool, CPU AI 0.50
+     *   Medium context = baseline/CPU decks sampled from 3.0+ pool, CPU AI 0.65
+     *   Hard context   = baseline/CPU decks sampled from 5.0+ pool, CPU AI 0.80
+     *
+     * The player pilot always uses 0.65 AI difficulty. Each context includes a
+     * control row where both sides receive 10 random context-pool cards, then
+     * bucket rows where the player receives 9 context-pool cards plus one marked
+     * marginal card from the bucket.
+     */
+    private static void runCampaignMultiContextMarginalCardStudy() {
+        long startMillis = System.currentTimeMillis();
+        List<President> allPresidents = CardData.getPresidents("full", null, 0.0);
+        List<RatingBucket> buckets = buildMarginalRatingBuckets();
+        List<MarginalStudyContext> contexts = buildMarginalStudyContexts();
+        ArrayList<MarginalCardStudyResult> allResults = new ArrayList<MarginalCardStudyResult>();
+
+        System.out.println("CAMPAIGN CLASH V10 MULTI-CONTEXT MARGINAL CARD FULL-MATCH STUDY");
+        System.out.println("Starting sim...");
+        System.out.println("Matches per row: " + MULTI_CONTEXT_MATCHES_PER_ROW);
+        System.out.println("Deck size per side: " + MULTI_CONTEXT_DECK_SIZE);
+        System.out.println("Starting hand size: " + MULTI_CONTEXT_STARTING_HAND_SIZE);
+        System.out.println("Player AI difficulty: " + MULTI_CONTEXT_PLAYER_AI_DIFFICULTY);
+        System.out.println("Contexts: Easy 1.0+ / CPU AI 0.50, Medium 3.0+ / CPU AI 0.65, Hard 5.0+ / CPU AI 0.80");
+        System.out.println("Bucket rows: 9 context-pool cards + 1 marked marginal card.");
+        System.out.println("Control row per context: 10 context-pool cards vs 10 context-pool cards.");
+        System.out.println("Buckets: 1.0-1.5, 1.5-2.0, ... , 5.5-6.0, 6.0-7.0 inclusive");
+        System.out.println();
+        System.out.flush();
+
+        for (MarginalStudyContext context : contexts) {
+            List<President> contextPool = CardData.getPresidents(
+                    "full", null, context.minRating
+            );
+            int belowMinCount = countPresidentsBelowRating(contextPool, context.minRating);
+
+            System.out.println("CONTEXT_START: " + context.contextName);
+            System.out.println("  Difficulty label: " + context.difficultyLabel);
+            System.out.println("  Context pool: CardData.getPresidents(\"full\", null, "
+                    + formatDouble(context.minRating) + ") returned "
+                    + contextPool.size() + " cards");
+            System.out.println("  Cards below min rating in returned pool: " + belowMinCount
+                    + (belowMinCount == 0 ? " (OK)" : " (WARNING - CardData minRate may still be broken)"));
+            System.out.println("  Player AI: " + MULTI_CONTEXT_PLAYER_AI_DIFFICULTY
+                    + " | CPU AI: " + context.cpuAiDifficulty);
+            System.out.flush();
+
+            if (contextPool.size() < MULTI_CONTEXT_DECK_SIZE) {
+                System.out.println("  Skipping context: not enough cards to build 10-card decks.");
+                System.out.println();
+                continue;
             }
-        }
-        
-        for (int i = 0; i < imageNames.size(); i++) {
-            imageNames.set(i, "files/" + imageNames.get(i));
-            imageNames.set(i, imageNames.get(i).toLowerCase());
-        }
 
-        // Check each president's image URL against the image filenames
-        for (President pres : preses) {
-            String imageUrl = pres.getImageURL();
-            imageUrl = imageUrl.toLowerCase();
-            if (imageUrl != null && !imageNames.contains(imageUrl)) {
-                System.out.println("No image found for President: " + pres.getName() + " with URL: " + imageUrl);
-            }
-        }
-    	
-    	/*
-    	Pack pack1 = new Pack(3, 50, CardData.calvinCoolidge,CardData.abrahamLincoln,
-    			CardData.georgeWashington,CardData.georgeHWBush, CardData.alGore);
-    	
-    	CampaignMode kevin = new CampaignMode("Kevin");
-    	System.out.println("Original Balance: " + kevin.getMoney());
-    	System.out.println("BOUGHT PACK");
-    	kevin.buyPack(pack1);
-    	kevin.printDeck();
-    	System.out.println();
-    	System.out.println("New Balance: " + kevin.getMoney());
-    	System.out.println("BOUGHT PACK");
-    	kevin.buyPack(pack1);
-    	kevin.printDeck();
-    	System.out.println();
-    	System.out.println("Final Balance: " + kevin.getMoney());
-    	System.out.println("LAST PACK");
-    	kevin.buyPack(pack1);
-    	*/
-    	
-    	/*
-        // This simulates a CPU vs. CPU game
-        double swing = 0;
-        double con = 0;
-        double prog = 0;
-        double lib = 0;
-        double pop = 0;
-        double rounds = 0;
-        double marquees = 0;
-        double attributes = 0;
-        int p1rdwins = 0;
-        
-        ElectionGame e = new ElectionGame();
-        e.reset("expanded", 0, true, 0, true, 0, true);
-        
+            MarginalCardStudyResult controlResult = runMarginalStudyRow(
+                    context,
+                    "CONTROL_" + context.contextName.toUpperCase() + "_RANDOM_10TH",
+                    null,
+                    contextPool,
+                    contextPool,
+                    true,
+                    startMillis
+            );
+            controlResult.deltaWinPctVsControl = 0.0;
+            controlResult.deltaEloPowerVsControl = 0.0;
+            allResults.add(controlResult);
 
-        AI p1 = (AI) e.getPlayer1();
-        AI p2 = (AI) e.getPlayer2();
-        p1.setDifficulty(1);
-        p2.setDifficulty(1);
-
-        Deck prez = e.getPres();
-        Deck singlePrez = e.getSinglePres();
-
-        System.out.println("Policy deck size " + e.getPol().getSize());
-        System.out.println(p1.toString());
-        
-        for (int i = 0; i < 5000; i++) {
-            while (e.checkWinner() == 0) {
-                //e.printGameState();
-                rounds++;
-                President c1 = p1.play(prez, e.getElection());
-                attributes += p1.getPresAttributes();
-                President c2 = p2.play(prez, e.getElection());
-                if(c1.getRegion().equals(e.getElection().getRegion())) {
-                    swing++;
-                }
-                if(c1.getIdeology().equals("Conservative")) {
-                    con++;
-                } else if(c1.getIdeology().equals("Libertarian")) {
-                    lib++;
-                } else if(c1.getIdeology().equals("Populist")) {
-                    pop++;
-                } else {
-                    prog++;
-                }
-                ArrayList<Policy> pols = p1.playPolicies(c1, e.getPol());
-                if(c1.isMarquee(pols.get(0))||c1.isMarquee(pols.get(1))) {
-                    marquees++;
-                }
-                e.playRound(
-                        c1, pols, c2, p2.playPolicies(c2, e.getPol())
+            for (RatingBucket bucket : buckets) {
+                List<President> marginalPool = filterPresidentsByBucket(allPresidents, bucket);
+                MarginalCardStudyResult rowResult = runMarginalStudyRow(
+                        context,
+                        bucket.label,
+                        marginalPool,
+                        contextPool,
+                        contextPool,
+                        false,
+                        startMillis
                 );
-                if(e.getLastWinner()) {
-                	p1rdwins++;
+                rowResult.bucketMinRating = bucket.minRating;
+                rowResult.bucketMaxRating = bucket.maxRating;
+                rowResult.bucketInclusiveMax = bucket.inclusiveMax;
+                rowResult.deltaWinPctVsControl = rowResult.getPlayerMatchWinRate()
+                        - controlResult.getPlayerMatchWinRate();
+                rowResult.deltaEloPowerVsControl = rowResult.getEloPower()
+                        - controlResult.getEloPower();
+                allResults.add(rowResult);
+            }
+
+            System.out.println("CONTEXT_DONE: " + context.contextName
+                    + " | Elapsed: " + formatMillis(System.currentTimeMillis() - startMillis));
+            System.out.println();
+            System.out.flush();
+        }
+
+        System.out.println("All contexts finished. Printing final multi-context marginal-card CSV summary...");
+        printMarginalStudySummary(allResults, startMillis);
+        System.out.println();
+        System.out.println("Runtime: " + formatMillis(System.currentTimeMillis() - startMillis));
+        System.out.println("Done.");
+    }
+
+    private static MarginalCardStudyResult runMarginalStudyRow(
+            MarginalStudyContext context,
+            String rowLabel,
+            List<President> marginalPool,
+            List<President> basePool,
+            List<President> cpuPool,
+            boolean controlRow,
+            long globalStartMillis
+    ) {
+        MarginalCardStudyResult result = new MarginalCardStudyResult(context, rowLabel, controlRow);
+        result.basePoolSize = basePool == null ? 0 : basePool.size();
+        result.cpuPoolSize = cpuPool == null ? 0 : cpuPool.size();
+        result.marginalEligibleCards = marginalPool == null ? 0 : marginalPool.size();
+
+        if (controlRow) {
+            System.out.println("  ROW_START: " + rowLabel + " | control 10-card context deck");
+        } else {
+            System.out.println("  ROW_START: " + rowLabel + " | marginal eligible cards: "
+                    + result.marginalEligibleCards);
+        }
+        System.out.flush();
+
+        if (!controlRow && (marginalPool == null || marginalPool.isEmpty())) {
+            System.out.println("  ROW_SKIP: " + rowLabel + " | no eligible marginal cards");
+            return result;
+        }
+        if (basePool == null || basePool.size() < MULTI_CONTEXT_BASELINE_CARDS) {
+            System.out.println("  ROW_SKIP: " + rowLabel + " | not enough baseline cards");
+            return result;
+        }
+        if (cpuPool == null || cpuPool.size() < MULTI_CONTEXT_DECK_SIZE) {
+            System.out.println("  ROW_SKIP: " + rowLabel + " | not enough CPU cards");
+            return result;
+        }
+
+        long rowStartMillis = System.currentTimeMillis();
+
+        for (int matchNumber = 1; matchNumber <= MULTI_CONTEXT_MATCHES_PER_ROW; matchNumber++) {
+            President marginalCard = null;
+            List<President> playerDeck;
+            if (controlRow) {
+                playerDeck = samplePresidents(basePool, MULTI_CONTEXT_DECK_SIZE);
+            } else {
+                marginalCard = sampleOnePresident(marginalPool);
+                playerDeck = buildMarginalPlayerDeck(basePool, marginalCard);
+            }
+            List<President> cpuDeck = samplePresidents(cpuPool, MULTI_CONTEXT_DECK_SIZE);
+
+            result.totalPlayerDeckRating += averagePresidentRating(playerDeck);
+            result.totalPlayerTopFiveRating += averagePresidentRating(
+                    rankPresidentsByRating(playerDeck).subList(0, Math.min(5, playerDeck.size()))
+            );
+            result.totalCpuDeckRating += averagePresidentRating(cpuDeck);
+            result.totalCpuTopFiveRating += averagePresidentRating(
+                    rankPresidentsByRating(cpuDeck).subList(0, Math.min(5, cpuDeck.size()))
+            );
+
+            if (marginalCard != null) {
+                result.totalMarginalRating += marginalCard.getAv();
+                result.totalMarginalCurrentValue += marginalCard.getValue();
+                result.totalMarginalFullDeckRank += getRankInFullDeck(
+                        rankPresidentsByRating(playerDeck), marginalCard
+                );
+            }
+
+            CampaignMatchConfig config = CampaignMatchConfig.quickPlay(
+                    "Player",
+                    context.difficultyLabel,
+                    playerDeck,
+                    cpuDeck
+            ).withExecutionMode(CampaignMatchConfig.EXECUTION_MODE_SIMULATED);
+
+            ElectionGame game = new ElectionGame();
+            game.resetForCampaignMatch(config);
+
+            AI playerAI = (AI) game.getPlayer1();
+            AI cpuAI = (AI) game.getPlayer2();
+            playerAI.setDifficulty(MULTI_CONTEXT_PLAYER_AI_DIFFICULTY);
+            cpuAI.setDifficulty(context.cpuAiDifficulty);
+
+            if (marginalCard != null && handContainsPresident(playerAI.getHand(), marginalCard)) {
+                result.marginalStartedInOpeningHand++;
+            }
+
+            boolean marginalAvailableThisMatch = false;
+            boolean marginalPlayedThisMatch = false;
+            int roundsThisMatch = 0;
+
+            while (game.checkWinner() == 0) {
+                roundsThisMatch++;
+
+                Deck playerPresidentDeck = game.getPlayer1PresidentDeck();
+                Deck cpuPresidentDeck = game.getPlayer2PresidentDeck();
+                Deck policyDeck = game.getPol();
+
+                if (marginalCard != null && handContainsPresident(playerAI.getHand(), marginalCard)) {
+                    marginalAvailableThisMatch = true;
+                    result.marginalAvailableBeforeRoundCount++;
                 }
-                if (e.checkWinner() != 0) {
-                    break;
+
+                President playerCard = playerAI.play(playerPresidentDeck, game.getElection());
+                President cpuCard = cpuAI.play(cpuPresidentDeck, game.getElection());
+
+                ArrayList<Policy> playerPolicies = playerAI.playPolicies(playerCard, policyDeck);
+                ArrayList<Policy> cpuPolicies = cpuAI.playPolicies(cpuCard, policyDeck);
+
+                int playerScore = game.getElection().getScore(
+                        playerCard, playerPolicies.get(0), playerPolicies.get(1)
+                );
+                int cpuScore = game.getElection().getScore(
+                        cpuCard, cpuPolicies.get(0), cpuPolicies.get(1)
+                );
+
+                boolean marginalWasPlayedThisRound = marginalCard != null
+                        && samePresidentByName(playerCard, marginalCard);
+                if (marginalWasPlayedThisRound) {
+                    marginalPlayedThisMatch = true;
+                    result.marginalPlayCount++;
+                    result.totalMarginalScore += playerScore;
+                }
+
+                game.playRound(playerCard, playerPolicies, cpuCard, cpuPolicies);
+                result.totalRounds++;
+                result.totalPlayerScore += playerScore;
+                result.totalCpuScore += cpuScore;
+                result.totalScoreDiff += playerScore - cpuScore;
+
+                if (game.getLastWinner()) {
+                    result.playerRoundWins++;
+                    if (marginalWasPlayedThisRound) {
+                        result.marginalRoundWins++;
+                    }
+                } else {
+                    result.cpuRoundWins++;
+                }
+
+                if (game.checkWinner() == 0) {
+                    game.finishRound();
                 }
             }
 
-            //System.out.println();
-            if (e.checkWinner() == 1) {
-                e.p1w++;                
-            } else {
-                e.p2w++;
+            result.matches++;
+            result.totalRoundsPerMatch += roundsThisMatch;
+            if (marginalAvailableThisMatch) {
+                result.marginalAvailableInMatch++;
             }
-            
-            e.reset("expanded", 0, true, 0, true, 0, true);
+            if (marginalPlayedThisMatch) {
+                result.marginalPlayedInMatch++;
+            }
+
+            if (game.checkWinner() == 1) {
+                result.playerMatchWins++;
+                if (marginalPlayedThisMatch) {
+                    result.matchesWonWhenMarginalPlayed++;
+                }
+            } else {
+                result.cpuMatchWins++;
+            }
+
+            if (!marginalPlayedThisMatch && game.checkWinner() == 1) {
+                result.matchesWonWhenMarginalNotPlayed++;
+            }
+            if (!marginalPlayedThisMatch) {
+                result.matchesMarginalNotPlayed++;
+            }
         }
-        
+
+        System.out.println("  ROW_DONE: " + rowLabel
+                + " | Match win %: " + formatPercent(result.getPlayerMatchWinRate())
+                + " | EloPower: " + formatDouble(result.getEloPower())
+                + " | Marginal used: " + (controlRow ? "n/a" : formatPercent(result.getMarginalPlayedMatchShare()))
+                + " | Avg score diff: " + formatDouble(result.getAverageScoreDiff())
+                + " | Row elapsed: " + formatMillis(System.currentTimeMillis() - rowStartMillis)
+                + " | Total elapsed: " + formatMillis(System.currentTimeMillis() - globalStartMillis));
+        System.out.flush();
+        return result;
+    }
+
+    private static List<MarginalStudyContext> buildMarginalStudyContexts() {
+        ArrayList<MarginalStudyContext> contexts = new ArrayList<MarginalStudyContext>();
+        contexts.add(new MarginalStudyContext(
+                "EASY", "Easy", EASY_CONTEXT_MIN_RATING, EASY_CONTEXT_CPU_AI_DIFFICULTY
+        ));
+        contexts.add(new MarginalStudyContext(
+                "MEDIUM", "Medium", MEDIUM_CONTEXT_MIN_RATING, MEDIUM_CONTEXT_CPU_AI_DIFFICULTY
+        ));
+        contexts.add(new MarginalStudyContext(
+                "HARD", "Hard", HARD_CONTEXT_MIN_RATING, HARD_CONTEXT_CPU_AI_DIFFICULTY
+        ));
+        return contexts;
+    }
+
+    private static List<RatingBucket> buildMarginalRatingBuckets() {
+        ArrayList<RatingBucket> buckets = new ArrayList<RatingBucket>();
+        double min = 1.0;
+        while (min < 6.0) {
+            double max = min + 0.5;
+            buckets.add(new RatingBucket(min, max, false));
+            min = max;
+        }
+        buckets.add(new RatingBucket(6.0, 7.0, true));
+        return buckets;
+    }
+
+    private static List<President> filterPresidentsByBucket(
+            List<President> presidents, RatingBucket bucket
+    ) {
+        ArrayList<President> filtered = new ArrayList<President>();
+        if (presidents == null || bucket == null) {
+            return filtered;
+        }
+        for (President president : presidents) {
+            if (president == null) {
+                continue;
+            }
+            double rating = president.getAv();
+            boolean inBucket = rating >= bucket.minRating
+                    && (bucket.inclusiveMax ? rating <= bucket.maxRating : rating < bucket.maxRating);
+            if (inBucket) {
+                filtered.add(president);
+            }
+        }
+        Collections.sort(filtered, presidentRatingComparator());
+        return filtered;
+    }
+
+    private static President sampleOnePresident(List<President> pool) {
+        if (pool == null || pool.isEmpty()) {
+            return null;
+        }
+        int index = (int) (Math.random() * pool.size());
+        if (index < 0) {
+            index = 0;
+        }
+        if (index >= pool.size()) {
+            index = pool.size() - 1;
+        }
+        return pool.get(index);
+    }
+
+    private static List<President> buildMarginalPlayerDeck(List<President> basePool, President marginalCard) {
+        ArrayList<President> availableBaseCards = new ArrayList<President>();
+        if (basePool != null) {
+            for (President president : basePool) {
+                if (president != null && !samePresidentByName(president, marginalCard)) {
+                    availableBaseCards.add(president);
+                }
+            }
+        }
+        List<President> baseNine = samplePresidents(availableBaseCards, MULTI_CONTEXT_BASELINE_CARDS);
+        ArrayList<President> deck = new ArrayList<President>(baseNine);
+        if (marginalCard != null) {
+            deck.add(marginalCard);
+        }
+        return deck;
+    }
+
+    private static List<President> samplePresidents(List<President> pool, int count) {
+        ArrayList<President> copy = new ArrayList<President>();
+        if (pool != null) {
+            for (President president : pool) {
+                if (president != null) {
+                    copy.add(president);
+                }
+            }
+        }
+        Collections.shuffle(copy);
+        int resultSize = Math.min(Math.max(0, count), copy.size());
+        return new ArrayList<President>(copy.subList(0, resultSize));
+    }
+
+    private static List<President> rankPresidentsByRating(List<President> presidents) {
+        ArrayList<President> ranked = new ArrayList<President>();
+        if (presidents != null) {
+            for (President president : presidents) {
+                if (president != null) {
+                    ranked.add(president);
+                }
+            }
+        }
+        Collections.sort(ranked, presidentRatingComparator());
+        return ranked;
+    }
+
+    private static int getRankInFullDeck(List<President> rankedDeck, President target) {
+        if (rankedDeck == null || target == null) {
+            return 0;
+        }
+        for (int i = 0; i < rankedDeck.size(); i++) {
+            if (samePresidentByName(rankedDeck.get(i), target)) {
+                return i + 1;
+            }
+        }
+        return 0;
+    }
+
+    private static boolean handContainsPresident(List<President> hand, President target) {
+        if (hand == null || target == null) {
+            return false;
+        }
+        for (President president : hand) {
+            if (samePresidentByName(president, target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean samePresidentByName(President p1, President p2) {
+        if (p1 == null || p2 == null) {
+            return false;
+        }
+        return p1.getName().equalsIgnoreCase(p2.getName());
+    }
+
+    private static int countPresidentsBelowRating(List<President> presidents, double minRating) {
+        if (presidents == null) {
+            return 0;
+        }
+        int count = 0;
+        for (President president : presidents) {
+            if (president != null && president.getAv() < minRating) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static void printMarginalStudySummary(
+            List<MarginalCardStudyResult> results,
+            long startMillis
+    ) {
+        if (results == null || results.isEmpty()) {
+            System.out.println("No results to print.");
+            return;
+        }
+
+        System.out.println("SUMMARY");
+        System.out.println("Rows include one control row per context plus one row per marginal rating bucket.");
+        System.out.println("Delta columns compare each bucket to the control row from the same context.");
+        System.out.println("Use the Context column to blend Easy / Medium / Hard later with chosen weights.");
         System.out.println();
+
+        System.out.println("CSV_START");
+        System.out.println("Context,DifficultyLabel,ContextMinRating,PlayerAIDifficulty,CpuAIDifficulty,Row,MinRating,MaxRating,InclusiveMax,MarginalEligibleCards,BasePoolCards,CpuPoolCards,Matches,PlayerWins,MatchWinPct,EloPower,DeltaWinPctVsContextControl,DeltaEloVsContextControl,RoundWinPct,AvgRounds,AvgMarginalRating,AvgMarginalCurrentGetValuePC,AvgPlayerDeckRating,AvgPlayerTop5Rating,AvgCpuDeckRating,AvgCpuTop5Rating,AvgMarginalFullDeckRank,MarginalOpeningHandPct,MarginalAvailableMatchPct,MarginalAvailableBeforeRoundPct,MarginalPlayedMatchPct,MarginalPlayedWhenAvailablePct,MarginalPlayShareOfPlayerRounds,MarginalRoundWinPct,AvgMarginalScore,MatchWinPctWhenMarginalPlayed,MatchWinPctWhenMarginalNotPlayed,AvgPlayerScore,AvgCpuScore,AvgScoreDiff");
+        for (MarginalCardStudyResult result : results) {
+            System.out.println(result.toCsvLine());
+        }
+        System.out.println("CSV_END");
         System.out.println();
-        System.out.println("Win share: " + (double)p1rdwins/(double)e.rounds);
-        System.out.println();
-        System.out.println("Attributes Sum: " + attributes/(double)e.rounds);
-        System.out.println();
-        System.out.println("Player 1 av. score: " + (double)e.p1score/(double)e.rounds);
-        System.out.println("Player 2 av. score: " + (double)e.p2score/(double)e.rounds);
-        
-        System.out.println();
-        System.out.println("Player 1 wins: " + e.p1w);
-        System.out.println("Player 2 wins: " + e.p2w);
-        System.out.println("Swing uses: " + swing/rounds);
-        System.out.println("Marquee uses: " + marquees/rounds);
-        System.out.println("Conservatives: " + con/rounds);
-        System.out.println("Progressives: " + prog/rounds);
-        System.out.println("Libertarians: " + lib/rounds);
-        System.out.println("Populists: " + pop/rounds);
-        */
+
+        System.out.println("MULTI_CONTEXT_MARGINAL_CARD_READ_ME");
+        System.out.println("Each context has its own control row: player 10 context-pool cards vs CPU 10 context-pool cards.");
+        System.out.println("Bucket rows: player 9 context-pool cards + 1 marked marginal card; CPU 10 context-pool cards.");
+        System.out.println("Easy context uses 1.0+ decks and CPU AI 0.50; Medium uses 3.0+ decks and CPU AI 0.65; Hard uses 5.0+ decks and CPU AI 0.80.");
+        System.out.println("Player AI stays 0.65 in every context.");
+        System.out.println("DeltaWinPctVsContextControl and DeltaEloVsContextControl are the cleanest columns for marginal competitive value within each context.");
+        System.out.println("Later, blend Easy/Medium/Hard context deltas with chosen weights to derive a candidate getValue curve.");
+    }
+
+    private static Comparator<President> presidentRatingComparator() {
+        return new Comparator<President>() {
+            @Override
+            public int compare(President p1, President p2) {
+                if (p1 == null && p2 == null) {
+                    return 0;
+                }
+                if (p1 == null) {
+                    return 1;
+                }
+                if (p2 == null) {
+                    return -1;
+                }
+                int ratingCompare = Double.compare(p2.getAv(), p1.getAv());
+                if (ratingCompare != 0) {
+                    return ratingCompare;
+                }
+                return p1.getName().compareToIgnoreCase(p2.getName());
+            }
+        };
+    }
+
+    private static double averagePresidentRating(List<President> presidents) {
+        if (presidents == null || presidents.isEmpty()) {
+            return 0.0;
+        }
+        double total = 0.0;
+        int count = 0;
+        for (President president : presidents) {
+            if (president == null) {
+                continue;
+            }
+            total += president.getAv();
+            count++;
+        }
+        return count == 0 ? 0.0 : total / count;
+    }
+
+    private static double calculateEloPower(double winRate) {
+        double clipped = Math.max(0.0001, Math.min(0.9999, winRate));
+        return 400.0 * Math.log10(clipped / (1.0 - clipped));
+    }
+
+    private static String formatDouble(double value) {
+        return String.format(Locale.US, "%.4f", value);
+    }
+
+    private static String formatPercent(double value) {
+        return String.format(Locale.US, "%.2f%%", value * 100.0);
+    }
+
+    private static String formatIntRounded(double value) {
+        return String.valueOf((int) Math.round(value));
+    }
+
+    private static String formatMillis(long millis) {
+        long cleanMillis = Math.max(0L, millis);
+        long seconds = cleanMillis / 1000L;
+        long minutes = seconds / 60L;
+        long remainingSeconds = seconds % 60L;
+        if (minutes <= 0L) {
+            return remainingSeconds + " sec";
+        }
+        return minutes + " min " + remainingSeconds + " sec";
+    }
+
+    private static class MarginalStudyContext {
+        private String contextName;
+        private String difficultyLabel;
+        private double minRating;
+        private double cpuAiDifficulty;
+
+        private MarginalStudyContext(
+                String contextName, String difficultyLabel, double minRating, double cpuAiDifficulty
+        ) {
+            this.contextName = contextName == null ? "" : contextName;
+            this.difficultyLabel = difficultyLabel == null ? "Medium" : difficultyLabel;
+            this.minRating = minRating;
+            this.cpuAiDifficulty = cpuAiDifficulty;
+        }
+    }
+
+    private static class RatingBucket {
+        private double minRating;
+        private double maxRating;
+        private boolean inclusiveMax;
+        private String label;
+
+        private RatingBucket(double minRating, double maxRating, boolean inclusiveMax) {
+            this.minRating = minRating;
+            this.maxRating = maxRating;
+            this.inclusiveMax = inclusiveMax;
+            this.label = formatDouble(minRating) + "-" + formatDouble(maxRating)
+                    + (inclusiveMax ? " inclusive" : "");
+        }
+    }
+
+    private static class MarginalCardStudyResult {
+        private MarginalStudyContext context;
+        private String rowLabel;
+        private boolean controlRow;
+        private double bucketMinRating;
+        private double bucketMaxRating;
+        private boolean bucketInclusiveMax;
+        private int marginalEligibleCards;
+        private int basePoolSize;
+        private int cpuPoolSize;
+        private int matches;
+        private int playerMatchWins;
+        private int cpuMatchWins;
+        private int playerRoundWins;
+        private int cpuRoundWins;
+        private int totalRounds;
+        private int totalRoundsPerMatch;
+        private int marginalStartedInOpeningHand;
+        private int marginalAvailableInMatch;
+        private int marginalAvailableBeforeRoundCount;
+        private int marginalPlayedInMatch;
+        private int marginalPlayCount;
+        private int marginalRoundWins;
+        private int matchesWonWhenMarginalPlayed;
+        private int matchesMarginalNotPlayed;
+        private int matchesWonWhenMarginalNotPlayed;
+        private double totalMarginalRating;
+        private double totalMarginalCurrentValue;
+        private double totalMarginalFullDeckRank;
+        private double totalMarginalScore;
+        private double totalPlayerDeckRating;
+        private double totalPlayerTopFiveRating;
+        private double totalCpuDeckRating;
+        private double totalCpuTopFiveRating;
+        private double totalPlayerScore;
+        private double totalCpuScore;
+        private double totalScoreDiff;
+        private double deltaWinPctVsControl;
+        private double deltaEloPowerVsControl;
+
+        private MarginalCardStudyResult(
+                MarginalStudyContext context, String rowLabel, boolean controlRow
+        ) {
+            this.context = context;
+            this.rowLabel = rowLabel == null ? "" : rowLabel;
+            this.controlRow = controlRow;
+        }
+
+        private double getPlayerMatchWinRate() {
+            return matches <= 0 ? 0.0 : playerMatchWins / (double) matches;
+        }
+
+        private double getEloPower() {
+            return calculateEloPower(getPlayerMatchWinRate());
+        }
+
+        private double getPlayerRoundWinRate() {
+            return totalRounds <= 0 ? 0.0 : playerRoundWins / (double) totalRounds;
+        }
+
+        private double getAverageRoundsPerMatch() {
+            return matches <= 0 ? 0.0 : totalRoundsPerMatch / (double) matches;
+        }
+
+        private double getAverageMarginalRating() {
+            return controlRow || matches <= 0 ? 0.0 : totalMarginalRating / matches;
+        }
+
+        private double getAverageMarginalCurrentValue() {
+            return controlRow || matches <= 0 ? 0.0 : totalMarginalCurrentValue / matches;
+        }
+
+        private double getAverageMarginalFullDeckRank() {
+            return controlRow || matches <= 0 ? 0.0 : totalMarginalFullDeckRank / matches;
+        }
+
+        private double getAveragePlayerDeckRating() {
+            return matches <= 0 ? 0.0 : totalPlayerDeckRating / matches;
+        }
+
+        private double getAveragePlayerTopFiveRating() {
+            return matches <= 0 ? 0.0 : totalPlayerTopFiveRating / matches;
+        }
+
+        private double getAverageCpuDeckRating() {
+            return matches <= 0 ? 0.0 : totalCpuDeckRating / matches;
+        }
+
+        private double getAverageCpuTopFiveRating() {
+            return matches <= 0 ? 0.0 : totalCpuTopFiveRating / matches;
+        }
+
+        private double getMarginalOpeningHandShare() {
+            return controlRow || matches <= 0 ? 0.0 : marginalStartedInOpeningHand / (double) matches;
+        }
+
+        private double getMarginalAvailableMatchShare() {
+            return controlRow || matches <= 0 ? 0.0 : marginalAvailableInMatch / (double) matches;
+        }
+
+        private double getMarginalAvailableBeforeRoundShare() {
+            return controlRow || totalRounds <= 0 ? 0.0 : marginalAvailableBeforeRoundCount / (double) totalRounds;
+        }
+
+        private double getMarginalPlayedMatchShare() {
+            return controlRow || matches <= 0 ? 0.0 : marginalPlayedInMatch / (double) matches;
+        }
+
+        private double getMarginalPlayedWhenAvailableShare() {
+            return controlRow || marginalAvailableInMatch <= 0
+                    ? 0.0
+                    : marginalPlayedInMatch / (double) marginalAvailableInMatch;
+        }
+
+        private double getMarginalPlayShareOfPlayerRounds() {
+            return controlRow || totalRounds <= 0 ? 0.0 : marginalPlayCount / (double) totalRounds;
+        }
+
+        private double getMarginalRoundWinRate() {
+            return controlRow || marginalPlayCount <= 0 ? 0.0 : marginalRoundWins / (double) marginalPlayCount;
+        }
+
+        private double getAverageMarginalScore() {
+            return controlRow || marginalPlayCount <= 0 ? 0.0 : totalMarginalScore / marginalPlayCount;
+        }
+
+        private double getMatchWinRateWhenMarginalPlayed() {
+            return controlRow || marginalPlayedInMatch <= 0
+                    ? 0.0
+                    : matchesWonWhenMarginalPlayed / (double) marginalPlayedInMatch;
+        }
+
+        private double getMatchWinRateWhenMarginalNotPlayed() {
+            return controlRow || matchesMarginalNotPlayed <= 0
+                    ? 0.0
+                    : matchesWonWhenMarginalNotPlayed / (double) matchesMarginalNotPlayed;
+        }
+
+        private double getAveragePlayerScore() {
+            return totalRounds <= 0 ? 0.0 : totalPlayerScore / totalRounds;
+        }
+
+        private double getAverageCpuScore() {
+            return totalRounds <= 0 ? 0.0 : totalCpuScore / totalRounds;
+        }
+
+        private double getAverageScoreDiff() {
+            return totalRounds <= 0 ? 0.0 : totalScoreDiff / totalRounds;
+        }
+
+        private String toCsvLine() {
+            return context.contextName + ","
+                    + context.difficultyLabel + ","
+                    + formatDouble(context.minRating) + ","
+                    + formatDouble(MULTI_CONTEXT_PLAYER_AI_DIFFICULTY) + ","
+                    + formatDouble(context.cpuAiDifficulty) + ","
+                    + rowLabel + ","
+                    + (controlRow ? "" : formatDouble(bucketMinRating)) + ","
+                    + (controlRow ? "" : formatDouble(bucketMaxRating)) + ","
+                    + (controlRow ? "" : String.valueOf(bucketInclusiveMax)) + ","
+                    + marginalEligibleCards + ","
+                    + basePoolSize + ","
+                    + cpuPoolSize + ","
+                    + matches + ","
+                    + playerMatchWins + ","
+                    + formatPercent(getPlayerMatchWinRate()) + ","
+                    + formatDouble(getEloPower()) + ","
+                    + formatPercent(deltaWinPctVsControl) + ","
+                    + formatDouble(deltaEloPowerVsControl) + ","
+                    + formatPercent(getPlayerRoundWinRate()) + ","
+                    + formatDouble(getAverageRoundsPerMatch()) + ","
+                    + (controlRow ? "" : formatDouble(getAverageMarginalRating())) + ","
+                    + (controlRow ? "" : formatIntRounded(getAverageMarginalCurrentValue())) + ","
+                    + formatDouble(getAveragePlayerDeckRating()) + ","
+                    + formatDouble(getAveragePlayerTopFiveRating()) + ","
+                    + formatDouble(getAverageCpuDeckRating()) + ","
+                    + formatDouble(getAverageCpuTopFiveRating()) + ","
+                    + (controlRow ? "" : formatDouble(getAverageMarginalFullDeckRank())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalOpeningHandShare())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalAvailableMatchShare())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalAvailableBeforeRoundShare())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalPlayedMatchShare())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalPlayedWhenAvailableShare())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalPlayShareOfPlayerRounds())) + ","
+                    + (controlRow ? "" : formatPercent(getMarginalRoundWinRate())) + ","
+                    + (controlRow ? "" : formatDouble(getAverageMarginalScore())) + ","
+                    + (controlRow ? "" : formatPercent(getMatchWinRateWhenMarginalPlayed())) + ","
+                    + (controlRow ? "" : formatPercent(getMatchWinRateWhenMarginalNotPlayed())) + ","
+                    + formatDouble(getAveragePlayerScore()) + ","
+                    + formatDouble(getAverageCpuScore()) + ","
+                    + formatDouble(getAverageScoreDiff());
+        }
     }
 }

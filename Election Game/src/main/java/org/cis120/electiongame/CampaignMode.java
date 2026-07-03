@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,21 +24,21 @@ import java.util.Scanner;
  */
 public class CampaignMode implements Runnable {
 
-    private static final int STARTING_POLITICAL_CAPITAL = 100000;
+    private static final int STARTING_POLITICAL_CAPITAL = 25000;
 
     private static final int ERA_PROSPECT_PACK_CARD_COUNT = 5;
-    private static final int ERA_PROSPECT_PACK_COST = 225000;
+    private static final int ERA_PROSPECT_PACK_COST = 60000;
     private static final double ERA_PROSPECT_PACK_MIN_RATING = 0.0;
     private static final double ERA_PROSPECT_PACK_MAX_RATING = 3.99;
 
-    private static final int EASY_WIN_REWARD_PC = 65000;
-    private static final int EASY_LOSS_REWARD_PC = 25000;
+    private static final int EASY_WIN_REWARD_PC = 15000;
+    private static final int EASY_LOSS_REWARD_PC = 5000;
 
-    private static final int MEDIUM_WIN_REWARD_PC = 95000;
-    private static final int MEDIUM_LOSS_REWARD_PC = 30000;
+    private static final int MEDIUM_WIN_REWARD_PC = 25000;
+    private static final int MEDIUM_LOSS_REWARD_PC = 10000;
 
-    private static final int HARD_WIN_REWARD_PC = 185000;
-    private static final int HARD_LOSS_REWARD_PC = 35000;
+    private static final int HARD_WIN_REWARD_PC = 50000;
+    private static final int HARD_LOSS_REWARD_PC = 10000;
 
     // The simulated human/player side should play competently but not perfectly.
     private static final double PLAYER_SIM_AI_DIFFICULTY = 0.65;
@@ -50,6 +51,12 @@ public class CampaignMode implements Runnable {
     private static final double MEDIUM_CPU_MIN_RATING = 3.0;
     private static final double HARD_CPU_MIN_RATING = 5.0;
 
+    // v10.2: Era tournament CPU decks should not be built from pure junk pools
+    // in content-rich eras, but should still fall back safely in thin eras.
+    private static final double TOURNAMENT_ROUND_1_CPU_MIN_RATING = 1.0;
+    private static final double TOURNAMENT_ROUND_2_CPU_MIN_RATING = 2.0;
+    private static final double TOURNAMENT_ROUND_3_CPU_MIN_RATING = 3.0;
+
     private static final double DUPLICATE_SALE_PERCENT = 0.25;
 
     private static final String SAVE_VERSION = "CAMPAIGN_CLASH_SAVE_V3";
@@ -57,7 +64,15 @@ public class CampaignMode implements Runnable {
     private static final String SAVE_VERSION_V1 = "CAMPAIGN_CLASH_SAVE_V1";
 
     // v8.0: Campaign Mode now supports up to three save slots.
+    // v8.2: Quick-match Active Deck can be Auto-Best or manually customized.
+    // v9.0: Era tournaments rotate every 3 real-world hours, three eras active at once.
+    // v9.1: Rotation is aligned to local clock windows: 12/3/6/9, not UTC epoch windows.
     private static final int MAX_SAVE_SLOTS = 3;
+
+    private static final int ACTIVE_TOURNAMENT_ERA_COUNT = 3;
+    private static final long TOURNAMENT_ROTATION_MILLIS = 3L * 60L * 60L * 1000L;
+    private static final long TOURNAMENT_ROTATION_WARNING_MILLIS = 15L * 60L * 1000L;
+    private static final int FIRST_TOURNAMENT_TITLE_BONUS_PC = 25000;
     private static final String SAVE_DIRECTORY_PATH = "files/campaign_saves";
     private static final String SAVE_FILE_PREFIX = "campaign_slot_";
     private static final String SAVE_FILE_SUFFIX = ".TXT";
@@ -71,6 +86,7 @@ public class CampaignMode implements Runnable {
     private List<President> allPresidents;
     private List<CampaignTournament> eraTournaments;
     private int activeSaveSlot = 1;
+    private long playTimeSessionAnchorMillis = System.currentTimeMillis();
 
     private CampaignMatchConfig pendingPlayableMatchConfig;
     private long pendingPlayableMatchStartedAtMillis;
@@ -100,6 +116,7 @@ public class CampaignMode implements Runnable {
         allPresidents = CardData.getPresidents("full", null, 0.0);
         eraTournaments = CampaignTournament.buildDefaultEraTournaments();
         buildPackPresets();
+        restartPlayTimeSessionClock();
     }
 
     /**
@@ -121,11 +138,11 @@ public class CampaignMode implements Runnable {
         starterMidPack = new CampaignPack(3, 0, 2.5, 4.0, allPresidents, null);
         starterPack = new CampaignPack(6, 0, 0.0, 2.5, allPresidents, null);
 
-        campaignTrailPack = new CampaignPack(1, 90000, 0.0, 10.0, allPresidents, null);
-        fillerPack = new CampaignPack(5, 100000, 0.0, 3.0, allPresidents, null);
-        starPack = new CampaignPack(1, 200000, 3.5, 10.0, allPresidents, null);
-        standardPack = new CampaignPack(5, 400000, 2.0, 10.0, allPresidents, null);
-        elitePack = new CampaignPack(3, 700000, 4.0, 10.0, allPresidents, null);
+        campaignTrailPack = new CampaignPack(1, 25000, 0.0, 10.0, allPresidents, null);
+        fillerPack = new CampaignPack(5, 25000, 0.0, 3.0, allPresidents, null);
+        starPack = new CampaignPack(1, 55000, 3.5, 10.0, allPresidents, null);
+        standardPack = new CampaignPack(5, 100000, 2.0, 10.0, allPresidents, null);
+        elitePack = new CampaignPack(3, 185000, 4.0, 10.0, allPresidents, null);
     }
 
     /**
@@ -363,7 +380,7 @@ public class CampaignMode implements Runnable {
         List<President> playerDeck = lockedTournamentDeck == null
                 ? getTournamentActiveDeck(tournament)
                 : new ArrayList<President>(lockedTournamentDeck);
-        List<President> cpuDeck = getPresidentsForTournament(tournament);
+        List<President> cpuDeck = getCpuPresidentsForTournamentRound(tournament, roundNumber);
         String playerName = player == null ? "Player" : player.getName();
 
         CampaignMatchConfig config = CampaignMatchConfig.tournamentRound(
@@ -387,6 +404,101 @@ public class CampaignMode implements Runnable {
 
     public String getCpuNameForDifficulty(String matchDifficulty) {
         return normalizeMatchDifficulty(matchDifficulty) + " CPU";
+    }
+
+    /*** V8.2 QUICK-MATCH ACTIVE DECK METHODS ***/
+
+    public List<President> getActiveDeck() {
+        return player == null ? new ArrayList<President>() : player.getActiveDeck();
+    }
+
+    public int getActiveDeckSize() {
+        return player == null ? 0 : player.getActiveDeckSize();
+    }
+
+    public int getActiveDeckMaxSize() {
+        return player == null ? 10 : player.getActiveDeckMaxSize();
+    }
+
+    public double getActiveDeckStrength() {
+        return player == null ? 0.0 : player.getActiveDeckStrength();
+    }
+
+    public String getActiveDeckModeLabel() {
+        return player == null ? "Auto-Best" : player.getActiveDeckModeLabel();
+    }
+
+    /*** V8.4 PLAY TIME METHODS ***/
+
+    public void restartPlayTimeSessionClock() {
+        playTimeSessionAnchorMillis = System.currentTimeMillis();
+    }
+
+    public void flushPlayTimeToPlayer() {
+        if (player == null) {
+            restartPlayTimeSessionClock();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (playTimeSessionAnchorMillis <= 0L) {
+            playTimeSessionAnchorMillis = now;
+            return;
+        }
+
+        long elapsed = now - playTimeSessionAnchorMillis;
+        if (elapsed > 0L) {
+            player.addPlayTimeMillis(elapsed);
+        }
+        playTimeSessionAnchorMillis = now;
+    }
+
+    public long getTotalPlayTimeMillis() {
+        if (player == null) {
+            return 0L;
+        }
+
+        long total = player.getTotalPlayTimeMillis();
+        long now = System.currentTimeMillis();
+        if (playTimeSessionAnchorMillis > 0L && now > playTimeSessionAnchorMillis) {
+            total += now - playTimeSessionAnchorMillis;
+        }
+        return Math.max(0L, total);
+    }
+
+    public long getTotalPlayTimeMinutes() {
+        return getTotalPlayTimeMillis() / 60000L;
+    }
+
+    public String getFormattedPlayTime() {
+        return CampaignPlayer.formatPlayTime(getTotalPlayTimeMillis());
+    }
+
+    public boolean isCustomActiveDeckMode() {
+        return player != null && player.isCustomActiveDeckMode();
+    }
+
+    public boolean setActiveDeckAutoMode() {
+        if (player == null) {
+            return false;
+        }
+        player.setActiveDeckAutoMode();
+        return autosaveCampaign();
+    }
+
+    public boolean setCustomActiveDeck(List<President> customDeck) {
+        if (player == null) {
+            return false;
+        }
+        boolean updated = player.setCustomActiveDeck(customDeck);
+        if (!updated) {
+            return false;
+        }
+        return autosaveCampaign();
+    }
+
+    public List<President> getBestOwnedPresidents(int count) {
+        return player == null ? new ArrayList<President>() : player.getBestPresidents(count);
     }
 
     /**
@@ -453,10 +565,13 @@ public class CampaignMode implements Runnable {
             difficulty = normalizeMatchDifficulty(result.getConfig().getDifficulty());
         }
 
+        boolean forfeitLikeResult = isForfeitLikeResult(result);
+
         int reward;
-        if (result.wasResigned()) {
-            // Forfeits/interrupted playable matches count as losses, but do not
-            // pay the normal quick-match consolation reward.
+        if (forfeitLikeResult) {
+            // Forfeits / resignations / interrupted playable quick matches count
+            // as losses, but must never pay the normal quick-match consolation
+            // reward. Otherwise the player can farm PC by repeatedly forfeiting.
             reward = 0;
         } else {
             reward = result.didPlayerWin()
@@ -470,8 +585,8 @@ public class CampaignMode implements Runnable {
         System.out.println();
         if (result.didPlayerWin()) {
             System.out.println("You won the " + difficulty + " campaign match!");
-        } else if (result.wasResigned()) {
-            System.out.println("You resigned the " + difficulty + " campaign match.");
+        } else if (forfeitLikeResult) {
+            System.out.println("You forfeited the " + difficulty + " campaign match.");
         } else {
             System.out.println("You lost the " + difficulty + " campaign match.");
         }
@@ -486,14 +601,24 @@ public class CampaignMode implements Runnable {
         }
         if (reward > 0) {
             System.out.println("You earned " + formatPC(reward) + ".");
-        } else {
+        } else if (forfeitLikeResult) {
             System.out.println("No Political Capital earned for a forfeit.");
+        } else {
+            System.out.println("You earned " + formatPC(0) + ".");
         }
         System.out.println("Campaign record: " + player.getRecordSummary());
         printStatus();
         clearPendingPlayableMatchInMemory();
         autosaveCampaign();
         return result.didPlayerWin();
+    }
+
+    private boolean isForfeitLikeResult(CampaignMatchResult result) {
+        if (result == null) {
+            return false;
+        }
+        return result.wasResigned()
+                || CampaignMatchResult.RESULT_RESIGNED.equals(result.getResultType());
     }
 
     /**
@@ -522,10 +647,15 @@ public class CampaignMode implements Runnable {
         }
 
         String difficulty = tournament.getRoundDifficulty(roundNumber);
+        boolean firstTournamentTitle = roundNumber == 3
+                && result.didPlayerWin()
+                && !player.hasTournamentTitle(tournament.getId());
+
         player.recordMatch(result.didPlayerWin());
 
         System.out.println();
         if (result.didPlayerWin()) {
+            player.recordTournamentRoundWin(tournament.getId(), roundNumber);
             int pcReward = tournament.getRoundWinPC(roundNumber);
             player.addPC(pcReward);
             System.out.println("You won Round " + roundNumber + " of "
@@ -540,11 +670,21 @@ public class CampaignMode implements Runnable {
                 System.out.println("Tournament clear bonus: "
                         + tournament.getChampionPackName() + ".");
                 awardTournamentChampionPack(tournament);
+
+                if (firstTournamentTitle) {
+                    player.addPC(FIRST_TOURNAMENT_TITLE_BONUS_PC);
+                    System.out.println("First championship bonus: "
+                            + formatPC(FIRST_TOURNAMENT_TITLE_BONUS_PC)
+                            + " + extra " + tournament.getChampionPackName() + ".");
+                    awardTournamentChampionPack(tournament);
+                }
+
                 System.out.println("You cleared " + tournament.getTournamentName() + "!");
             } else {
                 System.out.println("You advance to Round " + (roundNumber + 1) + ".");
             }
         } else {
+            player.recordTournamentRoundLoss(tournament.getId(), roundNumber, result.wasResigned());
             if (result.wasResigned()) {
                 System.out.println("You resigned Round " + roundNumber + " of "
                         + tournament.getTournamentName() + ".");
@@ -1223,6 +1363,7 @@ public class CampaignMode implements Runnable {
     public void startNewCampaign() {
         String playerName = player == null ? "Player" : player.getName();
         player = new CampaignPlayer(playerName, 0);
+        restartPlayTimeSessionClock();
 
         System.out.println("Welcome to Election Game Campaign Mode! It seems like you have not yet started with this account.");
         System.out.println("Let's setup your deck with the first opening packs and " + formatPC(STARTING_POLITICAL_CAPITAL) + "!");
@@ -1332,6 +1473,171 @@ public class CampaignMode implements Runnable {
         return true;
     }
 
+    /*** V9.0 ERA ROTATION / TOURNAMENT PROGRESSION METHODS ***/
+
+    public static int getActiveTournamentEraCount() {
+        return ACTIVE_TOURNAMENT_ERA_COUNT;
+    }
+
+    public static long getTournamentRotationMillis() {
+        return TOURNAMENT_ROTATION_MILLIS;
+    }
+
+    public int getCurrentTournamentRotationIndex() {
+        if (eraTournaments == null || eraTournaments.isEmpty()) {
+            return 0;
+        }
+
+        /*
+         * v9.1: Align tournament rotation to the player's local clock instead of
+         * raw UTC/epoch three-hour blocks. This makes visible rotations happen at
+         * clean local times: 12, 3, 6, and 9.
+         *
+         * The slot count still advances eight times per day. With ten eras, that
+         * means the era/time pairing drifts across the week instead of one era
+         * being trapped in the same inconvenient time window every day.
+         */
+        Calendar now = Calendar.getInstance();
+        int hourBlock = now.get(Calendar.HOUR_OF_DAY) / 3;
+        long daySerial = ((long) now.get(Calendar.YEAR) * 366L) + now.get(Calendar.DAY_OF_YEAR);
+        long slot = (daySerial * 8L) + hourBlock;
+        return (int) (slot % eraTournaments.size());
+    }
+
+    public List<CampaignTournament> getActiveEraTournaments() {
+        ArrayList<CampaignTournament> active = new ArrayList<CampaignTournament>();
+        if (eraTournaments == null || eraTournaments.isEmpty()) {
+            return active;
+        }
+
+        int startIndex = getCurrentTournamentRotationIndex();
+        int count = Math.min(ACTIVE_TOURNAMENT_ERA_COUNT, eraTournaments.size());
+        for (int i = 0; i < count; i++) {
+            active.add(eraTournaments.get((startIndex + i) % eraTournaments.size()));
+        }
+        return active;
+    }
+
+    public boolean isTournamentActive(CampaignTournament tournament) {
+        if (tournament == null) {
+            return false;
+        }
+        for (CampaignTournament activeTournament : getActiveEraTournaments()) {
+            if (tournament.equals(activeTournament)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean canStartTournament(CampaignTournament tournament) {
+        return isTournamentActive(tournament) && canEnterTournament(tournament);
+    }
+
+    public long getMillisUntilNextTournamentRotation() {
+        Calendar now = Calendar.getInstance();
+        Calendar nextRotation = (Calendar) now.clone();
+
+        int currentHour = now.get(Calendar.HOUR_OF_DAY);
+        int nextRotationHour = ((currentHour / 3) + 1) * 3;
+
+        nextRotation.set(Calendar.MINUTE, 0);
+        nextRotation.set(Calendar.SECOND, 0);
+        nextRotation.set(Calendar.MILLISECOND, 0);
+
+        if (nextRotationHour >= 24) {
+            nextRotation.add(Calendar.DAY_OF_YEAR, 1);
+            nextRotation.set(Calendar.HOUR_OF_DAY, 0);
+        } else {
+            nextRotation.set(Calendar.HOUR_OF_DAY, nextRotationHour);
+        }
+
+        long remaining = nextRotation.getTimeInMillis() - now.getTimeInMillis();
+        return remaining <= 0L ? TOURNAMENT_ROTATION_MILLIS : remaining;
+    }
+
+    public boolean isTournamentRotationClose() {
+        return getMillisUntilNextTournamentRotation() <= TOURNAMENT_ROTATION_WARNING_MILLIS;
+    }
+
+    public String getTournamentRotationCountdownText() {
+        long remainingMillis = getMillisUntilNextTournamentRotation();
+        long totalMinutes = Math.max(1L, (remainingMillis + 59999L) / 60000L);
+        long hours = totalMinutes / 60L;
+        long minutes = totalMinutes % 60L;
+
+        if (hours <= 0L) {
+            return totalMinutes + " min";
+        }
+        if (minutes <= 0L) {
+            return hours + (hours == 1L ? " hr" : " hrs");
+        }
+        return hours + (hours == 1L ? " hr, " : " hrs, ")
+                + minutes + (minutes == 1L ? " min" : " min");
+    }
+
+    public String getActiveEraNamesText() {
+        StringBuilder builder = new StringBuilder();
+        List<CampaignTournament> active = getActiveEraTournaments();
+        for (int i = 0; i < active.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(active.get(i).getEraName());
+        }
+        return builder.toString();
+    }
+
+    public String getTournamentAvailabilityText(CampaignTournament tournament) {
+        if (tournament == null) {
+            return "Unavailable";
+        }
+        if (isTournamentActive(tournament)) {
+            return "Active now";
+        }
+        return "Rotated out";
+    }
+
+    public void recordTournamentAttemptStarted(CampaignTournament tournament) {
+        if (player == null || tournament == null) {
+            return;
+        }
+        player.recordTournamentAttemptStarted(tournament.getId());
+        autosaveCampaign();
+    }
+
+    public CampaignTournamentRecord getTournamentRecord(CampaignTournament tournament) {
+        if (player == null || tournament == null) {
+            return new CampaignTournamentRecord(tournament == null ? "" : tournament.getId());
+        }
+        return player.getTournamentRecord(tournament.getId());
+    }
+
+    public int getCompletedTournamentEraCount() {
+        if (player == null || eraTournaments == null) {
+            return 0;
+        }
+        int completed = 0;
+        for (CampaignTournament tournament : eraTournaments) {
+            if (tournament != null && player.hasTournamentTitle(tournament.getId())) {
+                completed++;
+            }
+        }
+        return completed;
+    }
+
+    public int getTotalTournamentTitles() {
+        return player == null ? 0 : player.getTotalTournamentTitles();
+    }
+
+    public int getTotalTournamentAttempts() {
+        return player == null ? 0 : player.getTotalTournamentAttempts();
+    }
+
+    public int getFirstTournamentTitleBonusPC() {
+        return FIRST_TOURNAMENT_TITLE_BONUS_PC;
+    }
+
     /*** ERA TOURNAMENT METHODS ***/
 
     public List<CampaignTournament> getEraTournaments() {
@@ -1385,18 +1691,67 @@ public class CampaignMode implements Runnable {
     }
 
     public List<President> getPresidentsForTournament(CampaignTournament tournament) {
+        return getPresidentsForTournament(tournament, Double.NEGATIVE_INFINITY);
+    }
+
+    public List<President> getPresidentsForTournament(
+            CampaignTournament tournament, double minimumRating
+    ) {
         ArrayList<President> eligiblePresidents = new ArrayList<President>();
         if (tournament == null || allPresidents == null) {
             return eligiblePresidents;
         }
 
         for (President president : allPresidents) {
-            if (tournament.matchesPresident(president)) {
+            if (president != null
+                    && tournament.matchesPresident(president)
+                    && president.getAv() >= minimumRating) {
                 eligiblePresidents.add(president);
             }
         }
         Collections.sort(eligiblePresidents, presidentAverageComparator());
         return eligiblePresidents;
+    }
+
+    public List<President> getCpuPresidentsForTournamentRound(
+            CampaignTournament tournament, int roundNumber
+    ) {
+        double minimumRating = getTournamentCpuMinRating(roundNumber);
+        List<President> filtered = getPresidentsForTournament(tournament, minimumRating);
+
+        // If an era is too thin at the requested round floor, fall back to the
+        // full same-era pool instead of blocking the tournament or reusing a
+        // tiny CPU deck.
+        if (filtered.size() >= CampaignTournament.REQUIRED_ERA_CARDS) {
+            return filtered;
+        }
+        return getPresidentsForTournament(tournament);
+    }
+
+    private double getTournamentCpuMinRating(int roundNumber) {
+        if (roundNumber <= 1) {
+            return TOURNAMENT_ROUND_1_CPU_MIN_RATING;
+        }
+        if (roundNumber == 2) {
+            return TOURNAMENT_ROUND_2_CPU_MIN_RATING;
+        }
+        return TOURNAMENT_ROUND_3_CPU_MIN_RATING;
+    }
+
+    public String getTournamentCpuDeckDescription(CampaignTournament tournament, int roundNumber) {
+        double minimumRating = getTournamentCpuMinRating(roundNumber);
+        List<President> filtered = getPresidentsForTournament(tournament, minimumRating);
+        List<President> fallback = getPresidentsForTournament(tournament);
+        if (filtered.size() >= CampaignTournament.REQUIRED_ERA_CARDS) {
+            return String.format("%.1f+ %s CPU pool (%d cards)",
+                    minimumRating,
+                    tournament == null ? "era" : tournament.getEraName(),
+                    filtered.size());
+        }
+        return String.format("full %s CPU pool (%d cards; %.1f+ fallback unavailable)",
+                tournament == null ? "era" : tournament.getEraName(),
+                fallback.size(),
+                minimumRating);
     }
 
     public List<President> getOwnedPresidentsForTournament(CampaignTournament tournament) {
@@ -1481,7 +1836,7 @@ public class CampaignMode implements Runnable {
         List<President> usableTournamentDeck = tournamentDeck == null
                 ? getTournamentActiveDeck(tournament)
                 : new ArrayList<President>(tournamentDeck);
-        List<President> cpuEraPool = getPresidentsForTournament(tournament);
+        List<President> cpuEraPool = getCpuPresidentsForTournamentRound(tournament, roundNumber);
 
         System.out.println();
         System.out.println(tournament.getTournamentName() + " | Round " + roundNumber);
@@ -1502,7 +1857,7 @@ public class CampaignMode implements Runnable {
 
         String difficulty = tournament.getRoundDifficulty(roundNumber);
         System.out.println("Round " + roundNumber + " opponent: " + difficulty
-                + " AI using full " + tournament.getEraName() + " card pool.");
+                + " AI using " + getTournamentCpuDeckDescription(tournament, roundNumber) + ".");
         System.out.println("Tournament Deck Strength: "
                 + String.format("%.2f", calculateDeckStrength(usableTournamentDeck)));
 
@@ -1544,6 +1899,8 @@ public class CampaignMode implements Runnable {
                     + " cards from the " + tournament.getEraName() + " to enter.");
             return;
         }
+
+        recordTournamentAttemptStarted(tournament);
 
         System.out.println("Tournament Deck:");
         for (President president : tournamentDeck) {
@@ -1890,6 +2247,7 @@ public class CampaignMode implements Runnable {
         }
 
         activeSaveSlot = slot;
+        flushPlayTimeToPlayer();
         ensureSaveDirectoryExists();
         writeActiveSaveSlot(slot);
 
@@ -1914,6 +2272,14 @@ public class CampaignMode implements Runnable {
             writer.newLine();
             writer.write("CARDS=");
             writeCardCsvRow(writer, player.getPresidentCollection());
+            writer.newLine();
+            writer.write("ACTIVE_DECK_MODE=" + player.getActiveDeckMode());
+            writer.newLine();
+            writer.write("ACTIVE_DECK=" + player.getCustomActiveDeckCsv());
+            writer.newLine();
+            writer.write("PLAY_TIME_MILLIS=" + player.getTotalPlayTimeMillis());
+            writer.newLine();
+            writer.write("TOURNAMENT_RECORDS=" + player.getTournamentRecordsSaveString());
             writer.newLine();
             writePendingPlayableMatchFields(writer);
 
@@ -2055,8 +2421,19 @@ public class CampaignMode implements Runnable {
         int savedWins = parseNonNegativeInt(fields.containsKey("WINS") ? fields.get("WINS") : "0", "WINS");
         int savedLosses = parseNonNegativeInt(fields.containsKey("LOSSES") ? fields.get("LOSSES") : "0", "LOSSES");
         String cardCsvRow = fields.containsKey("CARDS") ? fields.get("CARDS") : "";
+        String activeDeckMode = fields.containsKey("ACTIVE_DECK_MODE")
+                ? fields.get("ACTIVE_DECK_MODE")
+                : CampaignPlayer.ACTIVE_DECK_MODE_AUTO;
+        String activeDeckCsvRow = fields.containsKey("ACTIVE_DECK") ? fields.get("ACTIVE_DECK") : "";
+        long savedPlayTimeMillis = parseOptionalNonNegativeLong(fields.get("PLAY_TIME_MILLIS"), 0L);
+        String tournamentRecords = fields.containsKey("TOURNAMENT_RECORDS")
+                ? fields.get("TOURNAMENT_RECORDS")
+                : "";
 
-        boolean loaded = applyLoadedCampaign(savedName, savedPC, savedWins, savedLosses, cardCsvRow, false);
+        boolean loaded = applyLoadedCampaign(
+                savedName, savedPC, savedWins, savedLosses, cardCsvRow,
+                activeDeckMode, activeDeckCsvRow, savedPlayTimeMillis, tournamentRecords, false
+        );
         if (loaded) {
             applyAbandonedPendingPlayableMatchIfNeeded(fields);
         }
@@ -2072,6 +2449,7 @@ public class CampaignMode implements Runnable {
         String matchTitle = cleanSaveField(fields.get("PENDING_MATCH_TITLE"), "Playable Campaign Match");
         String matchType = cleanSaveField(fields.get("PENDING_MATCH_TYPE"), "");
         String difficulty = normalizeMatchDifficulty(fields.get("PENDING_DIFFICULTY"));
+        String tournamentId = cleanSaveField(fields.get("PENDING_TOURNAMENT_ID"), "");
         String tournamentName = cleanSaveField(fields.get("PENDING_TOURNAMENT_NAME"), "Era Tournament");
         int roundNumber = parseOptionalPositiveInt(fields.get("PENDING_TOURNAMENT_ROUND"), 0);
 
@@ -2082,6 +2460,9 @@ public class CampaignMode implements Runnable {
         player.recordMatch(false);
 
         if (CampaignMatchConfig.MATCH_TYPE_TOURNAMENT.equals(matchType)) {
+            if (!tournamentId.trim().isEmpty()) {
+                player.recordTournamentRoundLoss(tournamentId, Math.max(1, roundNumber), true);
+            }
             System.out.println("Tournament result: " + tournamentName
                     + (roundNumber > 0 ? " Round " + roundNumber : "")
                     + " ended by forfeit. No tournament reward earned.");
@@ -2111,6 +2492,18 @@ public class CampaignMode implements Runnable {
         }
     }
 
+    private long parseOptionalNonNegativeLong(String text, long defaultValue) {
+        if (text == null || text.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            long value = Long.parseLong(text.trim());
+            return value < 0L ? defaultValue : value;
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
     private String cleanSaveField(String text, String defaultValue) {
         if (text == null || text.trim().isEmpty()) {
             return defaultValue;
@@ -2128,19 +2521,27 @@ public class CampaignMode implements Runnable {
         }
 
         int savedPC = parseNonNegativeInt(savedPCText, "PC");
-        return applyLoadedCampaign(savedName, savedPC, 0, 0, cardCsvRow, true);
+        return applyLoadedCampaign(
+                savedName, savedPC, 0, 0, cardCsvRow,
+                CampaignPlayer.ACTIVE_DECK_MODE_AUTO, "", 0L, "", true
+        );
     }
 
     private boolean applyLoadedCampaign(
             String savedName, int savedPC, int savedWins, int savedLosses,
-            String cardCsvRow, boolean legacySave
+            String cardCsvRow, String activeDeckMode, String activeDeckCsvRow,
+            long savedPlayTimeMillis, String tournamentRecordsSaveString, boolean legacySave
     ) {
         CampaignPlayer loadedPlayer = new CampaignPlayer(savedName, 0);
         loadedPlayer.setPC(savedPC);
         loadedPlayer.setRecord(savedWins, savedLosses);
+        loadedPlayer.setTotalPlayTimeMillis(savedPlayTimeMillis);
+        loadedPlayer.loadTournamentRecordsFromSaveString(tournamentRecordsSaveString);
 
         int loadedCards = loadCardsFromCsvRow(loadedPlayer, cardCsvRow);
+        applyLoadedActiveDeck(loadedPlayer, activeDeckMode, activeDeckCsvRow);
         player = loadedPlayer;
+        restartPlayTimeSessionClock();
 
         if (legacySave) {
             System.out.println("Loaded legacy campaign save from Save Slot " + activeSaveSlot
@@ -2153,6 +2554,58 @@ public class CampaignMode implements Runnable {
         System.out.println("Loaded " + loadedCards + " cards.");
         printStatus();
         return true;
+    }
+
+    private void applyLoadedActiveDeck(
+            CampaignPlayer loadedPlayer, String activeDeckMode, String activeDeckCsvRow
+    ) {
+        if (loadedPlayer == null) {
+            return;
+        }
+
+        if (!CampaignPlayer.ACTIVE_DECK_MODE_CUSTOM.equalsIgnoreCase(cleanSaveField(activeDeckMode, ""))) {
+            loadedPlayer.setActiveDeckAutoMode();
+            return;
+        }
+
+        List<President> customDeck = loadOwnedCardsFromCsvRow(loadedPlayer, activeDeckCsvRow);
+        boolean customApplied = loadedPlayer.setCustomActiveDeck(customDeck);
+        if (!customApplied) {
+            loadedPlayer.setActiveDeckAutoMode();
+            if (activeDeckCsvRow != null && !activeDeckCsvRow.trim().isEmpty()) {
+                System.out.println("Saved custom Active Deck was incomplete or invalid. Reverted to Auto-Best.");
+            }
+        }
+    }
+
+    private List<President> loadOwnedCardsFromCsvRow(CampaignPlayer loadedPlayer, String cardCsvRow) {
+        ArrayList<President> cards = new ArrayList<President>();
+        if (loadedPlayer == null || cardCsvRow == null || cardCsvRow.trim().isEmpty()) {
+            return cards;
+        }
+
+        String[] cardNames = cardCsvRow.split(",");
+        for (String cardName : cardNames) {
+            String cleanName = cardName == null ? "" : cardName.trim();
+            President president = findPresidentByName(cleanName);
+            if (president != null && loadedPlayer.ownsPresident(president)
+                    && !containsPresident(cards, president)) {
+                cards.add(president);
+            }
+        }
+        return cards;
+    }
+
+    private boolean containsPresident(List<President> presidents, President target) {
+        if (presidents == null || target == null) {
+            return false;
+        }
+        for (President president : presidents) {
+            if (president != null && president.getName().equalsIgnoreCase(target.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String getRequiredSaveField(Map<String, String> fields, String key) {
@@ -2259,10 +2712,11 @@ public class CampaignMode implements Runnable {
                 + " | Presidents owned: " + ownedPresidents
                 + "/" + totalPresidents
                 + " (" + String.format("%.1f", completionPct) + "%)"
-                + " | Active Deck: " + player.getActiveDeckSize()
+                + " | Active Deck: " + player.getActiveDeckModeLabel() + " " + player.getActiveDeckSize()
                 + "/" + player.getActiveDeckMaxSize()
                 + " | Strength: " + String.format("%.2f", player.getActiveDeckStrength())
-                + " | Record: " + player.getRecordSummary());
+                + " | Record: " + player.getRecordSummary()
+                + " | Time Played: " + getFormattedPlayTime());
     }
 
     /**

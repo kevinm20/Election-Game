@@ -8,17 +8,16 @@ import java.util.Objects;
 /**
  * Definition object for Campaign Mode era tournaments.
  *
- * This class intentionally stores tournament metadata and helper rules only.
- * CampaignMode should own the actual tournament simulation/reward flow, while
- * RunCampaignMode should own the Swing display.
+ * v9.0 adds permanent era-year boundaries so tournament matches can use
+ * elections from the correct historical window.
  */
 public class CampaignTournament {
 
     public static final int REQUIRED_ERA_CARDS = 10;
 
-    public static final int ROUND_1_WIN_PC = 40000;
-    public static final int ROUND_2_WIN_PC = 75000;
-    public static final int ROUND_3_WIN_PC = 200000;
+    public static final int ROUND_1_WIN_PC = 10000;
+    public static final int ROUND_2_WIN_PC = 20000;
+    public static final int ROUND_3_WIN_PC = 55000;
 
     public static final double SOUVENIR_MIN_RATING = 0.0;
     public static final double SOUVENIR_MAX_RATING = 3.99;
@@ -39,14 +38,24 @@ public class CampaignTournament {
     private final String primaryEraTag;
     private final List<String> eraTags;
     private final String description;
+    private final int electionStartYear;
+    private final int electionEndYear;
 
     public CampaignTournament(String id, String tournamentName, String eraName, String eraTag) {
-        this(id, tournamentName, eraName, eraTag, null, new String[0]);
+        this(id, tournamentName, eraName, eraTag, null, 0, 0, new String[0]);
     }
 
     public CampaignTournament(
             String id, String tournamentName, String eraName,
             String eraTag, String description, String... alternateEraTags
+    ) {
+        this(id, tournamentName, eraName, eraTag, description, 0, 0, alternateEraTags);
+    }
+
+    public CampaignTournament(
+            String id, String tournamentName, String eraName,
+            String eraTag, String description, int electionStartYear, int electionEndYear,
+            String... alternateEraTags
     ) {
         if (id == null || id.trim().isEmpty()) {
             throw new IllegalArgumentException("Tournament id cannot be blank.");
@@ -66,6 +75,8 @@ public class CampaignTournament {
         this.eraName = eraName.trim();
         this.primaryEraTag = eraTag.trim();
         this.description = description == null ? "" : description.trim();
+        this.electionStartYear = electionStartYear;
+        this.electionEndYear = electionEndYear;
 
         ArrayList<String> tags = new ArrayList<String>();
         addUniqueTag(tags, this.primaryEraTag);
@@ -113,6 +124,25 @@ public class CampaignTournament {
 
     public String getDescription() {
         return description;
+    }
+
+    public int getElectionStartYear() {
+        return electionStartYear;
+    }
+
+    public int getElectionEndYear() {
+        return electionEndYear;
+    }
+
+    public boolean hasElectionYearRange() {
+        return electionStartYear > 0 && electionEndYear >= electionStartYear;
+    }
+
+    public String getElectionYearRangeText() {
+        if (!hasElectionYearRange()) {
+            return "All elections";
+        }
+        return electionStartYear + "-" + electionEndYear;
     }
 
     public int getRequiredEraCards() {
@@ -184,11 +214,10 @@ public class CampaignTournament {
     }
 
     /**
-     * Default v5 era tournament slate.
+     * Default v9 era tournament slate.
      *
-     * Era matching is based on President tags, not year ranges. Most era names
-     * are identical to their data tags. Today's Trophy uses "Trump Era" as its
-     * primary data tag while also accepting "Present Era" as a future alias.
+     * Election year ranges follow decade-inclusive era boundaries:
+     * 1780/1810 means 1780-1819, 1820/1840 means 1820-1849, etc.
      */
     public static List<CampaignTournament> buildDefaultEraTournaments() {
         ArrayList<CampaignTournament> tournaments = new ArrayList<CampaignTournament>();
@@ -198,63 +227,81 @@ public class CampaignTournament {
                 "Founders' Gauntlet",
                 "Founding Era",
                 "Founding Era",
-                "Build a founding-era coalition and survive the birth of the republic."
+                "Build a founding-era coalition and survive the birth of the republic.",
+                1780,
+                1819
         ));
         tournaments.add(new CampaignTournament(
                 "OLD_HICKORY_OPEN",
                 "Old Hickory Open",
                 "Jacksonian Era",
                 "Jacksonian Era",
-                "Mass democracy, party machines, and the rough edge of Jacksonian politics."
+                "Mass democracy, party machines, and the rough edge of Jacksonian politics.",
+                1820,
+                1849
         ));
         tournaments.add(new CampaignTournament(
                 "HOUSE_DIVIDED_CUP",
                 "House Divided Cup",
                 "Civil War Era",
                 "Civil War Era",
-                "A brutal era tournament built around crisis, union, secession, and survival."
+                "A brutal era tournament built around crisis, union, secession, and survival.",
+                1850,
+                1869
         ));
         tournaments.add(new CampaignTournament(
                 "GILDED_AGE_INVITATIONAL",
                 "Gilded Age Invitational",
                 "Reconstruction Era",
                 "Reconstruction Era",
-                "Reconstruction, industrial power, patronage politics, and the Gilded Age."
+                "Reconstruction, industrial power, patronage politics, and the Gilded Age.",
+                1870,
+                1899
         ));
         tournaments.add(new CampaignTournament(
                 "BULL_MOOSE_CUP",
                 "Bull Moose Cup",
                 "Progressive Era",
                 "Progressive Era",
-                "Reformers, trust-busters, modern campaigns, and Progressive Era combat."
+                "Reformers, trust-busters, modern campaigns, and Progressive Era combat.",
+                1900,
+                1929
         ));
         tournaments.add(new CampaignTournament(
                 "FIRESIDE_CLASSIC",
                 "Fireside Classic",
                 "New Deal Era",
                 "New Deal Era",
-                "Depression, war, radio politics, and the rise of the New Deal state."
+                "Depression, war, radio politics, and the rise of the New Deal state.",
+                1930,
+                1949
         ));
         tournaments.add(new CampaignTournament(
                 "CONTAINMENT_CLASSIC",
                 "Containment Classic",
                 "Cold War Era",
                 "Cold War Era",
-                "Cold War consensus, civil rights, television politics, Vietnam, and detente."
+                "Cold War consensus, civil rights, television politics, Vietnam, and detente.",
+                1950,
+                1979
         ));
         tournaments.add(new CampaignTournament(
                 "MORNING_IN_AMERICA_BOWL",
                 "Morning in America Bowl",
                 "Reagan Era",
                 "Reagan Era",
-                "Conservatism, optimism, deregulation, and late-Cold-War political combat."
+                "Conservatism, optimism, deregulation, and late-Cold-War political combat.",
+                1980,
+                1999
         ));
         tournaments.add(new CampaignTournament(
                 "NEW_MILLENNIUM_CUP",
                 "New Millennium Cup",
                 "Modern Era",
                 "Modern Era",
-                "Post-Cold-War politics, polarization, terror, recession, and digital campaigns."
+                "Post-Cold-War politics, polarization, terror, recession, and digital campaigns.",
+                2000,
+                2019
         ));
         tournaments.add(new CampaignTournament(
                 "TODAYS_TROPHY",
@@ -262,6 +309,8 @@ public class CampaignTournament {
                 "Trump Era",
                 "Trump Era",
                 "Populism, disruption, media saturation, and the politics of right now.",
+                2020,
+                2039,
                 "Present Era"
         ));
 

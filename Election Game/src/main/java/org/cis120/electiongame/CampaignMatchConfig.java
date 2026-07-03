@@ -40,6 +40,9 @@ public class CampaignMatchConfig {
     private final String tournamentName;
     private final String tournamentEraName;
     private final int tournamentRound;
+    private final boolean useEraElectionDeck;
+    private final int electionStartYear;
+    private final int electionEndYear;
 
     private final boolean returnToCampaignModeAfterMatch;
     private final boolean resignCountsAsLoss;
@@ -64,6 +67,9 @@ public class CampaignMatchConfig {
         this.tournamentName = cleanOrDefault(builder.tournamentName, "");
         this.tournamentEraName = cleanOrDefault(builder.tournamentEraName, "");
         this.tournamentRound = builder.tournamentRound;
+        this.useEraElectionDeck = builder.useEraElectionDeck;
+        this.electionStartYear = builder.electionStartYear;
+        this.electionEndYear = builder.electionEndYear;
 
         this.returnToCampaignModeAfterMatch = builder.returnToCampaignModeAfterMatch;
         this.resignCountsAsLoss = builder.resignCountsAsLoss;
@@ -118,6 +124,8 @@ public class CampaignMatchConfig {
                 .tournamentName(tournament.getTournamentName())
                 .tournamentEraName(tournament.getEraName())
                 .tournamentRound(roundNumber)
+                .useEraElectionDeck(tournament.hasElectionYearRange())
+                .electionYearRange(tournament.getElectionStartYear(), tournament.getElectionEndYear())
                 .returnToCampaignModeAfterMatch(true)
                 .resignCountsAsLoss(true)
                 .build();
@@ -179,6 +187,25 @@ public class CampaignMatchConfig {
         return tournamentRound;
     }
 
+    public boolean shouldUseEraElectionDeck() {
+        return useEraElectionDeck && electionStartYear > 0 && electionEndYear >= electionStartYear;
+    }
+
+    public int getElectionStartYear() {
+        return electionStartYear;
+    }
+
+    public int getElectionEndYear() {
+        return electionEndYear;
+    }
+
+    public String getElectionYearRangeText() {
+        if (!shouldUseEraElectionDeck()) {
+            return "All elections";
+        }
+        return electionStartYear + "-" + electionEndYear;
+    }
+
     public boolean isTournamentMatch() {
         return MATCH_TYPE_TOURNAMENT.equals(matchType);
     }
@@ -238,6 +265,8 @@ public class CampaignMatchConfig {
                 .tournamentName(tournamentName)
                 .tournamentEraName(tournamentEraName)
                 .tournamentRound(tournamentRound)
+                .useEraElectionDeck(useEraElectionDeck)
+                .electionYearRange(electionStartYear, electionEndYear)
                 .returnToCampaignModeAfterMatch(returnToCampaignModeAfterMatch)
                 .resignCountsAsLoss(resignCountsAsLoss)
                 .build();
@@ -309,6 +338,9 @@ public class CampaignMatchConfig {
         private String tournamentName;
         private String tournamentEraName;
         private int tournamentRound;
+        private boolean useEraElectionDeck;
+        private int electionStartYear;
+        private int electionEndYear;
 
         private boolean returnToCampaignModeAfterMatch = true;
         private boolean resignCountsAsLoss = true;
@@ -380,6 +412,17 @@ public class CampaignMatchConfig {
 
         public Builder tournamentRound(int tournamentRound) {
             this.tournamentRound = tournamentRound;
+            return this;
+        }
+
+        public Builder useEraElectionDeck(boolean useEraElectionDeck) {
+            this.useEraElectionDeck = useEraElectionDeck;
+            return this;
+        }
+
+        public Builder electionYearRange(int electionStartYear, int electionEndYear) {
+            this.electionStartYear = electionStartYear;
+            this.electionEndYear = electionEndYear;
             return this;
         }
 

@@ -117,7 +117,7 @@ public class CardData {
 	                + "1868 (won), 1872 (won)"
     );
     static President woodrowWilson = new President(
-            "Woodrow Wilson", "Northeast", 2, 4, 8, 5, "Progressive", "Centralization",
+            "Woodrow Wilson", "Northeast", 2, 4, 9, 4, "Progressive", "Centralization",
             new String[]{"President", "Progressive Era"},
             "<center><b>Woodrow Wilson</b></center><br><br>"
 	                + "<b>Political Experience:</b><br><br>"
@@ -1243,7 +1243,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President jamesSSherman = new President(
-            "James S. Sherman", "Northeast", 5, 5, 2, 2, "Conservative", "Gold Standard",
+            "James S. Sherman", "Northeast", 5, 5, 1, 3, "Conservative", "Gold Standard",
             new String[]{"Progressive Era"}
     );
     static President adlaiStevensonI = new President(
@@ -1600,7 +1600,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President jamesTallmadgeJr = new President(
-            "James Tallmadge Jr.", "Northeast", 2, 1, 2, 2, "Libertarian", "Civil Rights",
+            "James Tallmadge Jr.", "Northeast", 2, 1, 3, 3, "Libertarian", "Civil Rights",
             new String[]{"Founding Era"}
     );
     static President frederickMuhlenberg = new President(
@@ -1904,7 +1904,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President williamDuane = new President(
-            "William Duane", "Northeast", 1, 3, 1, 2, "Populist", "Egalitarianism",
+            "William Duane", "Northeast", 1, 5, 2, 3, "Populist", "Egalitarianism",
             new String[]{"Founding Era"}
     );
     static President williamPinkney = new President(
@@ -1948,7 +1948,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President paulHamilton = new President(
-            "Paul Hamilton", "South", 2, 1, 3, 1, "Libertarian", "Imperialism",
+            "Paul Hamilton", "South", 2, 1, 3, 1, "Populist", "Imperialism",
             new String[]{"Founding Era"}
     );
     static President philipReed = new President(
@@ -1992,7 +1992,7 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President isaacShelby = new President(
-            "Isaac Shelby", "South", 3, 5, 1, 2, "Libertarian", "Imperialism",
+            "Isaac Shelby", "South", 3, 5, 1, 2, "Populist", "Imperialism",
             new String[]{"Founding Era"}
     );
     static President stephenRBradley = new President(
@@ -2000,11 +2000,11 @@ public class CardData {
             new String[]{"Founding Era"}
     );
     static President johnSevier = new President(
-            "John Sevier", "South", 5, 2, 3, 1, "Libertarian", "Imperialism",
+            "John Sevier", "South", 5, 2, 3, 1, "Populist", "Imperialism",
             new String[]{"Founding Era"}
     );
     static President michaelLeib = new President(
-            "Michael Leib", "Northeast", 4, 2, 1, 1, "Libertarian", "Deregulation",
+            "Michael Leib", "Northeast", 4, 3, 1, 2, "Libertarian", "Deregulation",
             new String[]{"Founding Era"}
     );
     static President mehmetOz = new President(
@@ -2248,7 +2248,7 @@ public class CardData {
             new String[]{"Jacksonian Era"}
     );
     static President williamLegett = new President(
-            "William Leggett", "Northeast", 1, 4, 1, 3, "Populist", "Laissez-Faire",
+            "William Leggett", "Northeast", 1, 4, 4, 3, "Populist", "Laissez-Faire",
             new String[]{"Jacksonian Era"}
     );
     static President robertCWinthrop = new President(
@@ -2664,7 +2664,7 @@ public class CardData {
             new String[]{"Civil War Era"}
     );
     static President williamTSherman = new President(
-            "William T. Sherman", "Northeast", 1, 6, 1, 8, "Conservative", "Imperialism",
+            "William T. Sherman", "Midwest", 1, 6, 1, 8, "Conservative", "Imperialism",
             new String[]{"Civil War Era"}
     );
     static President stonewallJackson = new President(
@@ -2804,7 +2804,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President hiramJohnson = new President(
-            "Hiram Johnson", "West", 6, 4, 3, 4, "Progressive", "Isolationism",
+            "Hiram Johnson", "West", 6, 2, 5, 4, "Progressive", "Isolationism",
             new String[]{"Progressive Era"}
     );
     static President nelsonwAldrich = new President(
@@ -2832,7 +2832,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President albertBCummins = new President(
-            "Albert B. Cummins", "Northeast", 5, 4, 4, 2, "Progressive", "Regulation",
+            "Albert B. Cummins", "Northeast", 5, 4, 3, 3, "Progressive", "Regulation",
             new String[]{"Progressive Era"}
     );
     static President judsonHarmon = new President(
@@ -3780,7 +3780,7 @@ public class CardData {
             new String[]{"Reconstruction Era"}
     );
     static President lorinathurston = new President(
-            "Lorin A. Thurston", "West", 2, 4, 2, 2, "Conservative", "Imperialism",
+            "Lorrin A. Thurston", "West", 2, 4, 2, 2, "Conservative", "Imperialism",
             new String[]{"Reconstruction Era"}
     );
     static President jameshendersonblount = new President(
@@ -4176,7 +4176,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President edwardbvreeland = new President(
-            "Edward B. Vreeland", "Northeast", 3, 1, 5, 2, "Conservative", "Central Bank",
+            "Edward B. Vreeland", "Northeast", 3, 1, 6, 2, "Conservative", "Central Bank",
             new String[]{"Progressive Era"}
     );
     static President samuelgompers = new President(
@@ -4384,7 +4384,7 @@ public class CardData {
             new String[]{"Reconstruction Era"}
     );
     static President milfordmhoward = new President(
-            "Milford M. Howard", "South", 2, 1, 1, 1, "Populist", "Active Executive",
+            "Milford W. Howard", "South", 2, 1, 1, 1, "Populist", "Active Executive",
             new String[]{"Reconstruction Era"}
     );
     static President jameshkyle = new President(
@@ -4660,7 +4660,7 @@ public class CardData {
             new String[]{"Progressive Era"}
     );
     static President andrewvolstead = new President(
-            "Andrew Volstead", "Midwest", 3, 3, 3, 2, "Conservative", "Traditional Morality",
+            "Andrew Volstead", "Midwest", 4, 3, 3, 4, "Conservative", "Law and Order",
             new String[]{"Progressive Era"}
     );
     static President robertpbass = new President(
@@ -5158,6 +5158,10 @@ public class CardData {
     
     
     // ELECTIONS
+    static Election e2024 = new Election(
+            2024, "infl", "exp", "Midwest", "Closed Borders vs. Open Borders",
+            "Tax Cuts vs. Social Programs", "Traditional Morality vs. Social Liberalism"
+    );
     static Election e2020 = new Election(
             2020, "nam", "exp", "Midwest", "Regulation vs. Deregulation",
             "Tax Cuts vs. Social Programs", "Law and Order vs. Civil Liberties"
@@ -5344,7 +5348,7 @@ public class CardData {
             "Civil Rights vs. Racism", "States' Rights vs. Centralization"
     );
     static Election e1840 = new Election(
-            1840, "nam", "infl", "South", "Laissez-Faire vs. Internal Improvements",
+            1840, "nam", "infl", "South", "Central Bank vs. Anti-Central Bank",
             "Active Executive vs. Limited Government", "Establishment vs. Anti-Establishment"
     );
     static Election e1836 = new Election(
@@ -5384,12 +5388,12 @@ public class CardData {
             "Free Trade vs. Tariffs", "Laissez-Faire vs. Internal Improvements"
     );
     static Election e1800 = new Election(
-            1800, "exp", "nam", "Northeast", "States' Rights vs. Centralization",
+            1800, "pol", "nam", "Northeast", "States' Rights vs. Centralization",
             "Constructionism vs. Implied Powers", "Social Hierarchy vs. Egalitarianism"
     );
     static Election e1796 = new Election(
-            1796, "exp", "infl", "Northeast", "Imperialism vs. Isolationism",
-            "Social Hierarchy vs. Egalitarianism", "Law and Order vs. Civil Liberties"
+            1796, "exp", "infl", "Northeast", "Social Hierarchy vs. Egalitarianism",
+            "Imperialism vs. Isolationism", "Law and Order vs. Civil Liberties"
     );
     static Election e1792 = new Election(
             1792, "nam", "infl", "South", "Constructionism vs. Implied Powers",
@@ -5404,9 +5408,9 @@ public class CardData {
             "Imperialism vs. Isolationism", "Law and Order vs. Civil Liberties"
     );
 
-    static Policy toughfp1 = new Policy("Imperialism", "Progressive", "Conservative");
-    static Policy toughfp2 = new Policy("Imperialism", "Progressive", "Conservative");
-    static Policy toughfp3 = new Policy("Imperialism", "Progressive", "Conservative");
+    static Policy toughfp1 = new Policy("Imperialism", "Progressive", "Populist", "Conservative");
+    static Policy toughfp2 = new Policy("Imperialism", "Progressive", "Populist", "Conservative");
+    static Policy toughfp3 = new Policy("Imperialism", "Progressive", "Populist", "Conservative");
     static Policy isolationism1 = new Policy(
             "Isolationism", "Progressive", "Libertarian", "Populist"
     );
@@ -5440,7 +5444,7 @@ public class CardData {
     );
     static Policy centralization1 = new Policy("Centralization", "Progressive", "Conservative");
     static Policy centralization2 = new Policy("Centralization", "Progressive", "Conservative");
-    static Policy goldstandard = new Policy("Gold Standard", "Conservative", "Libertarian", "Populist");
+    static Policy goldstandard = new Policy("Gold Standard", "Conservative", "Libertarian");
     static Policy inflation = new Policy("Inflation", "Progressive", "Populist");
     static Policy civilrights1 = new Policy(
             "Civil Rights", "Progressive", "Conservative", "Libertarian"
@@ -5460,7 +5464,7 @@ public class CardData {
     );
     static Policy strategicdev = new Policy("Internal Improvements", "Conservative", "Progressive");
     static Policy laissez1 = new Policy("Laissez-Faire", "Libertarian", "Populist", "Conservative");
-    static Policy openb = new Policy("Open Borders", "Progressive", "Libertarian", "Populist");
+    static Policy openb = new Policy("Open Borders", "Progressive", "Libertarian");
     static Policy closedb = new Policy("Closed Borders", "Conservative", "Populist");
     static Policy activeexec = new Policy("Active Executive", "Progressive", "Conservative", "Populist");
     static Policy limitedgov = new Policy(
@@ -5471,7 +5475,7 @@ public class CardData {
             "Constructionism", "Conservative", "Libertarian", "Populist"
     );
     static Policy laworder = new Policy("Law and Order", "Conservative", "Populist");
-    static Policy pfreedom = new Policy("Civil Liberties", "Progressive", "Libertarian", "Populist");
+    static Policy pfreedom = new Policy("Civil Liberties", "Progressive", "Libertarian");
     static Policy bank = new Policy("Central Bank", "Progressive", "Conservative");
     static Policy antibank = new Policy("Anti-Central Bank", "Libertarian", "Populist");
     static Policy nationalism1 = new Policy("Nationalism", "Conservative", "Libertarian");
@@ -5628,6 +5632,35 @@ public class CardData {
      *********************** ADD PRESIDENTS FUNCTION ************************************************************************
      ************************************************************************************************************************/
     
+
+    /**
+     * Applies the requested minimum weighted-average rating to any finished
+     * President pool.
+     *
+     * Historically, minRate was only honored by custom decks. Campaign Mode now
+     * relies on calls like getPresidents("full", null, 3.0) for Medium CPU
+     * pools and economy simulations, so every preset should respect minRate.
+     */
+    private static List<President> filterPresidentsByMinRating(List<President> source, double minRate) {
+        ArrayList<President> filtered = new ArrayList<President>();
+        if (source == null) {
+            return filtered;
+        }
+
+        for (President president : source) {
+            if (president != null && president.getWeightedAve() >= minRate) {
+                filtered.add(president);
+            }
+        }
+        return filtered;
+    }
+
+    private static List<President> shuffleAndReturnFiltered(List<President> source, double minRate) {
+        List<President> filtered = filterPresidentsByMinRating(source, minRate);
+        Collections.shuffle(filtered);
+        return filtered;
+    }
+
     /***
      * Use this for getting/adding presidents to the game
      */
@@ -6912,8 +6945,7 @@ public class CardData {
             
             presidents.addAll(nonpresidents);
             //System.out.println("GENERATIONAL CARD DECK");
-            Collections.shuffle(presidents);
-            return presidents;
+            return shuffleAndReturnFiltered(presidents, minRate);
         }
         
         if (preset.equals("expanded")) {
@@ -6933,19 +6965,16 @@ public class CardData {
             for (int i = 0; i < 54; i++) {
                 presidents.add(nonpresidents.get(i));
             }
-            Collections.shuffle(presidents);
-            return presidents;
+            return shuffleAndReturnFiltered(presidents, minRate);
         } else if (preset.equals("full")) {
             presidents.addAll(nonpresidents);
             //System.out.println("FULL CARD DECK");
-            Collections.shuffle(presidents);
-            return presidents;
+            return shuffleAndReturnFiltered(presidents, minRate);
         } else if (preset.equals("memes")) {
             presidents.addAll(nonpresidents);
             presidents.addAll(meme);
             //System.out.println("MEME CARD DECK");
-            Collections.shuffle(presidents);
-            return presidents;
+            return shuffleAndReturnFiltered(presidents, minRate);
         } else if (preset.equals("standard")) {
         	Iterator<President> it = nonpresidents.iterator();
         	while (it.hasNext()) {
@@ -6963,13 +6992,12 @@ public class CardData {
                 presidents.add(nonpresidents.get(i));
             }
             //System.out.println("STANDARD CARD DECK");
-            Collections.shuffle(presidents);
             /*
             for (President p : presidents) {
                 System.out.println(p.toString());
             } 
            	*/
-            return presidents;
+            return shuffleAndReturnFiltered(presidents, minRate);
         }
         
         if(preset.equals("custom")&&(!remembered)) {
@@ -7055,7 +7083,7 @@ public class CardData {
             presidents.add(nonpresidents.get(i));
         }
         //System.out.println("STANDARD CARD DECK");
-        return presidents;
+        return shuffleAndReturnFiltered(presidents, minRate);
     }
    
     
@@ -7196,6 +7224,7 @@ public class CardData {
 
     public static List<Election> getElections() {
         List<Election> elections = new ArrayList<Election>();
+        elections.add(e2024);
         elections.add(e2020);
         elections.add(e2016);
         elections.add(e2012);
