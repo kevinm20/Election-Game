@@ -17,6 +17,7 @@ public class CampaignMatchConfig {
 
     public static final String MATCH_TYPE_QUICK_PLAY = "Quick Play";
     public static final String MATCH_TYPE_TOURNAMENT = "Tournament";
+    public static final String MATCH_TYPE_LEAGUE = "League";
 
     public static final String EXECUTION_MODE_PLAYABLE = "Playable";
     public static final String EXECUTION_MODE_SIMULATED = "Simulated";
@@ -44,6 +45,11 @@ public class CampaignMatchConfig {
     private final int electionStartYear;
     private final int electionEndYear;
 
+    private final String leagueDivisionId;
+    private final String leagueDivisionName;
+    private final int leagueGameNumber;
+    private final int leagueSeasonLength;
+
     private final boolean returnToCampaignModeAfterMatch;
     private final boolean resignCountsAsLoss;
 
@@ -70,6 +76,11 @@ public class CampaignMatchConfig {
         this.useEraElectionDeck = builder.useEraElectionDeck;
         this.electionStartYear = builder.electionStartYear;
         this.electionEndYear = builder.electionEndYear;
+
+        this.leagueDivisionId = cleanOrDefault(builder.leagueDivisionId, "");
+        this.leagueDivisionName = cleanOrDefault(builder.leagueDivisionName, "");
+        this.leagueGameNumber = builder.leagueGameNumber;
+        this.leagueSeasonLength = builder.leagueSeasonLength;
 
         this.returnToCampaignModeAfterMatch = builder.returnToCampaignModeAfterMatch;
         this.resignCountsAsLoss = builder.resignCountsAsLoss;
@@ -126,6 +137,36 @@ public class CampaignMatchConfig {
                 .tournamentRound(roundNumber)
                 .useEraElectionDeck(tournament.hasElectionYearRange())
                 .electionYearRange(tournament.getElectionStartYear(), tournament.getElectionEndYear())
+                .returnToCampaignModeAfterMatch(true)
+                .resignCountsAsLoss(true)
+                .build();
+    }
+
+    public static CampaignMatchConfig leagueGame(
+            String playerName, CampaignLeagueDivision division, int gameNumber,
+            List<President> playerPresidentDeck, List<President> cpuPresidentDeck
+    ) {
+        if (division == null) {
+            throw new IllegalArgumentException("League division cannot be null.");
+        }
+
+        String difficulty = division.getDifficulty();
+        int cleanGameNumber = Math.max(1, gameNumber);
+        return CampaignMatchConfig.builder()
+                .matchId(division.getId() + "_GAME_" + cleanGameNumber)
+                .matchTitle(division.getName() + " - Game " + cleanGameNumber)
+                .matchType(MATCH_TYPE_LEAGUE)
+                .executionMode(EXECUTION_MODE_PLAYABLE)
+                .playerName(playerName)
+                .cpuName(division.getName() + " CPU")
+                .difficulty(difficulty)
+                .playerPresidentDeck(playerPresidentDeck)
+                .cpuPresidentDeck(cpuPresidentDeck)
+                .startingHandSize(DEFAULT_STARTING_HAND_SIZE)
+                .leagueDivisionId(division.getId())
+                .leagueDivisionName(division.getName())
+                .leagueGameNumber(cleanGameNumber)
+                .leagueSeasonLength(division.getSeasonLength())
                 .returnToCampaignModeAfterMatch(true)
                 .resignCountsAsLoss(true)
                 .build();
@@ -206,8 +247,28 @@ public class CampaignMatchConfig {
         return electionStartYear + "-" + electionEndYear;
     }
 
+    public String getLeagueDivisionId() {
+        return leagueDivisionId;
+    }
+
+    public String getLeagueDivisionName() {
+        return leagueDivisionName;
+    }
+
+    public int getLeagueGameNumber() {
+        return leagueGameNumber;
+    }
+
+    public int getLeagueSeasonLength() {
+        return leagueSeasonLength;
+    }
+
     public boolean isTournamentMatch() {
         return MATCH_TYPE_TOURNAMENT.equals(matchType);
+    }
+
+    public boolean isLeagueMatch() {
+        return MATCH_TYPE_LEAGUE.equals(matchType);
     }
 
     public boolean isQuickPlayMatch() {
@@ -246,6 +307,9 @@ public class CampaignMatchConfig {
         if (isTournamentMatch() && tournamentRound < 1) {
             return "Tournament match is missing a valid round number.";
         }
+        if (isLeagueMatch() && leagueGameNumber < 1) {
+            return "League match is missing a valid game number.";
+        }
         return "";
     }
 
@@ -267,6 +331,10 @@ public class CampaignMatchConfig {
                 .tournamentRound(tournamentRound)
                 .useEraElectionDeck(useEraElectionDeck)
                 .electionYearRange(electionStartYear, electionEndYear)
+                .leagueDivisionId(leagueDivisionId)
+                .leagueDivisionName(leagueDivisionName)
+                .leagueGameNumber(leagueGameNumber)
+                .leagueSeasonLength(leagueSeasonLength)
                 .returnToCampaignModeAfterMatch(returnToCampaignModeAfterMatch)
                 .resignCountsAsLoss(resignCountsAsLoss)
                 .build();
@@ -341,6 +409,11 @@ public class CampaignMatchConfig {
         private boolean useEraElectionDeck;
         private int electionStartYear;
         private int electionEndYear;
+
+        private String leagueDivisionId;
+        private String leagueDivisionName;
+        private int leagueGameNumber;
+        private int leagueSeasonLength;
 
         private boolean returnToCampaignModeAfterMatch = true;
         private boolean resignCountsAsLoss = true;
@@ -423,6 +496,26 @@ public class CampaignMatchConfig {
         public Builder electionYearRange(int electionStartYear, int electionEndYear) {
             this.electionStartYear = electionStartYear;
             this.electionEndYear = electionEndYear;
+            return this;
+        }
+
+        public Builder leagueDivisionId(String leagueDivisionId) {
+            this.leagueDivisionId = leagueDivisionId;
+            return this;
+        }
+
+        public Builder leagueDivisionName(String leagueDivisionName) {
+            this.leagueDivisionName = leagueDivisionName;
+            return this;
+        }
+
+        public Builder leagueGameNumber(int leagueGameNumber) {
+            this.leagueGameNumber = leagueGameNumber;
+            return this;
+        }
+
+        public Builder leagueSeasonLength(int leagueSeasonLength) {
+            this.leagueSeasonLength = leagueSeasonLength;
             return this;
         }
 

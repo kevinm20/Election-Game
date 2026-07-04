@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -30,6 +31,21 @@ public class CampaignMode implements Runnable {
     private static final int ERA_PROSPECT_PACK_COST = 60000;
     private static final double ERA_PROSPECT_PACK_MIN_RATING = 0.0;
     private static final double ERA_PROSPECT_PACK_MAX_RATING = 3.99;
+
+    private static final int TAG_PROSPECT_PACK_CARD_COUNT = ERA_PROSPECT_PACK_CARD_COUNT;
+    private static final int TAG_PROSPECT_PACK_COST = ERA_PROSPECT_PACK_COST;
+    private static final double TAG_PROSPECT_PACK_MIN_RATING = ERA_PROSPECT_PACK_MIN_RATING;
+    private static final double TAG_PROSPECT_PACK_MAX_RATING = ERA_PROSPECT_PACK_MAX_RATING;
+
+    private static final int STATE_TRAIL_PACK_CARD_COUNT = 1;
+    private static final int STATE_TRAIL_PACK_COST = 40000;
+    private static final double STATE_TRAIL_PACK_MIN_RATING = 0.0;
+    private static final double STATE_TRAIL_PACK_MAX_RATING = 10.0;
+
+    private static final int IDEOLOGY_STAR_PACK_CARD_COUNT = 1;
+    private static final int IDEOLOGY_STAR_PACK_COST = 70000;
+    private static final double IDEOLOGY_STAR_PACK_MIN_RATING = 3.5;
+    private static final double IDEOLOGY_STAR_PACK_MAX_RATING = 10.0;
 
     private static final int EASY_WIN_REWARD_PC = 15000;
     private static final int EASY_LOSS_REWARD_PC = 5000;
@@ -59,7 +75,8 @@ public class CampaignMode implements Runnable {
 
     private static final double DUPLICATE_SALE_PERCENT = 0.25;
 
-    private static final String SAVE_VERSION = "CAMPAIGN_CLASH_SAVE_V3";
+    private static final String SAVE_VERSION = "CAMPAIGN_CLASH_SAVE_V4";
+    private static final String SAVE_VERSION_V3 = "CAMPAIGN_CLASH_SAVE_V3";
     private static final String SAVE_VERSION_V2 = "CAMPAIGN_CLASH_SAVE_V2";
     private static final String SAVE_VERSION_V1 = "CAMPAIGN_CLASH_SAVE_V1";
 
@@ -70,9 +87,15 @@ public class CampaignMode implements Runnable {
     private static final int MAX_SAVE_SLOTS = 3;
 
     private static final int ACTIVE_TOURNAMENT_ERA_COUNT = 3;
+    private static final int ACTIVE_TOURNAMENT_TAG_COUNT = 3;
     private static final long TOURNAMENT_ROTATION_MILLIS = 3L * 60L * 60L * 1000L;
     private static final long TOURNAMENT_ROTATION_WARNING_MILLIS = 15L * 60L * 1000L;
     private static final int FIRST_TOURNAMENT_TITLE_BONUS_PC = 25000;
+
+    private static final int LEAGUE_REWARD_PACK_CARD_COUNT = 1;
+    private static final double LEAGUE_REWARD_PACK_MAX_RATING = 10.0;
+    private static final double LEAGUE_DUPLICATE_SALE_PERCENT = 1.0;
+
     private static final String SAVE_DIRECTORY_PATH = "files/campaign_saves";
     private static final String SAVE_FILE_PREFIX = "campaign_slot_";
     private static final String SAVE_FILE_SUFFIX = ".TXT";
@@ -85,6 +108,8 @@ public class CampaignMode implements Runnable {
     private CampaignPlayer player;
     private List<President> allPresidents;
     private List<CampaignTournament> eraTournaments;
+    private List<CampaignTournament> tagTournaments;
+    private List<CampaignLeagueDivision> leagueDivisions;
     private int activeSaveSlot = 1;
     private long playTimeSessionAnchorMillis = System.currentTimeMillis();
 
@@ -115,6 +140,8 @@ public class CampaignMode implements Runnable {
         player = new CampaignPlayer(playerName, 0);
         allPresidents = CardData.getPresidents("full", null, 0.0);
         eraTournaments = CampaignTournament.buildDefaultEraTournaments();
+        tagTournaments = CampaignTournament.buildDefaultTagTournaments(allPresidents);
+        leagueDivisions = CampaignLeagueDivision.buildDefaultDivisions();
         buildPackPresets();
         restartPlayTimeSessionClock();
     }
@@ -501,6 +528,358 @@ public class CampaignMode implements Runnable {
         return player == null ? new ArrayList<President>() : player.getBestPresidents(count);
     }
 
+    /*** V13.0 LEAGUE MODE BACKEND METHODS ***/
+
+    /**
+     * League Mode uses five static divisions. The player does not choose a lower
+     * division to farm; the current division is always the highest one unlocked
+     * by collection size.
+     */
+    public List<CampaignLeagueDivision> getLeagueDivisions() {
+        return new ArrayList<CampaignLeagueDivision>(leagueDivisions);
+    }
+
+    public CampaignLeagueDivision getCurrentLeagueDivision() {
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        CampaignLeagueDivision current = null;
+        if (leagueDivisions == null) {
+            return null;
+        }
+        for (CampaignLeagueDivision division : leagueDivisions) {
+            if (division != null && division.isUnlockedByCollectionSize(collectionSize)) {
+                if (current == null || division.getMinimumCollectionSize() > current.getMinimumCollectionSize()) {
+                    current = division;
+                }
+            }
+        }
+        return current;
+    }
+
+    public CampaignLeagueDivision getNextLeagueDivision() {
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        CampaignLeagueDivision next = null;
+        if (leagueDivisions == null) {
+            return null;
+        }
+        for (CampaignLeagueDivision division : leagueDivisions) {
+            if (division != null && collectionSize < division.getMinimumCollectionSize()) {
+                if (next == null || division.getMinimumCollectionSize() < next.getMinimumCollectionSize()) {
+                    next = division;
+                }
+            }
+        }
+        return next;
+    }
+
+    public CampaignLeagueDivision getLeagueDivisionById(String divisionId) {
+        String cleanId = CampaignLeagueDivision.cleanId(divisionId);
+        if (cleanId.isEmpty() || leagueDivisions == null) {
+            return null;
+        }
+        for (CampaignLeagueDivision division : leagueDivisions) {
+            if (division != null && cleanId.equalsIgnoreCase(division.getId())) {
+                return division;
+            }
+        }
+        return null;
+    }
+
+    public CampaignLeagueSeason getActiveLeagueSeason() {
+        return player == null ? null : player.getActiveLeagueSeason();
+    }
+
+    public boolean hasActiveLeagueSeason() {
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        return season != null && !season.isRewardClaimed();
+    }
+
+    public CampaignLeagueDivision getActiveLeagueSeasonDivision() {
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        return season == null ? null : getLeagueDivisionById(season.getDivisionId());
+    }
+
+    public boolean canStartLeagueSeason() {
+        if (player == null || getCurrentLeagueDivision() == null) {
+            return false;
+        }
+        CampaignLeagueSeason active = getActiveLeagueSeason();
+        return active == null || active.isRewardClaimed();
+    }
+
+    public boolean startLeagueSeason() {
+        if (player == null) {
+            System.out.println("No campaign player loaded.");
+            return false;
+        }
+        CampaignLeagueDivision division = getCurrentLeagueDivision();
+        if (division == null) {
+            System.out.println("League Mode unlocks at 25 owned candidates.");
+            return false;
+        }
+
+        CampaignLeagueSeason active = getActiveLeagueSeason();
+        if (active != null && !active.isRewardClaimed()) {
+            System.out.println("Finish or claim your current League season before starting another.");
+            return false;
+        }
+
+        player.setActiveLeagueSeason(new CampaignLeagueSeason(division.getId(), division.getSeasonLength()));
+        autosaveCampaign();
+        System.out.println("Started " + division.getDisplayName() + ".");
+        return true;
+    }
+
+    public CampaignMatchConfig buildLeagueMatchConfig(boolean playable) {
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        if (season == null) {
+            throw new IllegalStateException("No active League season exists.");
+        }
+        if (season.isCompleted()) {
+            throw new IllegalStateException("The active League season is already complete.");
+        }
+
+        CampaignLeagueDivision division = getLeagueDivisionById(season.getDivisionId());
+        if (division == null) {
+            throw new IllegalStateException("Active League division was not found.");
+        }
+
+        String playerName = player == null ? "Player" : player.getName();
+        List<President> playerDeck = player == null
+                ? new ArrayList<President>()
+                : player.getPresidentCollection();
+        List<President> cpuDeck = getCpuPresidentsForLeague(division);
+
+        CampaignMatchConfig config = CampaignMatchConfig.leagueGame(
+                playerName,
+                division,
+                season.getNextGameNumber(),
+                playerDeck,
+                cpuDeck
+        );
+        return config.withExecutionMode(playable
+                ? CampaignMatchConfig.EXECUTION_MODE_PLAYABLE
+                : CampaignMatchConfig.EXECUTION_MODE_SIMULATED);
+    }
+
+    public List<President> getCpuPresidentsForLeague(CampaignLeagueDivision division) {
+        double minimumRating = division == null
+                ? CampaignLeagueDivision.DEFAULT_CPU_MIN_RATING
+                : division.getCpuMinimumRating();
+        List<President> cpuPresidents = CardData.getPresidents("full", null, minimumRating);
+        Collections.sort(cpuPresidents, presidentAverageComparator());
+        return cpuPresidents;
+    }
+
+    public String getLeagueCpuDeckDescription(CampaignLeagueDivision division) {
+        if (division == null) {
+            return "1.0+ full CPU card pool";
+        }
+        return String.format("%.1f+ full CPU card pool", division.getCpuMinimumRating());
+    }
+
+    public boolean playLeagueGame(boolean playable) {
+        CampaignMatchConfig config = buildLeagueMatchConfig(playable);
+        if (playable) {
+            return beginPendingPlayableMatch(config);
+        }
+        CampaignMatchResult result = simulateCampaignMatchConfig(config);
+        return applyLeagueMatchResult(result);
+    }
+
+    public boolean applyLeagueMatchResult(CampaignMatchResult result) {
+        if (result == null) {
+            System.out.println("No League match result was returned.");
+            return false;
+        }
+        if (!result.shouldApplyCampaignResult()) {
+            System.out.println("League match did not finish: " + result.getMessage());
+            clearPendingPlayableMatchInMemory();
+            autosaveCampaign();
+            return false;
+        }
+
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        if (season == null) {
+            System.out.println("No active League season was found.");
+            clearPendingPlayableMatchInMemory();
+            autosaveCampaign();
+            return false;
+        }
+
+        CampaignLeagueDivision division = getLeagueDivisionById(season.getDivisionId());
+        if (division == null) {
+            System.out.println("Active League division was not found.");
+            clearPendingPlayableMatchInMemory();
+            autosaveCampaign();
+            return false;
+        }
+
+        boolean forfeitLikeResult = isForfeitLikeResult(result);
+        int pcReward = forfeitLikeResult
+                ? 0
+                : (result.didPlayerWin() ? division.getWinRewardPC() : division.getLossRewardPC());
+
+        player.recordMatch(result.didPlayerWin());
+        season.recordGame(result.didPlayerWin(), forfeitLikeResult);
+        player.addPC(pcReward);
+        finalizeLeagueSeasonHistoryIfNeeded(season);
+
+        System.out.println();
+        if (result.didPlayerWin()) {
+            System.out.println("You won " + division.getName() + " Game " + season.getGamesPlayed() + "!");
+        } else if (forfeitLikeResult) {
+            System.out.println("You forfeited " + division.getName() + " Game " + season.getGamesPlayed() + ".");
+        } else {
+            System.out.println("You lost " + division.getName() + " Game " + season.getGamesPlayed() + ".");
+        }
+        printResultFinalScore(result, division.getDifficulty());
+        if (pcReward > 0) {
+            System.out.println("League game reward: " + formatPC(pcReward) + ".");
+        } else if (forfeitLikeResult) {
+            System.out.println("No Political Capital earned for a forfeit.");
+        }
+
+        System.out.println("League season: " + season.getRecordText() + " ("
+                + season.getProgressText() + ").");
+        if (season.isCompleted()) {
+            System.out.println("League season complete. Final reward: "
+                    + getLeagueSeasonRewardText(season, division));
+        } else {
+            System.out.println("Current final reward: "
+                    + getLeagueSeasonRewardText(season, division));
+        }
+
+        clearPendingPlayableMatchInMemory();
+        autosaveCampaign();
+        return result.didPlayerWin();
+    }
+
+    public CampaignLeagueDivision.RewardTier getLeagueSeasonRewardTier(
+            CampaignLeagueSeason season, CampaignLeagueDivision division
+    ) {
+        if (season == null || division == null) {
+            return null;
+        }
+        return division.getRewardTierForWins(season.getWins());
+    }
+
+    public String getLeagueSeasonRewardText(CampaignLeagueSeason season, CampaignLeagueDivision division) {
+        if (season == null || division == null) {
+            return "No active League season";
+        }
+        CampaignLeagueDivision.RewardTier currentTier = getLeagueSeasonRewardTier(season, division);
+        CampaignLeagueDivision.RewardTier nextTier = division.getNextRewardTierForWins(season.getWins());
+
+        String currentText = currentTier == null
+                ? "No final pack yet"
+                : currentTier.getPackName(division);
+        if (nextTier == null) {
+            return currentText + " | Top tier reached";
+        }
+        return currentText + " | Next: " + nextTier.getWinsRequired() + "+ wins for "
+                + nextTier.getPackName(division);
+    }
+
+    public CampaignPack getLeagueSeasonRewardPack() {
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        CampaignLeagueDivision division = getActiveLeagueSeasonDivision();
+        CampaignLeagueDivision.RewardTier tier = getLeagueSeasonRewardTier(season, division);
+        if (season == null || division == null || !season.isCompleted() || tier == null) {
+            return null;
+        }
+        return new CampaignPack(
+                LEAGUE_REWARD_PACK_CARD_COUNT,
+                0,
+                tier.getMinimumRating(),
+                LEAGUE_REWARD_PACK_MAX_RATING,
+                allPresidents,
+                null
+        );
+    }
+
+    public String getLeagueSeasonRewardPackName() {
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        CampaignLeagueDivision division = getActiveLeagueSeasonDivision();
+        CampaignLeagueDivision.RewardTier tier = getLeagueSeasonRewardTier(season, division);
+        if (division == null || tier == null) {
+            return "League Reward Pack";
+        }
+        return tier.getPackName(division);
+    }
+
+    public boolean claimLeagueSeasonReward() {
+        CampaignLeagueSeason season = getActiveLeagueSeason();
+        CampaignLeagueDivision division = getActiveLeagueSeasonDivision();
+        if (season == null || division == null) {
+            System.out.println("No League season reward is available.");
+            return false;
+        }
+        if (!season.isCompleted()) {
+            System.out.println("Finish the League season before claiming a reward.");
+            return false;
+        }
+
+        finalizeLeagueSeasonHistoryIfNeeded(season);
+        CampaignPack rewardPack = getLeagueSeasonRewardPack();
+        if (rewardPack == null) {
+            System.out.println("League season complete: " + season.getRecordText()
+                    + ". No final pack earned below 3 wins.");
+        } else {
+            openPackInternal(
+                    getLeagueSeasonRewardPackName(),
+                    rewardPack,
+                    false,
+                    LEAGUE_DUPLICATE_SALE_PERCENT,
+                    false,
+                    false
+            );
+        }
+
+        season.setRewardClaimed(true);
+        player.clearActiveLeagueSeason();
+        autosaveCampaign();
+        return true;
+    }
+
+    public CampaignLeagueRecord getLeagueRecord(CampaignLeagueDivision division) {
+        if (player == null || division == null) {
+            return new CampaignLeagueRecord(division == null ? "" : division.getId());
+        }
+        return player.getLeagueRecord(division.getId());
+    }
+
+    public List<CampaignLeagueRecord> getLeagueRecords() {
+        return player == null ? new ArrayList<CampaignLeagueRecord>() : player.getLeagueRecords();
+    }
+
+    public String getLeagueStatusText() {
+        CampaignLeagueDivision current = getCurrentLeagueDivision();
+        CampaignLeagueDivision next = getNextLeagueDivision();
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+
+        if (current == null) {
+            int needed = next == null ? 25 : next.getMinimumCollectionSize();
+            return "League Mode locked: " + collectionSize + "/" + needed + " cards owned.";
+        }
+
+        String text = "Current League: " + current.getDisplayName()
+                + " | Collection: " + collectionSize + " cards";
+        if (next != null) {
+            text += " | Next: " + next.getName() + " at "
+                    + next.getMinimumCollectionSize() + " cards";
+        } else {
+            text += " | Top division unlocked";
+        }
+        return text;
+    }
+
+    private void finalizeLeagueSeasonHistoryIfNeeded(CampaignLeagueSeason season) {
+        if (player == null || season == null || !season.isCompleted() || season.isHistoryRecorded()) {
+            return;
+        }
+        player.recordCompletedLeagueSeason(season);
+    }
+
     /**
      * Runs an AI-vs-AI simulation from the same CampaignMatchConfig that a
      * playable match would use.
@@ -721,6 +1100,9 @@ public class CampaignMode implements Runnable {
                     : config.getTournamentEraName();
             return "Player sim: Medium AI using tournament-entry " + eraName + " deck";
         }
+        if (config != null && config.isLeagueMatch()) {
+            return "Player sim: Medium AI using full owned collection";
+        }
         return "Player sim: Medium AI using Active Deck";
     }
 
@@ -731,6 +1113,11 @@ public class CampaignMode implements Runnable {
                     : config.getTournamentEraName();
             return "CPU sim: " + config.getDifficulty() + " AI using full "
                     + eraName + " card pool";
+        }
+        if (config != null && config.isLeagueMatch()) {
+            CampaignLeagueDivision division = getLeagueDivisionById(config.getLeagueDivisionId());
+            return "CPU sim: " + config.getDifficulty() + " AI using "
+                    + getLeagueCpuDeckDescription(division);
         }
         String difficulty = config == null ? "Medium" : normalizeMatchDifficulty(config.getDifficulty());
         return "CPU sim: " + difficulty + " AI using " + getCpuDeckDescription(difficulty);
@@ -1479,15 +1866,15 @@ public class CampaignMode implements Runnable {
         return ACTIVE_TOURNAMENT_ERA_COUNT;
     }
 
+    public static int getActiveTournamentTagCount() {
+        return ACTIVE_TOURNAMENT_TAG_COUNT;
+    }
+
     public static long getTournamentRotationMillis() {
         return TOURNAMENT_ROTATION_MILLIS;
     }
 
-    public int getCurrentTournamentRotationIndex() {
-        if (eraTournaments == null || eraTournaments.isEmpty()) {
-            return 0;
-        }
-
+    private long getCurrentTournamentRotationSerial() {
         /*
          * v9.1: Align tournament rotation to the player's local clock instead of
          * raw UTC/epoch three-hour blocks. This makes visible rotations happen at
@@ -1496,12 +1883,23 @@ public class CampaignMode implements Runnable {
          * The slot count still advances eight times per day. With ten eras, that
          * means the era/time pairing drifts across the week instead of one era
          * being trapped in the same inconvenient time window every day.
+         *
+         * v12.7: Tag tournaments use the same slot serial as a deterministic
+         * shuffle seed. That gives the player three random-looking active tags
+         * that stay stable until the next rotation instead of changing every
+         * time the menu refreshes.
          */
         Calendar now = Calendar.getInstance();
         int hourBlock = now.get(Calendar.HOUR_OF_DAY) / 3;
         long daySerial = ((long) now.get(Calendar.YEAR) * 366L) + now.get(Calendar.DAY_OF_YEAR);
-        long slot = (daySerial * 8L) + hourBlock;
-        return (int) (slot % eraTournaments.size());
+        return (daySerial * 8L) + hourBlock;
+    }
+
+    public int getCurrentTournamentRotationIndex() {
+        if (eraTournaments == null || eraTournaments.isEmpty()) {
+            return 0;
+        }
+        return (int) (getCurrentTournamentRotationSerial() % eraTournaments.size());
     }
 
     public List<CampaignTournament> getActiveEraTournaments() {
@@ -1518,11 +1916,35 @@ public class CampaignMode implements Runnable {
         return active;
     }
 
+    public List<CampaignTournament> getActiveTagTournaments() {
+        ArrayList<CampaignTournament> active = new ArrayList<CampaignTournament>();
+        if (tagTournaments == null || tagTournaments.isEmpty()) {
+            return active;
+        }
+
+        ArrayList<CampaignTournament> shuffled = new ArrayList<CampaignTournament>(tagTournaments);
+        long seed = (getCurrentTournamentRotationSerial() * 1000003L) + 1207L;
+        Collections.shuffle(shuffled, new Random(seed));
+
+        int count = Math.min(ACTIVE_TOURNAMENT_TAG_COUNT, shuffled.size());
+        for (int i = 0; i < count; i++) {
+            active.add(shuffled.get(i));
+        }
+        return active;
+    }
+
+    public List<CampaignTournament> getActiveCampaignTournaments() {
+        ArrayList<CampaignTournament> active = new ArrayList<CampaignTournament>();
+        active.addAll(getActiveEraTournaments());
+        active.addAll(getActiveTagTournaments());
+        return active;
+    }
+
     public boolean isTournamentActive(CampaignTournament tournament) {
         if (tournament == null) {
             return false;
         }
-        for (CampaignTournament activeTournament : getActiveEraTournaments()) {
+        for (CampaignTournament activeTournament : getActiveCampaignTournaments()) {
             if (tournament.equals(activeTournament)) {
                 return true;
             }
@@ -1577,13 +1999,28 @@ public class CampaignMode implements Runnable {
     }
 
     public String getActiveEraNamesText() {
+        return getTournamentNamesText(getActiveEraTournaments());
+    }
+
+    public String getActiveTagNamesText() {
+        return getTournamentNamesText(getActiveTagTournaments());
+    }
+
+    public String getActiveTournamentNamesText() {
+        return getTournamentNamesText(getActiveCampaignTournaments());
+    }
+
+    private String getTournamentNamesText(List<CampaignTournament> tournaments) {
         StringBuilder builder = new StringBuilder();
-        List<CampaignTournament> active = getActiveEraTournaments();
-        for (int i = 0; i < active.size(); i++) {
+        if (tournaments == null || tournaments.isEmpty()) {
+            return "None";
+        }
+        for (int i = 0; i < tournaments.size(); i++) {
             if (i > 0) {
                 builder.append(", ");
             }
-            builder.append(active.get(i).getEraName());
+            CampaignTournament tournament = tournaments.get(i);
+            builder.append(tournament == null ? "Unknown" : tournament.getScopeName());
         }
         return builder.toString();
     }
@@ -1626,6 +2063,32 @@ public class CampaignMode implements Runnable {
         return completed;
     }
 
+    public int getCompletedTournamentCount() {
+        if (player == null) {
+            return 0;
+        }
+        int completed = 0;
+        for (CampaignTournament tournament : getAllTournaments()) {
+            if (tournament != null && player.hasTournamentTitle(tournament.getId())) {
+                completed++;
+            }
+        }
+        return completed;
+    }
+
+    public int getCompletedTournamentTagCount() {
+        if (player == null || tagTournaments == null) {
+            return 0;
+        }
+        int completed = 0;
+        for (CampaignTournament tournament : tagTournaments) {
+            if (tournament != null && player.hasTournamentTitle(tournament.getId())) {
+                completed++;
+            }
+        }
+        return completed;
+    }
+
     public int getTotalTournamentTitles() {
         return player == null ? 0 : player.getTotalTournamentTitles();
     }
@@ -1638,10 +2101,25 @@ public class CampaignMode implements Runnable {
         return FIRST_TOURNAMENT_TITLE_BONUS_PC;
     }
 
-    /*** ERA TOURNAMENT METHODS ***/
+    /*** TOURNAMENT METHODS ***/
 
     public List<CampaignTournament> getEraTournaments() {
         return new ArrayList<CampaignTournament>(eraTournaments);
+    }
+
+    public List<CampaignTournament> getTagTournaments() {
+        return new ArrayList<CampaignTournament>(tagTournaments);
+    }
+
+    public List<CampaignTournament> getAllTournaments() {
+        ArrayList<CampaignTournament> tournaments = new ArrayList<CampaignTournament>();
+        if (eraTournaments != null) {
+            tournaments.addAll(eraTournaments);
+        }
+        if (tagTournaments != null) {
+            tournaments.addAll(tagTournaments);
+        }
+        return tournaments;
     }
 
     public CampaignTournament getTournamentById(String tournamentId) {
@@ -1649,7 +2127,7 @@ public class CampaignMode implements Runnable {
             return null;
         }
 
-        for (CampaignTournament tournament : eraTournaments) {
+        for (CampaignTournament tournament : getAllTournaments()) {
             if (tournament != null && tournamentId.equalsIgnoreCase(tournament.getId())) {
                 return tournament;
             }
@@ -1665,7 +2143,7 @@ public class CampaignMode implements Runnable {
         if (tournament == null) {
             return "Era Prospect Pack";
         }
-        return tournament.getEraName() + " Prospect Pack";
+        return tournament.getScopeName() + " Prospect Pack";
     }
 
     public CampaignPack getEraProspectPack(CampaignTournament tournament) {
@@ -1684,10 +2162,186 @@ public class CampaignMode implements Runnable {
 
     public boolean buyEraProspectPack(CampaignTournament tournament) {
         if (tournament == null) {
-            System.out.println("That era does not exist.");
+            System.out.println("That tournament scope does not exist.");
             return false;
         }
         return buyPack(getEraProspectPackName(tournament), getEraProspectPack(tournament));
+    }
+
+    public int getTagProspectPackCost() {
+        return TAG_PROSPECT_PACK_COST;
+    }
+
+    public String getTagProspectPackName(CampaignTournament tournament) {
+        if (tournament == null) {
+            return "Tag Prospect Pack";
+        }
+        return tournament.getScopeName() + " Prospect Pack";
+    }
+
+    public CampaignPack getTagProspectPack(CampaignTournament tournament) {
+        if (tournament == null || !tournament.isTagTournament()) {
+            return null;
+        }
+        return new CampaignPack(
+                TAG_PROSPECT_PACK_CARD_COUNT,
+                TAG_PROSPECT_PACK_COST,
+                TAG_PROSPECT_PACK_MIN_RATING,
+                TAG_PROSPECT_PACK_MAX_RATING,
+                getPresidentsForTournament(tournament),
+                null
+        );
+    }
+
+    public boolean buyTagProspectPack(CampaignTournament tournament) {
+        if (tournament == null || !tournament.isTagTournament()) {
+            System.out.println("That tag tournament scope does not exist.");
+            return false;
+        }
+        return buyPack(getTagProspectPackName(tournament), getTagProspectPack(tournament));
+    }
+
+    public int getStateCampaignTrailPackCost() {
+        return STATE_TRAIL_PACK_COST;
+    }
+
+    public String getStateCampaignTrailPackName(String state) {
+        String cleanState = cleanPackFilterText(state);
+        if (cleanState.isEmpty()) {
+            return "State Campaign Trail Pack";
+        }
+        return cleanState + " Campaign Trail Pack";
+    }
+
+    public CampaignPack getStateCampaignTrailPack(String state) {
+        String cleanState = cleanPackFilterText(state);
+        if (cleanState.isEmpty()) {
+            return null;
+        }
+        return new CampaignPack(
+                STATE_TRAIL_PACK_CARD_COUNT,
+                STATE_TRAIL_PACK_COST,
+                STATE_TRAIL_PACK_MIN_RATING,
+                STATE_TRAIL_PACK_MAX_RATING,
+                getPresidentsForState(cleanState),
+                null
+        );
+    }
+
+    public boolean buyStateCampaignTrailPack(String state) {
+        CampaignPack pack = getStateCampaignTrailPack(state);
+        if (pack == null) {
+            System.out.println("That state pack does not exist.");
+            return false;
+        }
+        return buyPack(getStateCampaignTrailPackName(state), pack);
+    }
+
+    public int getIdeologyStarPackCost() {
+        return IDEOLOGY_STAR_PACK_COST;
+    }
+
+    public String getIdeologyStarPackName(String ideology) {
+        String cleanIdeology = cleanPackFilterText(ideology);
+        if (cleanIdeology.isEmpty()) {
+            return "Ideology Star Pack";
+        }
+        return cleanIdeology + " Star Pack";
+    }
+
+    public CampaignPack getIdeologyStarPack(String ideology) {
+        String cleanIdeology = cleanPackFilterText(ideology);
+        if (cleanIdeology.isEmpty()) {
+            return null;
+        }
+        return new CampaignPack(
+                IDEOLOGY_STAR_PACK_CARD_COUNT,
+                IDEOLOGY_STAR_PACK_COST,
+                IDEOLOGY_STAR_PACK_MIN_RATING,
+                IDEOLOGY_STAR_PACK_MAX_RATING,
+                getPresidentsForIdeology(cleanIdeology),
+                null
+        );
+    }
+
+    public boolean buyIdeologyStarPack(String ideology) {
+        CampaignPack pack = getIdeologyStarPack(ideology);
+        if (pack == null) {
+            System.out.println("That ideology pack does not exist.");
+            return false;
+        }
+        return buyPack(getIdeologyStarPackName(ideology), pack);
+    }
+
+    public List<String> getAvailableStatePackStates() {
+        ArrayList<String> states = new ArrayList<String>();
+        if (allPresidents != null) {
+            for (President president : allPresidents) {
+                if (president != null) {
+                    addUniquePackFilterValue(states, president.getState());
+                }
+            }
+        }
+        Collections.sort(states, String.CASE_INSENSITIVE_ORDER);
+        return states;
+    }
+
+    public List<String> getAvailableIdeologyPackIdeologies() {
+        ArrayList<String> ideologies = new ArrayList<String>();
+        if (allPresidents != null) {
+            for (President president : allPresidents) {
+                if (president != null) {
+                    addUniquePackFilterValue(ideologies, president.getIdeology());
+                }
+            }
+        }
+        Collections.sort(ideologies, String.CASE_INSENSITIVE_ORDER);
+        return ideologies;
+    }
+
+    public List<President> getPresidentsForState(String state) {
+        String cleanState = cleanPackFilterText(state);
+        ArrayList<President> eligiblePresidents = new ArrayList<President>();
+        if (cleanState.isEmpty() || allPresidents == null) {
+            return eligiblePresidents;
+        }
+        for (President president : allPresidents) {
+            if (president != null && cleanState.equalsIgnoreCase(president.getState())) {
+                eligiblePresidents.add(president);
+            }
+        }
+        return eligiblePresidents;
+    }
+
+    public List<President> getPresidentsForIdeology(String ideology) {
+        String cleanIdeology = cleanPackFilterText(ideology);
+        ArrayList<President> eligiblePresidents = new ArrayList<President>();
+        if (cleanIdeology.isEmpty() || allPresidents == null) {
+            return eligiblePresidents;
+        }
+        for (President president : allPresidents) {
+            if (president != null && cleanIdeology.equalsIgnoreCase(president.getIdeology())) {
+                eligiblePresidents.add(president);
+            }
+        }
+        return eligiblePresidents;
+    }
+
+    private void addUniquePackFilterValue(List<String> values, String value) {
+        String cleanValue = cleanPackFilterText(value);
+        if (cleanValue.isEmpty()) {
+            return;
+        }
+        for (String existing : values) {
+            if (existing.equalsIgnoreCase(cleanValue)) {
+                return;
+            }
+        }
+        values.add(cleanValue);
+    }
+
+    private String cleanPackFilterText(String value) {
+        return value == null ? "" : value.trim();
     }
 
     public List<President> getPresidentsForTournament(CampaignTournament tournament) {
@@ -1719,10 +2373,10 @@ public class CampaignMode implements Runnable {
         double minimumRating = getTournamentCpuMinRating(roundNumber);
         List<President> filtered = getPresidentsForTournament(tournament, minimumRating);
 
-        // If an era is too thin at the requested round floor, fall back to the
-        // full same-era pool instead of blocking the tournament or reusing a
+        // If a tournament scope is too thin at the requested round floor, fall back to the
+        // full same-scope pool instead of blocking the tournament or reusing a
         // tiny CPU deck.
-        if (filtered.size() >= CampaignTournament.REQUIRED_ERA_CARDS) {
+        if (filtered.size() >= CampaignTournament.REQUIRED_TOURNAMENT_CARDS) {
             return filtered;
         }
         return getPresidentsForTournament(tournament);
@@ -1742,14 +2396,14 @@ public class CampaignMode implements Runnable {
         double minimumRating = getTournamentCpuMinRating(roundNumber);
         List<President> filtered = getPresidentsForTournament(tournament, minimumRating);
         List<President> fallback = getPresidentsForTournament(tournament);
-        if (filtered.size() >= CampaignTournament.REQUIRED_ERA_CARDS) {
+        if (filtered.size() >= CampaignTournament.REQUIRED_TOURNAMENT_CARDS) {
             return String.format("%.1f+ %s CPU pool (%d cards)",
                     minimumRating,
-                    tournament == null ? "era" : tournament.getEraName(),
+                    tournament == null ? "era" : tournament.getScopeName(),
                     filtered.size());
         }
         return String.format("full %s CPU pool (%d cards; %.1f+ fallback unavailable)",
-                tournament == null ? "era" : tournament.getEraName(),
+                tournament == null ? "era" : tournament.getScopeName(),
                 fallback.size(),
                 minimumRating);
     }
@@ -1774,12 +2428,12 @@ public class CampaignMode implements Runnable {
     }
 
     public boolean canEnterTournament(CampaignTournament tournament) {
-        return getOwnedCountForTournament(tournament) >= CampaignTournament.REQUIRED_ERA_CARDS;
+        return getOwnedCountForTournament(tournament) >= CampaignTournament.REQUIRED_TOURNAMENT_CARDS;
     }
 
     public List<President> getTournamentActiveDeck(CampaignTournament tournament) {
         List<President> ownedPresidents = getOwnedPresidentsForTournament(tournament);
-        int deckSize = Math.min(CampaignTournament.REQUIRED_ERA_CARDS, ownedPresidents.size());
+        int deckSize = Math.min(CampaignTournament.REQUIRED_TOURNAMENT_CARDS, ownedPresidents.size());
         return new ArrayList<President>(ownedPresidents.subList(0, deckSize));
     }
 
@@ -1793,21 +2447,21 @@ public class CampaignMode implements Runnable {
         }
 
         int owned = getOwnedCountForTournament(tournament);
-        int required = CampaignTournament.REQUIRED_ERA_CARDS;
+        int required = CampaignTournament.REQUIRED_TOURNAMENT_CARDS;
         if (owned >= required) {
-            return "Ready: " + owned + "/" + required + " " + tournament.getEraName()
+            return "Ready: " + owned + "/" + required + " " + tournament.getScopeName()
                     + " cards owned | Deck Strength: "
                     + String.format("%.2f", getTournamentDeckStrength(tournament));
         }
-        return "Locked: " + owned + "/" + required + " " + tournament.getEraName()
+        return "Locked: " + owned + "/" + required + " " + tournament.getScopeName()
                 + " cards owned | Need " + (required - owned) + " more.";
     }
 
     /**
-     * Plays one round of an era tournament through the v06 config/result bridge.
+     * Plays one round of a tournament through the v06 config/result bridge.
      *
      * The overload without a supplied deck auto-builds the current best 10-card
-     * era deck. The overload with a supplied deck lets the GUI freeze the deck
+     * tournament deck. The overload with a supplied deck lets the GUI freeze the deck
      * at tournament entry, so reward cards pulled after Round 1 do not quietly
      * upgrade the Round 2/Final deck inside the same tournament run.
      */
@@ -1836,22 +2490,22 @@ public class CampaignMode implements Runnable {
         List<President> usableTournamentDeck = tournamentDeck == null
                 ? getTournamentActiveDeck(tournament)
                 : new ArrayList<President>(tournamentDeck);
-        List<President> cpuEraPool = getCpuPresidentsForTournamentRound(tournament, roundNumber);
+        List<President> cpuTournamentPool = getCpuPresidentsForTournamentRound(tournament, roundNumber);
 
         System.out.println();
         System.out.println(tournament.getTournamentName() + " | Round " + roundNumber);
-        System.out.println("Era: " + tournament.getEraName());
+        System.out.println("Scope: " + tournament.getScopeName());
         System.out.println("Eligibility: " + getTournamentEligibilityText(tournament));
 
-        if (usableTournamentDeck.size() < CampaignTournament.REQUIRED_ERA_CARDS) {
-            System.out.println("You need at least " + CampaignTournament.REQUIRED_ERA_CARDS
-                    + " cards from the " + tournament.getEraName() + " to enter.");
+        if (usableTournamentDeck.size() < CampaignTournament.REQUIRED_TOURNAMENT_CARDS) {
+            System.out.println("You need at least " + CampaignTournament.REQUIRED_TOURNAMENT_CARDS
+                    + " cards from the " + tournament.getScopeName() + " to enter.");
             return false;
         }
 
-        if (cpuEraPool.size() < CampaignMatchConfig.DEFAULT_STARTING_HAND_SIZE) {
+        if (cpuTournamentPool.size() < CampaignMatchConfig.DEFAULT_STARTING_HAND_SIZE) {
             System.out.println("Not enough eligible CPU cards exist for this tournament yet.");
-            System.out.println("Eligible CPU cards found: " + cpuEraPool.size());
+            System.out.println("Eligible CPU cards found: " + cpuTournamentPool.size());
             return false;
         }
 
@@ -1872,7 +2526,7 @@ public class CampaignMode implements Runnable {
     }
 
     /**
-     * Plays a full v5 era tournament in console/sim mode.
+     * Plays a full v5-style tournament in console/sim mode.
      *
      * The GUI uses playTournamentRound(...) directly so it can show a dashboard
      * between rounds. This console helper now uses the same round-by-round bridge
@@ -1888,15 +2542,15 @@ public class CampaignMode implements Runnable {
 
         System.out.println();
         System.out.println("Entering " + tournament.getTournamentName());
-        System.out.println("Era: " + tournament.getEraName());
+        System.out.println("Scope: " + tournament.getScopeName());
         if (!tournament.getDescription().isEmpty()) {
             System.out.println(tournament.getDescription());
         }
         System.out.println("Eligibility: " + getTournamentEligibilityText(tournament));
 
-        if (tournamentDeck.size() < CampaignTournament.REQUIRED_ERA_CARDS) {
-            System.out.println("You need at least " + CampaignTournament.REQUIRED_ERA_CARDS
-                    + " cards from the " + tournament.getEraName() + " to enter.");
+        if (tournamentDeck.size() < CampaignTournament.REQUIRED_TOURNAMENT_CARDS) {
+            System.out.println("You need at least " + CampaignTournament.REQUIRED_TOURNAMENT_CARDS
+                    + " cards from the " + tournament.getScopeName() + " to enter.");
             return;
         }
 
@@ -2281,6 +2935,10 @@ public class CampaignMode implements Runnable {
             writer.newLine();
             writer.write("TOURNAMENT_RECORDS=" + player.getTournamentRecordsSaveString());
             writer.newLine();
+            writer.write("LEAGUE_ACTIVE_SEASON=" + player.getActiveLeagueSeasonSaveString());
+            writer.newLine();
+            writer.write("LEAGUE_RECORDS=" + player.getLeagueRecordsSaveString());
+            writer.newLine();
             writePendingPlayableMatchFields(writer);
 
             if (printMessage) {
@@ -2344,6 +3002,12 @@ public class CampaignMode implements Runnable {
         writer.newLine();
         writer.write("PENDING_TOURNAMENT_ROUND=" + pendingPlayableMatchConfig.getTournamentRound());
         writer.newLine();
+        writer.write("PENDING_LEAGUE_DIVISION_ID=" + pendingPlayableMatchConfig.getLeagueDivisionId());
+        writer.newLine();
+        writer.write("PENDING_LEAGUE_DIVISION_NAME=" + pendingPlayableMatchConfig.getLeagueDivisionName());
+        writer.newLine();
+        writer.write("PENDING_LEAGUE_GAME_NUMBER=" + pendingPlayableMatchConfig.getLeagueGameNumber());
+        writer.newLine();
         writer.write("PENDING_STARTED_AT=" + pendingPlayableMatchStartedAtMillis);
         writer.newLine();
     }
@@ -2377,7 +3041,8 @@ public class CampaignMode implements Runnable {
             reader = new BufferedReader(new FileReader(saveFile));
             String version = reader.readLine();
 
-            if (SAVE_VERSION.equals(version) || SAVE_VERSION_V2.equals(version)) {
+            if (SAVE_VERSION.equals(version) || SAVE_VERSION_V3.equals(version)
+                    || SAVE_VERSION_V2.equals(version)) {
                 return loadCurrentSaveFormat(reader);
             } else if (SAVE_VERSION_V1.equals(version)) {
                 return loadLegacyV1SaveFormat(reader);
@@ -2429,10 +3094,17 @@ public class CampaignMode implements Runnable {
         String tournamentRecords = fields.containsKey("TOURNAMENT_RECORDS")
                 ? fields.get("TOURNAMENT_RECORDS")
                 : "";
+        String activeLeagueSeason = fields.containsKey("LEAGUE_ACTIVE_SEASON")
+                ? fields.get("LEAGUE_ACTIVE_SEASON")
+                : "";
+        String leagueRecords = fields.containsKey("LEAGUE_RECORDS")
+                ? fields.get("LEAGUE_RECORDS")
+                : "";
 
         boolean loaded = applyLoadedCampaign(
                 savedName, savedPC, savedWins, savedLosses, cardCsvRow,
-                activeDeckMode, activeDeckCsvRow, savedPlayTimeMillis, tournamentRecords, false
+                activeDeckMode, activeDeckCsvRow, savedPlayTimeMillis, tournamentRecords,
+                activeLeagueSeason, leagueRecords, false
         );
         if (loaded) {
             applyAbandonedPendingPlayableMatchIfNeeded(fields);
@@ -2466,6 +3138,18 @@ public class CampaignMode implements Runnable {
             System.out.println("Tournament result: " + tournamentName
                     + (roundNumber > 0 ? " Round " + roundNumber : "")
                     + " ended by forfeit. No tournament reward earned.");
+        } else if (CampaignMatchConfig.MATCH_TYPE_LEAGUE.equals(matchType)) {
+            CampaignLeagueSeason season = getActiveLeagueSeason();
+            if (season != null && !season.isCompleted()) {
+                season.recordGame(false, true);
+                finalizeLeagueSeasonHistoryIfNeeded(season);
+                CampaignLeagueDivision division = getLeagueDivisionById(season.getDivisionId());
+                String divisionName = division == null ? "League" : division.getName();
+                System.out.println("League result: " + divisionName + " Game "
+                        + season.getGamesPlayed() + " forfeited. No Political Capital earned.");
+            } else {
+                System.out.println("League result: abandoned match forfeited. No Political Capital earned.");
+            }
         } else {
             System.out.println("Quick match result: " + difficulty
                     + " campaign match forfeited. No Political Capital earned.");
@@ -2523,20 +3207,23 @@ public class CampaignMode implements Runnable {
         int savedPC = parseNonNegativeInt(savedPCText, "PC");
         return applyLoadedCampaign(
                 savedName, savedPC, 0, 0, cardCsvRow,
-                CampaignPlayer.ACTIVE_DECK_MODE_AUTO, "", 0L, "", true
+                CampaignPlayer.ACTIVE_DECK_MODE_AUTO, "", 0L, "", "", "", true
         );
     }
 
     private boolean applyLoadedCampaign(
             String savedName, int savedPC, int savedWins, int savedLosses,
             String cardCsvRow, String activeDeckMode, String activeDeckCsvRow,
-            long savedPlayTimeMillis, String tournamentRecordsSaveString, boolean legacySave
+            long savedPlayTimeMillis, String tournamentRecordsSaveString,
+            String activeLeagueSeasonSaveString, String leagueRecordsSaveString, boolean legacySave
     ) {
         CampaignPlayer loadedPlayer = new CampaignPlayer(savedName, 0);
         loadedPlayer.setPC(savedPC);
         loadedPlayer.setRecord(savedWins, savedLosses);
         loadedPlayer.setTotalPlayTimeMillis(savedPlayTimeMillis);
         loadedPlayer.loadTournamentRecordsFromSaveString(tournamentRecordsSaveString);
+        loadedPlayer.loadLeagueRecordsFromSaveString(leagueRecordsSaveString);
+        loadedPlayer.loadActiveLeagueSeasonFromSaveString(activeLeagueSeasonSaveString);
 
         int loadedCards = loadCardsFromCsvRow(loadedPlayer, cardCsvRow);
         applyLoadedActiveDeck(loadedPlayer, activeDeckMode, activeDeckCsvRow);
@@ -2900,7 +3587,7 @@ public class CampaignMode implements Runnable {
                 CampaignTournament tournament = eraTournaments.get(i);
                 System.out.println("  " + (i + 1) + " - "
                         + tournament.getTournamentName() + " ("
-                        + tournament.getEraName() + ") | "
+                        + tournament.getScopeName() + ") | "
                         + getTournamentEligibilityText(tournament));
             }
             System.out.println("  0 - Back");
@@ -2940,7 +3627,7 @@ public class CampaignMode implements Runnable {
                     + formatPC(standardPack.getCost()) + ")");
             System.out.println("  5 - Elite Pack (3 Presidents, rating 4.0-10.0, cost "
                     + formatPC(elitePack.getCost()) + ")");
-            System.out.println("  6 - Era Prospect Pack (5 same-era Presidents, rating 0.0-3.99, cost "
+            System.out.println("  6 - Era Prospect Pack (5 same-era Presidents, rating 0.0-4.0, cost "
                     + formatPC(ERA_PROSPECT_PACK_COST) + ")");
             System.out.println("  0 - Back");
             System.out.print("> ");

@@ -32,6 +32,8 @@ public class CampaignPlayer {
     private String activeDeckMode;
     private long totalPlayTimeMillis;
     private Map<String, CampaignTournamentRecord> tournamentRecords;
+    private CampaignLeagueSeason activeLeagueSeason;
+    private Map<String, CampaignLeagueRecord> leagueRecords;
 
     /**
      * Creates a campaign player with 0 starting PC.
@@ -54,6 +56,8 @@ public class CampaignPlayer {
         this.activeDeckMode = ACTIVE_DECK_MODE_AUTO;
         this.totalPlayTimeMillis = 0L;
         this.tournamentRecords = new HashMap<String, CampaignTournamentRecord>();
+        this.activeLeagueSeason = null;
+        this.leagueRecords = new HashMap<String, CampaignLeagueRecord>();
     }
 
     /*** BASIC GETTERS / SETTERS ***/
@@ -345,6 +349,117 @@ public class CampaignPlayer {
 
     private String cleanTournamentId(String tournamentId) {
         return tournamentId == null ? "" : tournamentId.trim().toUpperCase();
+    }
+
+    /*** LEAGUE MODE METHODS ***/
+
+    public CampaignLeagueSeason getActiveLeagueSeason() {
+        return activeLeagueSeason;
+    }
+
+    public boolean hasActiveLeagueSeason() {
+        return activeLeagueSeason != null && !activeLeagueSeason.isRewardClaimed();
+    }
+
+    public void setActiveLeagueSeason(CampaignLeagueSeason season) {
+        activeLeagueSeason = season;
+    }
+
+    public void clearActiveLeagueSeason() {
+        activeLeagueSeason = null;
+    }
+
+    public CampaignLeagueRecord getLeagueRecord(String divisionId) {
+        String cleanId = cleanLeagueDivisionId(divisionId);
+        if (cleanId.isEmpty()) {
+            return new CampaignLeagueRecord("");
+        }
+
+        CampaignLeagueRecord record = leagueRecords.get(cleanId);
+        if (record == null) {
+            record = new CampaignLeagueRecord(cleanId);
+            leagueRecords.put(cleanId, record);
+        }
+        return record;
+    }
+
+    public List<CampaignLeagueRecord> getLeagueRecords() {
+        return new ArrayList<CampaignLeagueRecord>(leagueRecords.values());
+    }
+
+    public void setLeagueRecords(List<CampaignLeagueRecord> records) {
+        leagueRecords.clear();
+        if (records == null) {
+            return;
+        }
+        for (CampaignLeagueRecord record : records) {
+            if (record == null || record.getDivisionId() == null
+                    || record.getDivisionId().trim().isEmpty()) {
+                continue;
+            }
+            leagueRecords.put(cleanLeagueDivisionId(record.getDivisionId()), record);
+        }
+    }
+
+    public void recordCompletedLeagueSeason(CampaignLeagueSeason season) {
+        if (season == null || !season.isCompleted() || season.isHistoryRecorded()) {
+            return;
+        }
+        getLeagueRecord(season.getDivisionId()).recordCompletedSeason(season);
+        season.setHistoryRecorded(true);
+    }
+
+    public String getActiveLeagueSeasonSaveString() {
+        if (activeLeagueSeason == null || activeLeagueSeason.isRewardClaimed()) {
+            return "";
+        }
+        return activeLeagueSeason.toSaveString();
+    }
+
+    public void loadActiveLeagueSeasonFromSaveString(String saveString) {
+        activeLeagueSeason = CampaignLeagueSeason.fromSaveString(saveString);
+        if (activeLeagueSeason != null && activeLeagueSeason.isRewardClaimed()) {
+            activeLeagueSeason = null;
+        }
+    }
+
+    public String getLeagueRecordsSaveString() {
+        StringBuilder builder = new StringBuilder();
+        boolean first = true;
+        ArrayList<String> ids = new ArrayList<String>(leagueRecords.keySet());
+        Collections.sort(ids);
+        for (String id : ids) {
+            CampaignLeagueRecord record = leagueRecords.get(id);
+            if (record == null) {
+                continue;
+            }
+            if (!first) {
+                builder.append(";");
+            }
+            builder.append(record.toSaveString());
+            first = false;
+        }
+        return builder.toString();
+    }
+
+    public void loadLeagueRecordsFromSaveString(String saveString) {
+        leagueRecords.clear();
+        if (saveString == null || saveString.trim().isEmpty()) {
+            return;
+        }
+
+        String[] rows = saveString.split(";");
+        for (String row : rows) {
+            CampaignLeagueRecord record = CampaignLeagueRecord.fromSaveString(row);
+            if (record != null && record.getDivisionId() != null
+                    && !record.getDivisionId().trim().isEmpty()) {
+                leagueRecords.put(cleanLeagueDivisionId(record.getDivisionId()), record);
+            }
+        }
+    }
+
+    private String cleanLeagueDivisionId(String divisionId) {
+        return CampaignLeagueDivision.cleanId(divisionId);
     }
 
     /*** PRESIDENT COLLECTION METHODS ***/

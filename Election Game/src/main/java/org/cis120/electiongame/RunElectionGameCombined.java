@@ -109,21 +109,279 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	private double controlPanelStartXRatio = 1.0 - controlPanelWidthRatio; // Start from the right side
 	
 
-	// Turn this to TRUE if trying to export to JAR file, FALSE otherwise. Make prefix "resources/" if exporting to JAR.
+	/*
+	 * Resource loading
+	 *
+	 * Old versions used a manual prefix toggle for JAR exports. v11.4 keeps the
+	 * legacy prefix variable so the rest of this large file does not need a risky
+	 * rewrite, but the prefix is now detected automatically. It checks the two
+	 * layouts we actually use:
+	 *
+	 *   files/...
+	 *   resources/files/...
+	 *
+	 * The helper methods below also try both locations directly, so newer code can
+	 * call loadResourceURL("files/foo.PNG") without caring how the project/JAR was
+	 * packaged.
+	 */
+	static String prefix = detectResourcePrefix();
 
-	private boolean jarmode = false;
-	static String prefix = "";
+	private final Map<String, ImageIcon> scaledImageCache = new HashMap<String, ImageIcon>();
 
 	// Change this if the screen is wacky
 	int cardSize = 275;
 	public int screenWidth;
 
-	public static InputStream loadImage(String path) {
-		InputStream input = RunElectionGameCombined.class.getResourceAsStream(path);
-		if (input == null) {
-			input = RunElectionGameCombined.class.getResourceAsStream("/" + path);
+	private static String normalizeResourcePath(String path) {
+		if (path == null) {
+			return "";
 		}
-		return input;
+		String normalized = path.trim().replace('\\', '/');
+		while (normalized.startsWith("/")) {
+			normalized = normalized.substring(1);
+		}
+		return normalized;
+	}
+
+	private static URL loadResourceURLExact(String path) {
+		String normalized = normalizeResourcePath(path);
+		if (normalized.isEmpty()) {
+			return null;
+		}
+
+		ClassLoader loader = RunElectionGameCombined.class.getClassLoader();
+		URL url = loader.getResource(normalized);
+		if (url != null) {
+			return url;
+		}
+
+		File file = new File(normalized);
+		if (file.exists()) {
+			try {
+				return file.toURI().toURL();
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		return null;
+	}
+
+	private static boolean resourceOrFileExistsExact(String path) {
+		return loadResourceURLExact(path) != null;
+	}
+
+	private static String detectResourcePrefix() {
+		if (resourceOrFileExistsExact("files/loadingscreen.PNG")) {
+			return "";
+		}
+		if (resourceOrFileExistsExact("resources/files/loadingscreen.PNG")) {
+			return "resources/";
+		}
+		return "";
+	}
+
+	public static URL loadResourceURL(String path) {
+		String normalized = normalizeResourcePath(path);
+		URL url = loadResourceURLExact(normalized);
+		if (url != null) {
+			return url;
+		}
+
+		if (normalized.startsWith("resources/")) {
+			url = loadResourceURLExact(normalized.substring("resources/".length()));
+		} else {
+			url = loadResourceURLExact("resources/" + normalized);
+		}
+		return url;
+	}
+
+	public static InputStream loadImage(String path) {
+		URL url = loadResourceURL(path);
+		if (url == null) {
+			return null;
+		}
+		try {
+			return url.openStream();
+		} catch (IOException e) {
+			return null;
+		}
+	}
+
+	private static String resolveFilePath(String path) {
+		String normalized = normalizeResourcePath(path);
+		if (new File(normalized).exists()) {
+			return normalized;
+		}
+		if (normalized.startsWith("resources/")) {
+			String withoutResources = normalized.substring("resources/".length());
+			if (new File(withoutResources).exists()) {
+				return withoutResources;
+			}
+		} else {
+			String withResources = "resources/" + normalized;
+			if (new File(withResources).exists()) {
+				return withResources;
+			}
+		}
+		return normalized;
+	}
+
+	private Image getResourceImage(String path) {
+		URL url = loadResourceURL(path);
+		if (url == null) {
+			return null;
+		}
+		ImageIcon icon = new ImageIcon(url);
+		if (icon.getIconWidth() <= 0 || icon.getIconHeight() <= 0) {
+			return null;
+		}
+		return icon.getImage();
+	}
+
+	private ImageIcon getScaledResourceIcon(String path, int width, int height) {
+		width = Math.max(1, width);
+		height = Math.max(1, height);
+		String normalized = normalizeResourcePath(path);
+		String key = "resource|" + normalized + "|" + width + "x" + height;
+		ImageIcon cached = scaledImageCache.get(key);
+		if (cached != null) {
+			return cached;
+		}
+
+		URL url = loadResourceURL(normalized);
+		ImageIcon result;
+		if (url == null) {
+			result = createMissingImageIcon("Missing image", normalized, width, height);
+		} else {
+			ImageIcon rawIcon = new ImageIcon(url);
+			if (rawIcon.getIconWidth() <= 0 || rawIcon.getIconHeight() <= 0) {
+				result = createMissingImageIcon("Missing image", normalized, width, height);
+			} else {
+				result = new ImageIcon(rawIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH));
+			}
+		}
+
+		scaledImageCache.put(key, result);
+		return result;
+	}
+
+	private ImageIcon getScaledCardIcon(Card card, int width, int height) {
+		if (card == null) {
+			return getScaledResourceIcon("files/placeholder.PNG", width, height);
+		}
+
+		String imagePath = normalizeResourcePath(card.getImageURL());
+		if (loadResourceURL(imagePath) != null) {
+			return getScaledResourceIcon(imagePath, width, height);
+		}
+
+		width = Math.max(1, width);
+		height = Math.max(1, height);
+		String key = "missing-card|" + card.getClass().getName() + "|" + card.getName() + "|"
+				+ width + "x" + height;
+		ImageIcon cached = scaledImageCache.get(key);
+		if (cached != null) {
+			return cached;
+		}
+
+		ImageIcon result = createMissingCardIcon(card, imagePath, width, height);
+		scaledImageCache.put(key, result);
+		return result;
+	}
+
+	private ImageIcon createMissingCardIcon(Card card, String attemptedPath, int width, int height) {
+		String title = card == null ? "Missing Card" : card.getName();
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = image.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setColor(new Color(238, 232, 214));
+		g.fillRect(0, 0, width, height);
+		g.setColor(new Color(80, 52, 29));
+		g.fillRect(0, 0, width, Math.max(20, height / 7));
+		g.setColor(Color.BLACK);
+		g.drawRect(0, 0, width - 1, height - 1);
+
+		int margin = Math.max(6, width / 16);
+		int y = Math.max(18, height / 14);
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("Dialog", Font.BOLD, Math.max(10, width / 12)));
+		y = drawWrappedText(g, title, margin, y, width - 2 * margin, Math.max(12, height / 13));
+
+		g.setColor(Color.BLACK);
+		g.setFont(new Font("Dialog", Font.BOLD, Math.max(9, width / 15)));
+		y = Math.max(y + Math.max(8, height / 20), height / 5);
+		y = drawWrappedText(g, "Image missing", margin, y, width - 2 * margin, Math.max(10, height / 15));
+
+		g.setFont(new Font("Dialog", Font.PLAIN, Math.max(8, width / 18)));
+		if (card instanceof President) {
+			President p = (President) card;
+			y += Math.max(4, height / 45);
+			y = drawWrappedText(g, "EXP " + p.getExp() + "   INF " + p.getInfl(), margin, y,
+					width - 2 * margin, Math.max(9, height / 17));
+			y = drawWrappedText(g, "POL " + p.getPol() + "   NAM " + p.getNam(), margin, y,
+					width - 2 * margin, Math.max(9, height / 17));
+			y = drawWrappedText(g, "Region: " + p.getRegion(), margin, y, width - 2 * margin,
+					Math.max(9, height / 17));
+			y = drawWrappedText(g, "Ideology: " + p.getIdeology(), margin, y, width - 2 * margin,
+					Math.max(9, height / 17));
+			y = drawWrappedText(g, "Marquee: " + p.getMarquee(), margin, y, width - 2 * margin,
+					Math.max(9, height / 17));
+		} else {
+			y = drawWrappedText(g, attemptedPath, margin, y + 4, width - 2 * margin,
+					Math.max(9, height / 17));
+		}
+
+		g.dispose();
+		return new ImageIcon(image);
+	}
+
+	private ImageIcon createMissingImageIcon(String title, String path, int width, int height) {
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = image.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setColor(new Color(230, 230, 230));
+		g.fillRect(0, 0, width, height);
+		g.setColor(Color.DARK_GRAY);
+		g.drawRect(0, 0, width - 1, height - 1);
+		g.setFont(new Font("Dialog", Font.BOLD, Math.max(9, width / 12)));
+		int y = Math.max(14, height / 5);
+		y = drawWrappedText(g, title, Math.max(5, width / 12), y,
+				width - 2 * Math.max(5, width / 12), Math.max(10, height / 8));
+		g.setFont(new Font("Dialog", Font.PLAIN, Math.max(8, width / 16)));
+		drawWrappedText(g, path, Math.max(5, width / 12), y + 4,
+				width - 2 * Math.max(5, width / 12), Math.max(9, height / 10));
+		g.dispose();
+		return new ImageIcon(image);
+	}
+
+	private int drawWrappedText(Graphics2D g, String text, int x, int y, int maxWidth, int lineHeight) {
+		if (text == null) {
+			return y;
+		}
+		String cleaned = text.trim();
+		if (cleaned.isEmpty()) {
+			return y;
+		}
+
+		FontMetrics fm = g.getFontMetrics();
+		String[] words = cleaned.split("\\s+");
+		String line = "";
+		for (int i = 0; i < words.length; i++) {
+			String test = line.isEmpty() ? words[i] : line + " " + words[i];
+			if (fm.stringWidth(test) <= maxWidth) {
+				line = test;
+			} else {
+				g.drawString(line, x, y);
+				y += lineHeight;
+				line = words[i];
+			}
+		}
+		if (!line.isEmpty()) {
+			g.drawString(line, x, y);
+			y += lineHeight;
+		}
+		return y;
 	}
 	
 	private void printMemoryUsage() {
@@ -273,7 +531,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	    frame.setUndecorated(true);
 	    
 	    // Load the custom cursor image
-        Image cursorImage = Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("files/mouse.PNG"));
+        Image cursorImage = Toolkit.getDefaultToolkit().getImage(loadResourceURL("files/mouse.PNG"));
 
         // Scale the image to make the cursor bigger
         int newCursorSize = 100;  // Adjust this size to make it bigger or smaller
@@ -1500,7 +1758,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 		// null.
 		
 		try {
-			reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+			reader = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 
 			// Read the first line of the file
 			activeAccount = reader.readLine();
@@ -1524,7 +1782,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 		reader2 = null;
 		accountSettings = null;
 		try {
-			reader2 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+			reader2 = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 			String line;
 			while ((line = reader2.readLine()) != null) {
 				if (line.startsWith(activeAccount)) {
@@ -1599,7 +1857,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 			BufferedReader reader3 = null;
 			String[] accountList = null;
 			try {
-				reader3 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+				reader3 = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 				List<String> entries = new ArrayList<>();
 				String line;
 				int lineNumber = 1;
@@ -1639,7 +1897,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 				reader2 = null;
 				accountSettings = null;
 				try {
-					reader2 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+					reader2 = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 					String line;
 					while ((line = reader2.readLine()) != null) {
 						if (line.startsWith(activeAccount)) {
@@ -1663,7 +1921,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 				BufferedReader reader4 = null;
 				BufferedWriter writer = null;
 				try {
-					reader4 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+					reader4 = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 					List<String> lines = new ArrayList<>();
 					String line;
 					while ((line = reader4.readLine()) != null) {
@@ -1671,7 +1929,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 					}
 					lines.set(0, activeAccount);
 
-					writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
+					writer = new BufferedWriter(new FileWriter(resolveFilePath("files/logininfo.TXT")));
 					for (String modifiedLine : lines) {
 						writer.write(modifiedLine);
 						writer.newLine();
@@ -1728,7 +1986,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 					reader = null;
 					BufferedWriter writer = null;
 					try {
-						reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+						reader = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 						List<String> lines = new ArrayList<>();
 						String line;
 						boolean deleted = false;
@@ -1740,7 +1998,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 							}
 						}
 
-						writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
+						writer = new BufferedWriter(new FileWriter(resolveFilePath("files/logininfo.TXT")));
 						for (String modifiedLine : lines) {
 							writer.write(modifiedLine);
 							writer.newLine();
@@ -1893,7 +2151,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 					reader = null;
 					BufferedWriter writer = null;
 					try {
-						reader = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+						reader = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 						List<String> lines = new ArrayList<>();
 						String line;
 						boolean replaced = false;
@@ -1910,7 +2168,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 							lines.add(acctLine);
 						}
 
-						writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
+						writer = new BufferedWriter(new FileWriter(resolveFilePath("files/logininfo.TXT")));
 						for (String modifiedLine : lines) {
 							writer.write(modifiedLine);
 							writer.newLine();
@@ -1943,7 +2201,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 					BufferedReader reader4 = null;
 					writer = null;
 					try {
-						reader4 = new BufferedReader(new FileReader(prefix + "files/logininfo.TXT"));
+						reader4 = new BufferedReader(new FileReader(resolveFilePath("files/logininfo.TXT")));
 						List<String> lines = new ArrayList<>();
 						String line;
 						while ((line = reader4.readLine()) != null) {
@@ -1951,7 +2209,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 						}
 						lines.set(0, newAcctName);
 
-						writer = new BufferedWriter(new FileWriter(prefix + "files/logininfo.TXT"));
+						writer = new BufferedWriter(new FileWriter(resolveFilePath("files/logininfo.TXT")));
 						for (String modifiedLine : lines) {
 							writer.write(modifiedLine);
 							writer.newLine();
@@ -2439,7 +2697,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 	        paintCards();
 
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
+	        backgroundImage = getResourceImage("files/backgroundfull.PNG");
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
@@ -2580,7 +2838,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	                    this.add(userCardLabel);
 	                }
 
-	                this.updateUI();
+	                this.revalidate();
+	                this.repaint();
 
 	            } catch (NullPointerException e) {
 	                StringBuilder message = new StringBuilder("One of the cards has an error, please exit the game. Here is the hand:");
@@ -2597,8 +2856,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	        for (President curr : hand) {
 	            currentImages.add(curr.getImageURL());
 	            if (!imageCache.containsKey(curr.getImageURL())) {
-	                ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-	                        .getImage().getScaledInstance(scaledCardWidth, scaledCardHeight, Image.SCALE_SMOOTH));
+	                ImageIcon img = getScaledCardIcon(curr, scaledCardWidth, scaledCardHeight);
 	                imageCache.put(curr.getImageURL(), img);
 	            }
 	        }
@@ -2607,7 +2865,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 	    public void reset() {
 	        this.removeAll();
-	        this.updateUI();
+	        this.revalidate();
+	                this.repaint();
 	        imageCache.clear();
 	        hand = election.userHand();
 	        paintCards();
@@ -2617,11 +2876,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 	    public void hideCards(int cds) {
 	        this.removeAll();
-	        this.updateUI();
+	        this.revalidate();
+	                this.repaint();
 
 	        for (int i = 0; i < cds; i++) {
-	            ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-	                    .getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+	            ImageIcon img = getScaledResourceIcon("files/aicard.PNG", cardSize, (int) Math.round(1.32713755 * cardSize));
 	            final JLabel usercd = new JLabel(img);
 	            this.add(usercd);
 	            usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
@@ -2713,7 +2972,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 	        paintCards();
 
-	        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/policiesbackground.PNG")).getImage();
+	        backgroundImage = getResourceImage("files/policiesbackground.PNG");
 
 	        addMouseListener(new MouseAdapter() {
 	            @Override
@@ -2926,7 +3185,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	                this.add(userPolicyLabel);
 	            }
 
-	            this.updateUI();
+	            this.revalidate();
+	                this.repaint();
 
 	        } catch (NullPointerException e) {
 	            StringBuilder message = new StringBuilder("One of the policies has an error, please exit the game. Here is the hand:");
@@ -2942,8 +3202,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	        for (Policy curr : hand) {
 	            currentImages.add(curr.getImageURL());
 	            if (!imageCache.containsKey(curr.getImageURL())) {
-	                ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-	                        .getImage().getScaledInstance(scaledCardWidth, scaledCardHeight, Image.SCALE_SMOOTH));
+	                ImageIcon img = getScaledCardIcon(curr, scaledCardWidth, scaledCardHeight);
 	                imageCache.put(curr.getImageURL(), img);
 	            }
 	        }
@@ -2955,8 +3214,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 	        for (Policy policy : allPolicies) {
 	            String imageUrl = policy.getImageURL();
 	            if (!imageCache.containsKey(imageUrl)) {
-	                ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + imageUrl))
-	                    .getImage().getScaledInstance(scaledCardWidth, scaledCardHeight, Image.SCALE_SMOOTH));
+	                ImageIcon img = getScaledCardIcon(policy, scaledCardWidth, scaledCardHeight);
 	                imageCache.put(imageUrl, img);
 	            }
 	        }
@@ -2964,7 +3222,8 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 	    public void reset() {
 	        this.removeAll();
-	        this.updateUI();
+	        this.revalidate();
+	                this.repaint();
 	        imageCache.clear();
 	        hand = election.getPlayer1().getPolicies();
 	        paintCards();
@@ -2974,11 +3233,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 	    public void hideCards() {
 	        this.removeAll();
-	        this.updateUI();
+	        this.revalidate();
+	                this.repaint();
 
 	        for (int i = 0; i < 13; i++) {
-	            ImageIcon img = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-	                    .getImage().getScaledInstance(cardSize, (int) Math.round(1.32713755 * cardSize), Image.SCALE_SMOOTH));
+	            ImageIcon img = getScaledResourceIcon("files/aicard.PNG", cardSize, (int) Math.round(1.32713755 * cardSize));
 	            final JLabel usercd = new JLabel(img);
 	            this.add(usercd);
 	            usercd.setPreferredSize(new Dimension(cardSize, (int) Math.round(1.32713755 * cardSize)));
@@ -3041,7 +3300,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 				this.glassPane = glassPane;
 
 				// Load the background image
-		        backgroundImage = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/backgroundfull.PNG")).getImage();
+		        backgroundImage = getResourceImage("files/backgroundfull.PNG");
 		        xref = 215.0;
 		        frameXRef = 1920.0;
 		        
@@ -3061,10 +3320,9 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 			
 			// Method to load the White House image
 		    private void loadWhiteHouseImage() {
-		        ImageIcon whIcon = new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/whitehouse.PNG"));
 		        int scaledWidth = (int) (200 * (cardSize / 275.0));
 		        int scaledHeight = (int) (200 * (cardSize / 275.0));
-		        whiteHouseImage = whIcon.getImage().getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+		        whiteHouseImage = getScaledResourceIcon("files/whitehouse.PNG", scaledWidth, scaledHeight).getImage();
 		    }
 			
 			// For background
@@ -3098,15 +3356,15 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 			// cards that the player is about to play along with others
 			public void draw() {
 				this.removeAll();
-				this.updateUI();
+				this.revalidate();
+	                this.repaint();
 
 				if (zoomedCard != null) {
 					// Use the same dimensions as the zoomed election card
 		            final int zoomedCardWidth = (int) (0.888888889 * cardSize * 1.75);
 		            final int zoomedCardHeight = (int) (1.17777778 * cardSize * 1.75);
 
-		            ImageIcon zoomedIcon = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + zoomedCard.getImageURL()))
-		                    .getImage().getScaledInstance(zoomedCardWidth, zoomedCardHeight, Image.SCALE_SMOOTH));
+		            ImageIcon zoomedIcon = getScaledCardIcon(zoomedCard, zoomedCardWidth, zoomedCardHeight);
 		            JLabel zoomedLabel = new JLabel(zoomedIcon);
 		            zoomedLabel.setBounds((getWidth() - zoomedCardWidth) / 2, (getHeight() - zoomedCardHeight) / 2, zoomedCardWidth, zoomedCardHeight);
 		            this.add(zoomedLabel);
@@ -3132,16 +3390,14 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 				for (int i = 0; i < 2; i++) {
 					if (hideUsers && twoplayermode) {
-						ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon usercard = getScaledResourceIcon("files/aicard.PNG", (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 						final JLabel label = new JLabel(usercard);
 						userpin.add(label);
 					} else {
 						int pos = i;
 						Policy curr = election.getActivePinnedPolicies().get(i);
 						if (curr != null) {
-							ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							ImageIcon usercard = getScaledCardIcon(curr, (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 							final JLabel label = new JLabel(usercard);
 
 							label.addMouseListener(new MouseAdapter() {
@@ -3154,8 +3410,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 							});
 							userpin.add(label);
 						} else {
-							ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							ImageIcon usercard = getScaledResourceIcon("files/placeholder.PNG", (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 							final JLabel label = new JLabel(usercard);
 							userpin.add(label);
 						}
@@ -3169,13 +3424,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 				 * Player 1 played president
 				 */
 				if (hideUsers && twoplayermode) {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+					ImageIcon aicard = getScaledResourceIcon("files/aicard.PNG", (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 				} else if (election.getActivePinCard() != null) {
-					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getActivePinCard().getImageURL()))
-							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+					ImageIcon usercard = getScaledCardIcon(election.getActivePinCard(), (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 					final JLabel butt = new JLabel(usercard);
 
 					this.add(butt);
@@ -3190,8 +3443,7 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 						}
 					});
 				} else {
-					ImageIcon usercard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+					ImageIcon usercard = getScaledResourceIcon("files/placeholder.PNG", (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 					final JLabel label = new JLabel(usercard);
 					this.add(label);
 				}
@@ -3203,13 +3455,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 				final int electionCardHeight = (int) (1.17777778 * cardSize);
 
 		        if (starting) {
-		            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-		                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
+		            ImageIcon currelection = getScaledResourceIcon("files/placeholder.PNG", electionCardWidth, electionCardHeight);
 		            final JLabel elec = new JLabel(currelection);
 		            this.add(elec);
 		        } else {
-		            ImageIcon currelection = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getElection().getImageURL()))
-		                    .getImage().getScaledInstance(electionCardWidth, electionCardHeight, Image.SCALE_SMOOTH));
+		            ImageIcon currelection = getScaledCardIcon(election.getElection(), electionCardWidth, electionCardHeight);
 		            final JLabel elec = new JLabel(currelection);
 		            this.add(elec);
 
@@ -3230,15 +3480,13 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 			    cpupin.setOpaque(false); // Make the userpin panel transparent
 				    
 				if (starting) {
-					ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-							.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+					ImageIcon aicard = getScaledResourceIcon("files/placeholder.PNG", (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 					final JLabel label = new JLabel(aicard);
 					this.add(label);
 
 
 					for (int i = 0; i < 2; i++) {
-						ImageIcon place = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/placeholder.PNG"))
-								.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon place = getScaledResourceIcon("files/placeholder.PNG", (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 						final JLabel placeLab = new JLabel(place);
 						cpupin.add(placeLab);
 					}
@@ -3251,13 +3499,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 					 */
 					// CPU President
 					if (!cpuPlayed || election.getPlayer2Card() == null) {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = getScaledResourceIcon("files/aicard.PNG", (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 						final JLabel label = new JLabel(aicard);
 						this.add(label);
 					} else {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer2Card().getImageURL()))
-								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = getScaledCardIcon(election.getPlayer2Card(), (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 						final JLabel label = new JLabel(aicard);
 						this.add(label);
 					}
@@ -3265,13 +3511,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 					// CPU Policies
 					for (Policy curr : election.getPinned2()) {
 						if (!cpuPlayed || curr == null) {
-							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + "files/aicard.PNG"))
-									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							ImageIcon aicard = getScaledResourceIcon("files/aicard.PNG", (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 							final JLabel label = new JLabel(aicard);
 							cpupin.add(label);
 						} else {
-							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							ImageIcon aicard = getScaledCardIcon(curr, (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 							final JLabel label = new JLabel(aicard);
 
 							cpupin.add(label);
@@ -3286,13 +3530,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 						cd = prefix + "files/aicard.PNG";
 					}
 					if (!cpuPlayed || election.getPlayer1Card() == null) {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
-								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = getScaledResourceIcon(cd, (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 						final JLabel label = new JLabel(aicard);
 						this.add(label);
 					} else {
-						ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + election.getPlayer1Card().getImageURL()))
-								.getImage().getScaledInstance((int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize), Image.SCALE_SMOOTH));
+						ImageIcon aicard = getScaledCardIcon(election.getPlayer1Card(), (int) (0.666666667 * cardSize), (int) (0.884444444 * cardSize));
 						final JLabel label = new JLabel(aicard);
 
 						this.add(label);
@@ -3300,13 +3542,11 @@ public class RunElectionGameCombined implements Runnable, CampaignMatchLauncher,
 
 					for (Policy curr : election.getPinned1()) {
 						if (!cpuPlayed || curr == null) {
-							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(cd))
-									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							ImageIcon aicard = getScaledResourceIcon(cd, (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 							final JLabel label = new JLabel(aicard);
 							cpupin.add(label);
 						} else {
-							ImageIcon aicard = new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource(prefix + curr.getImageURL()))
-									.getImage().getScaledInstance((int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize), Image.SCALE_SMOOTH));
+							ImageIcon aicard = getScaledCardIcon(curr, (int) (0.355555556 * cardSize), (int) (0.469026549 * cardSize));
 							final JLabel label = new JLabel(aicard);
 
 							cpupin.add(label);

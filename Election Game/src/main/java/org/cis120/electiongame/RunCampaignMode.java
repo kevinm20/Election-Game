@@ -13,6 +13,8 @@ import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -53,10 +55,10 @@ import javax.swing.border.EmptyBorder;
 /**
  * Swing UI for Campaign Mode.
  *
- * v8.4 polishes the Active Deck view/edit split and adds a saved total
- * play-time counter. The Active Deck view stays clean by default, with
- * editing available behind an Edit button. Tournament decks remain auto-built
- * by era.
+ * v13.3 polishes League Mode after the first playable UI pass:
+ * league seasons now start only when Game 1 is actually launched, League records
+ * are more trophy-like, and the Trophy Cabinet moves into the Collection hub as
+ * a third roster tab beside Active Deck and Collection.
  */
 public class RunCampaignMode implements Runnable {
 
@@ -65,9 +67,47 @@ public class RunCampaignMode implements Runnable {
     private static final Pattern DUPLICATE_CARD_PATTERN = Pattern.compile("^\\s*Duplicate:\\s+(.+?)\\s+auto-sold.*$");
 
     private static final String COLLECTION_ERA_ALL = "All Eras";
+    private static final String COLLECTION_TAG_ALL = "All Tags";
+    private static final String COLLECTION_PARTY_ALL = "All Parties";
+    private static final String COLLECTION_STATE_ALL = "All States";
+    private static final String COLLECTION_REGION_ALL = "All Regions";
+    private static final String COLLECTION_IDEOLOGY_ALL = "All Ideologies";
+    private static final String COLLECTION_SCOPE_ALL = "All Cards";
+    private static final String COLLECTION_SCOPE_ERA = "Era";
+    private static final String COLLECTION_SCOPE_TAG = "Tag";
+    private static final String COLLECTION_SCOPE_FILTERS = "Full Filters";
+    private static final String COLLECTION_SCOPE_PROGRESS = "Progress Dashboard";
     private static final String COLLECTION_OWNERSHIP_OWNED = "Owned";
     private static final String COLLECTION_OWNERSHIP_MISSING = "Missing";
     private static final String COLLECTION_OWNERSHIP_ALL = "All Cards";
+    private static final int TAG_TOURNAMENT_REQUIRED_CARDS = 10;
+    private static final String PROGRESS_SORT_ELIGIBLE_CLOSE = "Eligible / Close";
+    private static final String PROGRESS_SORT_CLOSEST_LOCKED = "Closest Locked";
+    private static final String PROGRESS_SORT_PERCENT_OWNED = "% Owned";
+    private static final String PROGRESS_SORT_OWNED_COUNT = "Owned Count";
+    private static final String PROGRESS_SORT_DECK_STRENGTH = "Deck Strength";
+    private static final String PROGRESS_SORT_ALPHABETICAL = "Alphabetical";
+    private static final String PROGRESS_SORT_CHRONOLOGICAL = "Chronological Era";
+    private static final String PROGRESS_TYPE_BOTH = "Eras + Tags";
+    private static final String PROGRESS_TYPE_ERAS = "Eras Only";
+    private static final String PROGRESS_TYPE_TAGS = "Tags Only";
+
+    private static final String TROPHY_TYPE_ALL = "All Trophies";
+    private static final String TROPHY_TYPE_TOURNAMENTS = "Eras + Tags";
+    private static final String TROPHY_TYPE_ERAS = "Eras Only";
+    private static final String TROPHY_TYPE_TAGS = "Tags Only";
+    private static final String TROPHY_TYPE_LEAGUES = "Leagues Only";
+    private static final String TROPHY_STATUS_ALL = "All";
+    private static final String TROPHY_STATUS_WON = "Won";
+    private static final String TROPHY_STATUS_ENTERED = "Entered";
+    private static final String TROPHY_STATUS_ELIGIBLE = "Eligible";
+    private static final String TROPHY_STATUS_LOCKED = "Locked";
+    private static final String TROPHY_SORT_DEFAULT = "Default";
+    private static final String TROPHY_SORT_TITLES = "Titles";
+    private static final String TROPHY_SORT_BEST_FINISH = "Best Finish";
+    private static final String TROPHY_SORT_ELIGIBLE = "Eligibility";
+    private static final String TROPHY_SORT_ATTEMPTS = "Attempts";
+    private static final String TROPHY_SORT_ALPHABETICAL = "Alphabetical";
 
     private JFrame frame;
     private JPanel rootPanel;
@@ -103,11 +143,24 @@ public class RunCampaignMode implements Runnable {
     // Scaled card images are expensive to load/resize. Cache by path + size so
     // collection/active-deck/store result views can reuse already-scaled icons.
     private final Map<String, ImageIcon> scaledIconCache = new HashMap<String, ImageIcon>();
-    private SwingWorker<List<CardIconData>, Void> collectionLoadWorker;
+    private SwingWorker<List<CardIconData>, Integer> collectionLoadWorker;
     private long collectionLoadRequestId = 0;
 
+    private String collectionScopeMode = COLLECTION_SCOPE_PROGRESS;
     private String collectionEraFilterId = COLLECTION_ERA_ALL;
+    private String collectionTagFilter = COLLECTION_TAG_ALL;
     private String collectionOwnershipFilter = COLLECTION_OWNERSHIP_OWNED;
+    private String collectionFullEraFilter = COLLECTION_ERA_ALL;
+    private String collectionFullTagFilter = COLLECTION_TAG_ALL;
+    private String collectionFullPartyFilter = COLLECTION_PARTY_ALL;
+    private String collectionFullStateFilter = COLLECTION_STATE_ALL;
+    private String collectionFullRegionFilter = COLLECTION_REGION_ALL;
+    private String collectionFullIdeologyFilter = COLLECTION_IDEOLOGY_ALL;
+    private String collectionProgressSortMode = PROGRESS_SORT_ELIGIBLE_CLOSE;
+    private String collectionProgressTypeFilter = PROGRESS_TYPE_BOTH;
+    private String trophyTypeFilter = TROPHY_TYPE_ALL;
+    private String trophyStatusFilter = TROPHY_STATUS_ALL;
+    private String trophySortMode = TROPHY_SORT_DEFAULT;
 
     private java.util.List<President> activeDeckDraft = new ArrayList<President>();
 
@@ -389,8 +442,11 @@ public class RunCampaignMode implements Runnable {
         buttonPanel.setOpaque(false);
         buttonPanel.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-        JButton playMatchButton = makeButton("Play Match");
+        JButton playMatchButton = makeButton("Quick Play");
         playMatchButton.addActionListener(e -> displayMatchOptionsDashboard());
+
+        JButton leagueButton = makeButton("League");
+        leagueButton.addActionListener(e -> displayLeagueDashboard());
 
         JButton tournamentsButton = makeButton("Tournaments");
         tournamentsButton.addActionListener(e -> displayTournamentsDashboard());
@@ -398,20 +454,17 @@ public class RunCampaignMode implements Runnable {
         JButton packsButton = makeButton("Store");
         packsButton.addActionListener(e -> displayStoreDashboard());
 
-        JButton collectionButton = makeButton("View Collection");
+        JButton collectionButton = makeButton("Collection");
         collectionButton.addActionListener(e -> displayCollectionCards());
-
-        JButton activeDeckButton = makeButton("Active Deck");
-        activeDeckButton.addActionListener(e -> displayActiveDeckCards());
 
         JButton quitButton = makeButton(embeddedMode ? "Campaign Menu" : "Save and Quit");
         quitButton.addActionListener(e -> confirmSaveAndQuit());
 
         buttonPanel.add(playMatchButton);
+        buttonPanel.add(leagueButton);
         buttonPanel.add(tournamentsButton);
         buttonPanel.add(packsButton);
         buttonPanel.add(collectionButton);
-        buttonPanel.add(activeDeckButton);
         buttonPanel.add(quitButton);
 
         return buttonPanel;
@@ -792,7 +845,7 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
-        displayTitleLabel.setText("Choose Match Difficulty");
+        displayTitleLabel.setText("Choose Quick Play Difficulty");
         displayPanel.removeAll();
         displayPanel.setLayout(new BorderLayout(14, 14));
         displayPanel.setBackground(new Color(255, 253, 245));
@@ -802,7 +855,7 @@ public class RunCampaignMode implements Runnable {
         wrapper.setBorder(new EmptyBorder(30, 30, 30, 30));
 
         JLabel intro = new JLabel(
-                "<html><center>Pick a campaign match. "
+                "<html><center>Pick a quick play match. "
                         + getMatchModeHelpText()
                         + "</center></html>",
                 SwingConstants.CENTER
@@ -880,7 +933,7 @@ public class RunCampaignMode implements Runnable {
                 : "Sim/Test Mode is now OFF. Campaign Mode will launch playable matches from the Campaign Clash board.";
         showShortDialog("Campaign Mode", modeText, false);
 
-        if (displayTitleLabel != null && "Choose Match Difficulty".equals(displayTitleLabel.getText())) {
+        if (displayTitleLabel != null && "Choose Quick Play Difficulty".equals(displayTitleLabel.getText())) {
             displayMatchOptionsDashboard();
         }
     }
@@ -1171,6 +1224,777 @@ public class RunCampaignMode implements Runnable {
     }
 
 
+    private void displayLeagueDashboard() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("League Mode");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(18, 18));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(26, 28, 28, 28));
+
+        CampaignPlayer player = campaign == null ? null : campaign.getPlayer();
+        CampaignLeagueDivision currentDivision = campaign == null ? null : campaign.getCurrentLeagueDivision();
+        CampaignLeagueDivision nextDivision = campaign == null ? null : campaign.getNextLeagueDivision();
+        CampaignLeagueSeason season = campaign == null ? null : campaign.getActiveLeagueSeason();
+        CampaignLeagueDivision seasonDivision = campaign == null ? null : campaign.getActiveLeagueSeasonDivision();
+
+        JLabel intro = new JLabel(
+                "<html><center><b>League Mode</b><br>"
+                        + "A 10-game playable season using your full owned collection. "
+                        + "You are placed in the highest league your collection qualifies for."
+                        + "<br>CPU decks use the broad 1.0+ pool; division difficulty controls the challenge."
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        intro.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
+        intro.setForeground(new Color(20, 35, 65));
+        wrapper.add(intro, BorderLayout.NORTH);
+
+        JPanel center = new JPanel(new GridLayout(1, 2, 22, 0));
+        center.setOpaque(false);
+        center.add(buildLeagueStatusPanel(player, currentDivision, nextDivision));
+        center.add(buildLeagueSeasonPanel(season, seasonDivision));
+        wrapper.add(center, BorderLayout.CENTER);
+
+        JPanel buttons = new JPanel(new GridLayout(1, 4, 16, 0));
+        buttons.setOpaque(false);
+        buttons.setBorder(new EmptyBorder(16, 0, 0, 0));
+
+        JButton primaryButton;
+        if (season != null && season.isCompleted()) {
+            primaryButton = makeDashboardButton(season.isRewardClaimed() ? "Season Complete" : "Claim Reward");
+            primaryButton.setEnabled(!season.isRewardClaimed());
+            primaryButton.addActionListener(e -> claimLeagueRewardFromUI());
+        } else if (season != null) {
+            primaryButton = makeDashboardButton(getMatchActionVerb() + " Next Game");
+            primaryButton.addActionListener(e -> playLeagueGameFromUI());
+        } else {
+            primaryButton = makeDashboardButton(getMatchActionVerb() + " Game 1");
+            primaryButton.setEnabled(currentDivision != null);
+            primaryButton.addActionListener(e -> playLeagueGameFromUI());
+        }
+
+        JButton divisionsButton = makeDashboardButton("Divisions");
+        divisionsButton.addActionListener(e -> displayLeagueDivisions());
+        JButton recordsButton = makeDashboardButton("Records");
+        recordsButton.addActionListener(e -> displayLeagueRecords());
+        JButton collectionButton = makeDashboardButton("Collection");
+        collectionButton.addActionListener(e -> displayCollectionCards());
+
+        buttons.add(primaryButton);
+        buttons.add(divisionsButton);
+        buttons.add(recordsButton);
+        buttons.add(collectionButton);
+        wrapper.add(buttons, BorderLayout.SOUTH);
+
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildLeagueStatusPanel(
+            CampaignPlayer player, CampaignLeagueDivision currentDivision, CampaignLeagueDivision nextDivision
+    ) {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(new Color(255, 250, 235));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 160, 120), 2),
+                new EmptyBorder(18, 18, 18, 18)
+        ));
+
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        String currentText = currentDivision == null
+                ? "Locked"
+                : currentDivision.getDisplayName();
+        String nextText;
+        if (nextDivision == null) {
+            nextText = currentDivision == null ? "Need 25 cards to unlock Local League" : "Top league reached";
+        } else {
+            int needed = Math.max(0, nextDivision.getMinimumCollectionSize() - collectionSize);
+            nextText = nextDivision.getDisplayName() + " at " + nextDivision.getMinimumCollectionSize()
+                    + " cards (need " + needed + ")";
+        }
+
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>Your League Placement</b><br><br>"
+                        + "Collection: <b>" + collectionSize + " cards</b><br>"
+                        + "Current League: <b>" + escapeHtml(currentText) + "</b><br>"
+                        + "Next League: " + escapeHtml(nextText) + "<br><br>"
+                        + "You cannot farm lower leagues. Once your collection grows, "
+                        + "your next season moves up automatically."
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel buildLeagueSeasonPanel(CampaignLeagueSeason season, CampaignLeagueDivision division) {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(new Color(255, 250, 235));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 160, 120), 2),
+                new EmptyBorder(18, 18, 18, 18)
+        ));
+
+        String html;
+        if (season == null || division == null) {
+            html = "<html><center>"
+                    + "<b>No Active Season</b><br><br>"
+                    + "Click " + escapeHtml(getMatchActionVerb()) + " Game 1 to start a 10-game League season.<br>"
+                    + "The season division locks when the first game launches.<br>"
+                    + "Final reward packs unlock at 3, 6, and 9 wins."
+                    + "</center></html>";
+        } else {
+            CampaignLeagueDivision.RewardTier currentTier = campaign.getLeagueSeasonRewardTier(season, division);
+            CampaignLeagueDivision.RewardTier nextTier = division.getNextRewardTierForWins(season.getWins());
+            String currentReward = currentTier == null
+                    ? "No final pack yet"
+                    : currentTier.getPackName(division);
+            String nextReward = nextTier == null
+                    ? "Top reward tier reached"
+                    : nextTier.getWinsRequired() + "+ wins: " + nextTier.getPackName(division);
+            String status = season.isCompleted()
+                    ? (season.isRewardClaimed() ? "Completed / Reward Claimed" : "Completed / Reward Ready")
+                    : "In Progress";
+
+            html = "<html><center>"
+                    + "<b>Active Season</b><br><br>"
+                    + escapeHtml(division.getDisplayName()) + "<br>"
+                    + "Status: <b>" + escapeHtml(status) + "</b><br>"
+                    + "Record: <b>" + season.getRecordText() + "</b> | Games: "
+                    + season.getProgressText() + "<br>"
+                    + "Difficulty: " + escapeHtml(division.getDifficulty())
+                    + " | CPU: " + escapeHtml(campaign.getLeagueCpuDeckDescription(division)) + "<br>"
+                    + "Game Rewards: " + CampaignMode.formatPC(division.getWinRewardPC()) + " win / "
+                    + CampaignMode.formatPC(division.getLossRewardPC()) + " loss<br><br>"
+                    + "Current Final Reward: <b>" + escapeHtml(currentReward) + "</b><br>"
+                    + "Next Reward: " + escapeHtml(nextReward) + "<br>"
+                    + "Last Result: " + escapeHtml(season.getLastResult())
+                    + "</center></html>";
+        }
+
+        JLabel details = new JLabel(html, SwingConstants.CENTER);
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void startLeagueSeasonFromUI() {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (!campaign.canStartLeagueSeason()) {
+            showShortDialog("League Unavailable", campaign.getLeagueStatusText(), true);
+            return;
+        }
+
+        OperationResult result = captureBooleanOutput(() -> campaign.startLeagueSeason());
+        appendLog(result.output);
+        refreshDashboard();
+        if (!result.success) {
+            showShortDialog("League Error", result.output == null ? "Could not start season." : result.output.trim(), true);
+            return;
+        }
+        displayLeagueDashboard();
+    }
+
+    private boolean ensureLeagueSeasonStartedForNextGame() {
+        CampaignLeagueSeason season = campaign == null ? null : campaign.getActiveLeagueSeason();
+        if (season != null) {
+            return true;
+        }
+
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return false;
+        }
+        if (!campaign.canStartLeagueSeason()) {
+            showShortDialog("League Unavailable", campaign.getLeagueStatusText(), true);
+            return false;
+        }
+
+        OperationResult result = captureBooleanOutput(() -> campaign.startLeagueSeason());
+        appendLog(result.output);
+        refreshDashboard();
+        if (!result.success) {
+            showShortDialog(
+                    "League Error",
+                    result.output == null || result.output.trim().isEmpty()
+                            ? "Could not start League season."
+                            : result.output.trim(),
+                    true
+            );
+            return false;
+        }
+        return true;
+    }
+
+    private void playLeagueGameFromUI() {
+        if (shouldUsePlayableMatches()) {
+            playPlayableLeagueGameFromUI();
+        } else {
+            playSimulatedLeagueGameFromUI();
+        }
+    }
+
+    private void playPlayableLeagueGameFromUI() {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (campaignMatchLauncher == null) {
+            showShortDialog(
+                    "Playable Match Unavailable",
+                    "Playable league games require Campaign Mode to be launched from the main Campaign Clash shell.\n"
+                            + "Use Sim/Test Mode for now, or launch Campaign Mode from the main Campaign Clash home screen.",
+                    true
+            );
+            return;
+        }
+        if (!ensureLeagueSeasonStartedForNextGame()) {
+            return;
+        }
+        if (campaign.getActiveLeagueSeason().isCompleted()) {
+            showShortDialog("Season Complete", "Claim your League reward before starting another season.", false);
+            return;
+        }
+
+        final CampaignMatchConfig config;
+        try {
+            config = campaign.buildLeagueMatchConfig(true);
+        } catch (Exception ex) {
+            showShortDialog("League Error", "Could not build league game:\n" + ex.getMessage(), true);
+            return;
+        }
+
+        String validationError = config.getValidationError();
+        if (validationError != null && !validationError.isEmpty()) {
+            showShortDialog("Playable League Error", validationError, true);
+            return;
+        }
+
+        setActionButtonsEnabled(false);
+        OperationResult pendingResult = captureBooleanOutput(() -> campaign.beginPendingPlayableMatch(config));
+        appendLog(pendingResult.output);
+        if (!pendingResult.success) {
+            setActionButtonsEnabled(true);
+            displayLeagueDashboard();
+            showShortDialog(
+                    "Playable League Error",
+                    "Could not save the pending league game. The game was not launched.",
+                    true
+            );
+            return;
+        }
+
+        appendLog("\nLaunching playable " + config.getMatchTitle() + "...\n");
+        displayPlayableLeagueGameInProgress(config);
+        hideCampaignWindowForPlayableMatch();
+
+        try {
+            campaignMatchLauncher.launchCampaignMatch(config, new CampaignMatchCallback() {
+                @Override
+                public void onCampaignMatchComplete(final CampaignMatchResult result) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            restoreCampaignWindowAfterPlayableMatch();
+                            handlePlayableLeagueGameResult(result);
+                        }
+                    });
+                }
+            });
+        } catch (Exception ex) {
+            OperationResult clearResult = captureBooleanOutput(() -> campaign.clearPendingPlayableMatch());
+            appendLog(clearResult.output);
+            showPlayableLaunchFailure(
+                    "Playable League Error",
+                    "Could not launch playable league game:\n" + ex.getMessage(),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            displayLeagueDashboard();
+                        }
+                    }
+            );
+        }
+    }
+
+    private void handlePlayableLeagueGameResult(CampaignMatchResult result) {
+        OperationResult applyResult = captureBooleanOutput(() -> campaign.applyLeagueMatchResult(result));
+        appendLog(applyResult.output);
+        refreshDashboard();
+        displayLeagueGameResult(applyResult.output);
+        setActionButtonsEnabled(true);
+    }
+
+    private void playSimulatedLeagueGameFromUI() {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (!ensureLeagueSeasonStartedForNextGame()) {
+            return;
+        }
+        if (campaign.getActiveLeagueSeason().isCompleted()) {
+            showShortDialog("Season Complete", "Claim your League reward before starting another season.", false);
+            return;
+        }
+
+        setActionButtonsEnabled(false);
+        appendLog("\nSimulating League game...\n");
+        displayLeagueGameInProgress();
+
+        SwingWorker<OperationResult, Void> worker = new SwingWorker<OperationResult, Void>() {
+            @Override
+            protected OperationResult doInBackground() {
+                return captureBooleanOutput(() -> campaign.playLeagueGame(false));
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    OperationResult result = get();
+                    appendLog(result.output);
+                    refreshDashboard();
+                    displayLeagueGameResult(result.output);
+                } catch (Exception ex) {
+                    showShortDialog("League Error", "Could not run League game:\n" + ex.getMessage(), true);
+                } finally {
+                    setActionButtonsEnabled(true);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void displayPlayableLeagueGameInProgress(CampaignMatchConfig config) {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        String title = config == null ? "Playable League Game" : config.getMatchTitle();
+        displayTitleLabel.setText(title);
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+        displayPanel.add(makeCenteredDisplayMessage(
+                "Launching playable League game...\nFinish the match on the Campaign Clash board to return here."
+        ), BorderLayout.CENTER);
+        updateDisplayPanel();
+    }
+
+    private void displayLeagueGameInProgress() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("League Game");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+        displayPanel.add(makeCenteredDisplayMessage("Playing League game..."), BorderLayout.CENTER);
+        updateDisplayPanel();
+    }
+
+    private void displayLeagueGameResult(String output) {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("League Game Result");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(12, 12));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel resultPanel = new JPanel(new BorderLayout(12, 12));
+        resultPanel.setBackground(new Color(255, 253, 245));
+        resultPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+
+        JTextArea resultArea = new JTextArea(output == null || output.trim().isEmpty()
+                ? "League game completed."
+                : output.trim());
+        resultArea.setEditable(false);
+        resultArea.setLineWrap(true);
+        resultArea.setWrapStyleWord(true);
+        resultArea.setFont(new Font("Monospaced", Font.PLAIN,
+                Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        resultArea.setBackground(new Color(255, 253, 245));
+        resultArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 160, 120), 1),
+                new EmptyBorder(14, 14, 14, 14)
+        ));
+        resultPanel.add(resultArea, BorderLayout.CENTER);
+
+        CampaignLeagueSeason season = campaign == null ? null : campaign.getActiveLeagueSeason();
+        boolean completed = season != null && season.isCompleted();
+
+        JPanel followUpButtons = new JPanel(new GridLayout(1, 2, 18, 0));
+        followUpButtons.setOpaque(false);
+        followUpButtons.setBorder(new EmptyBorder(4, 0, 0, 0));
+
+        JButton primaryButton = makeDashboardButton(completed ? "Claim Reward" : getMatchActionVerb() + " Next Game");
+        primaryButton.addActionListener(e -> {
+            CampaignLeagueSeason activeSeason = campaign == null ? null : campaign.getActiveLeagueSeason();
+            if (activeSeason != null && activeSeason.isCompleted()) {
+                claimLeagueRewardFromUI();
+            } else {
+                playLeagueGameFromUI();
+            }
+        });
+        JButton backButton = makeDashboardButton("Back to League");
+        backButton.addActionListener(e -> displayLeagueDashboard());
+        followUpButtons.add(primaryButton);
+        followUpButtons.add(backButton);
+        resultPanel.add(followUpButtons, BorderLayout.SOUTH);
+
+        displayPanel.add(resultPanel, BorderLayout.CENTER);
+        updateDisplayPanel();
+    }
+
+    private void claimLeagueRewardFromUI() {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        CampaignLeagueSeason season = campaign.getActiveLeagueSeason();
+        if (season == null) {
+            showShortDialog("No Active Season", "There is no completed League season to claim.", true);
+            return;
+        }
+        if (!season.isCompleted()) {
+            showShortDialog("Season Incomplete", "Finish all " + season.getSeasonLength()
+                    + " League games before claiming your final reward.", true);
+            return;
+        }
+
+        OperationResult result = captureBooleanOutput(() -> campaign.claimLeagueSeasonReward());
+        appendLog(result.output);
+        refreshDashboard();
+        if (!result.success) {
+            showShortDialog("League Reward Error", result.output == null ? "Could not claim reward." : result.output.trim(), true);
+            return;
+        }
+        displayLeagueRewardResult(result.output);
+    }
+
+    private void displayLeagueRewardResult(String output) {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("League Season Reward");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(12, 12));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel resultPanel = new JPanel(new BorderLayout(12, 12));
+        resultPanel.setBackground(new Color(255, 253, 245));
+        resultPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+
+        List<President> pulledCards = extractPresidentsFromPackOutput(output);
+        if (!pulledCards.isEmpty()) {
+            int imageWidth = getPackResultCardImageWidth();
+            int columns = getPackResultColumnCount(imageWidth, pulledCards.size());
+            JPanel cardGrid = new JPanel(new GridLayout(0, columns, 20, 20));
+            cardGrid.setBackground(new Color(255, 253, 245));
+            cardGrid.setBorder(new EmptyBorder(8, 0, 10, 0));
+
+            for (President president : pulledCards) {
+                cardGrid.add(buildPresidentCardPanel(president, imageWidth));
+            }
+            resultPanel.add(cardGrid, BorderLayout.NORTH);
+        }
+
+        JTextArea resultArea = new JTextArea(output == null || output.trim().isEmpty()
+                ? "League reward claimed."
+                : output.trim());
+        resultArea.setEditable(false);
+        resultArea.setLineWrap(true);
+        resultArea.setWrapStyleWord(true);
+        resultArea.setFont(new Font("Monospaced", Font.PLAIN,
+                Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        resultArea.setBackground(new Color(255, 253, 245));
+        resultArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 160, 120), 1),
+                new EmptyBorder(14, 14, 14, 14)
+        ));
+        resultPanel.add(resultArea, BorderLayout.CENTER);
+
+        JPanel followUpButtons = new JPanel(new GridLayout(1, 2, 18, 0));
+        followUpButtons.setOpaque(false);
+        followUpButtons.setBorder(new EmptyBorder(4, 0, 0, 0));
+        JButton leagueButton = makeDashboardButton("Back to League");
+        leagueButton.addActionListener(e -> displayLeagueDashboard());
+        JButton collectionButton = makeDashboardButton("Collection");
+        collectionButton.addActionListener(e -> displayCollectionCards());
+        followUpButtons.add(leagueButton);
+        followUpButtons.add(collectionButton);
+        resultPanel.add(followUpButtons, BorderLayout.SOUTH);
+
+        displayPanel.add(resultPanel, BorderLayout.CENTER);
+        updateDisplayPanel();
+    }
+
+    private void displayLeagueDivisions() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("League Divisions");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(16, 16));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
+
+        JLabel intro = new JLabel(
+                "<html><center><b>League Divisions</b><br>"
+                        + "Your current league is always the highest division your collection size unlocks."
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        intro.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
+        intro.setForeground(new Color(20, 35, 65));
+        wrapper.add(intro, BorderLayout.NORTH);
+
+        JPanel grid = new JPanel(new GridLayout(0, 1, 0, 14));
+        grid.setOpaque(false);
+        List<CampaignLeagueDivision> divisions = campaign == null
+                ? new ArrayList<CampaignLeagueDivision>()
+                : campaign.getLeagueDivisions();
+        Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+            @Override
+            public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                return b.getDivisionNumber() - a.getDivisionNumber();
+            }
+        });
+        for (CampaignLeagueDivision division : divisions) {
+            grid.add(buildLeagueDivisionPanel(division));
+        }
+        wrapper.add(grid, BorderLayout.CENTER);
+
+        JPanel buttons = new JPanel(new GridLayout(1, 2, 18, 0));
+        buttons.setOpaque(false);
+        buttons.setBorder(new EmptyBorder(16, 0, 0, 0));
+        JButton backButton = makeDashboardButton("Back to League");
+        backButton.addActionListener(e -> displayLeagueDashboard());
+        JButton recordsButton = makeDashboardButton("Records");
+        recordsButton.addActionListener(e -> displayLeagueRecords());
+        buttons.add(backButton);
+        buttons.add(recordsButton);
+        wrapper.add(buttons, BorderLayout.SOUTH);
+
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildLeagueDivisionPanel(CampaignLeagueDivision division) {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        CampaignPlayer player = campaign == null ? null : campaign.getPlayer();
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        CampaignLeagueDivision current = campaign == null ? null : campaign.getCurrentLeagueDivision();
+        boolean unlocked = division != null && division.isUnlockedByCollectionSize(collectionSize);
+        boolean currentDivision = division != null && division.equals(current);
+
+        panel.setBackground(currentDivision ? new Color(255, 248, 220) : new Color(255, 250, 235));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(currentDivision ? new Color(190, 150, 50) : new Color(180, 160, 120), 2),
+                new EmptyBorder(14, 16, 14, 16)
+        ));
+
+        CampaignLeagueRecord record = campaign == null || division == null
+                ? new CampaignLeagueRecord("")
+                : campaign.getLeagueRecord(division);
+        String status = currentDivision
+                ? "Current League"
+                : (unlocked ? "Unlocked but below current league" : "Locked");
+        String neededText = unlocked
+                ? "Unlocked"
+                : "Need " + Math.max(0, division.getMinimumCollectionSize() - collectionSize) + " more cards";
+
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>" + escapeHtml(division.getDisplayName()) + "</b><br>"
+                        + escapeHtml(status) + " | " + escapeHtml(neededText) + "<br>"
+                        + "Collection Gate: " + division.getMinimumCollectionSize() + "+ cards"
+                        + " | Difficulty: " + escapeHtml(division.getDifficulty())
+                        + " | CPU: " + String.format("%.1f+", division.getCpuMinimumRating()) + "<br>"
+                        + "Per Game: " + CampaignMode.formatPC(division.getWinRewardPC()) + " win / "
+                        + CampaignMode.formatPC(division.getLossRewardPC()) + " loss<br>"
+                        + "Final Rewards: " + escapeHtml(division.getRewardSummaryText()) + "<br>"
+                        + "History: " + record.getSeasonsPlayed() + " seasons | Best: "
+                        + record.getBestWins() + "-" + (division.getSeasonLength() - record.getBestWins())
+                        + " | Total: " + escapeHtml(record.getTotalRecordText())
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void displayLeagueRecords() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("League Records");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(16, 16));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
+
+        JLabel intro = new JLabel(
+                "<html><center><b>League Records</b><br>"
+                        + "Permanent history for completed League seasons. A League title means a 9+ win season."
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        intro.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
+        intro.setForeground(new Color(20, 35, 65));
+        wrapper.add(intro, BorderLayout.NORTH);
+
+        JPanel grid = new JPanel(new GridLayout(0, 1, 0, 14));
+        grid.setOpaque(false);
+        List<CampaignLeagueDivision> divisions = campaign == null
+                ? new ArrayList<CampaignLeagueDivision>()
+                : campaign.getLeagueDivisions();
+        Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+            @Override
+            public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                return b.getDivisionNumber() - a.getDivisionNumber();
+            }
+        });
+        for (CampaignLeagueDivision division : divisions) {
+            grid.add(buildLeagueRecordPanel(division));
+        }
+        wrapper.add(grid, BorderLayout.CENTER);
+
+        JPanel buttons = new JPanel(new GridLayout(1, 2, 18, 0));
+        buttons.setOpaque(false);
+        buttons.setBorder(new EmptyBorder(16, 0, 0, 0));
+        JButton backButton = makeDashboardButton("Back to League");
+        backButton.addActionListener(e -> displayLeagueDashboard());
+        JButton divisionsButton = makeDashboardButton("Divisions");
+        divisionsButton.addActionListener(e -> displayLeagueDivisions());
+        buttons.add(backButton);
+        buttons.add(divisionsButton);
+        wrapper.add(buttons, BorderLayout.SOUTH);
+
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildLeagueRecordPanel(CampaignLeagueDivision division) {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        CampaignPlayer player = campaign == null ? null : campaign.getPlayer();
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        boolean eligible = division != null && division.isUnlockedByCollectionSize(collectionSize);
+        CampaignLeagueRecord record = campaign == null || division == null
+                ? new CampaignLeagueRecord("")
+                : campaign.getLeagueRecord(division);
+        boolean titleWon = hasLeagueTitle(record);
+
+        panel.setBackground(titleWon ? new Color(255, 248, 220) : new Color(255, 250, 235));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(titleWon ? new Color(190, 150, 50) : new Color(180, 160, 120), 2),
+                new EmptyBorder(14, 16, 14, 16)
+        ));
+
+        String winPct = String.format("%.1f%%", record.getWinPercentage());
+        String leagueStatus = titleWon
+                ? "League Title Won"
+                : (eligible ? "Eligible" : "Locked");
+        String eligibleText = eligible
+                ? "Collection Gate Met"
+                : "Need " + Math.max(0, division.getMinimumCollectionSize() - collectionSize) + " more cards";
+        CampaignLeagueDivision.RewardTier bestTier = division.getRewardTierForWins(record.getBestWins());
+        String bestReward = bestTier == null
+                ? "No final pack earned yet"
+                : bestTier.getPackName(division);
+
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>" + escapeHtml(division.getDisplayName()) + "</b><br>"
+                        + "<b>" + escapeHtml(leagueStatus) + "</b> | "
+                        + escapeHtml(eligibleText) + "<br>"
+                        + "Seasons Played: " + record.getSeasonsPlayed() + "<br>"
+                        + "Best Season: " + record.getBestWins() + "-"
+                        + (division.getSeasonLength() - record.getBestWins()) + "<br>"
+                        + "Best Reward: " + escapeHtml(bestReward) + "<br>"
+                        + "Perfect Seasons: " + record.getPerfectSeasons() + "<br>"
+                        + "Total Record: " + escapeHtml(record.getTotalRecordText())
+                        + " (" + winPct + ")<br>"
+                        + "Last Season: " + escapeHtml(record.getLastResult())
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+        return panel;
+    }
+
+
+    private String getTournamentScopeLabel(CampaignTournament tournament) {
+        if (tournament == null) {
+            return "Scope";
+        }
+        if (tournament.isTagTournament()) {
+            return "Tag";
+        }
+        if (tournament.isEraTournament()) {
+            return "Era";
+        }
+        return "Scope";
+    }
+
     private void displayTournamentsDashboard() {
         cancelCollectionLoadWorker();
         showingActiveDeckCards = false;
@@ -1180,7 +2004,7 @@ public class RunCampaignMode implements Runnable {
             return;
         }
 
-        displayTitleLabel.setText("Era Tournaments");
+        displayTitleLabel.setText("Tournaments");
         displayPanel.removeAll();
         displayPanel.setLayout(new BorderLayout(14, 14));
         displayPanel.setBackground(new Color(255, 253, 245));
@@ -1190,11 +2014,13 @@ public class RunCampaignMode implements Runnable {
         wrapper.setBorder(new EmptyBorder(20, 24, 24, 24));
 
         String activeEras = campaign == null ? "" : campaign.getActiveEraNamesText();
+        String activeTags = campaign == null ? "" : campaign.getActiveTagNamesText();
         String nextRotation = campaign == null ? "" : campaign.getTournamentRotationCountdownText();
         JLabel intro = new JLabel(
-                "<html><center>Three era tournaments are active at a time and rotate every 3 real-world hours. "
-                        + "Tournament decks are still auto-built from your best 10 owned cards in that era."
-                        + "<br><br><b>Active now:</b> " + escapeHtml(activeEras)
+                "<html><center>Three era tournaments and three tag tournaments are active at a time. "
+                        + "Tournament decks are auto-built from your best 10 owned cards in that scope."
+                        + "<br><br><b>Active eras:</b> " + escapeHtml(activeEras)
+                        + "<br><b>Active tags:</b> " + escapeHtml(activeTags)
                         + "<br><b>Next rotation:</b> " + escapeHtml(nextRotation)
                         + "</center></html>",
                 SwingConstants.CENTER
@@ -1203,21 +2029,31 @@ public class RunCampaignMode implements Runnable {
         intro.setForeground(new Color(35, 35, 35));
         wrapper.add(intro, BorderLayout.NORTH);
 
-        java.util.List<CampaignTournament> tournaments = campaign.getEraTournaments();
+        java.util.List<CampaignTournament> tournaments = campaign.getActiveCampaignTournaments();
         JPanel choices = new JPanel(new GridLayout(0, 2, 22, 22));
         choices.setOpaque(false);
 
-        for (CampaignTournament tournament : tournaments) {
-            choices.add(buildTournamentChoicePanel(tournament));
+        if (tournaments == null || tournaments.isEmpty()) {
+            JLabel emptyLabel = new JLabel(
+                    "<html><center>No active tournaments are available right now.</center></html>",
+                    SwingConstants.CENTER
+            );
+            emptyLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+            choices.add(emptyLabel);
+        } else {
+            for (CampaignTournament tournament : tournaments) {
+                choices.add(buildTournamentChoicePanel(tournament));
+            }
         }
 
-        int bottomButtonCount = activeTournament == null || activeTournamentDeck == null
-                || activeTournamentDeck.isEmpty() ? 2 : 3;
+        boolean hasCurrentTournamentRun = activeTournament != null && activeTournamentDeck != null
+                && !activeTournamentDeck.isEmpty();
+        int bottomButtonCount = hasCurrentTournamentRun ? 2 : 1;
         JPanel bottomButtons = new JPanel(new GridLayout(1, bottomButtonCount, 18, 0));
         bottomButtons.setOpaque(false);
         bottomButtons.setBorder(new EmptyBorder(18, 0, 0, 0));
 
-        if (bottomButtonCount == 3) {
+        if (hasCurrentTournamentRun) {
             JButton continueRunButton = makeDashboardButton("Continue Current Run");
             continueRunButton.addActionListener(e -> displayTournamentRunDashboard(
                     activeTournament, Math.max(1, Math.min(3, activeTournamentNextRound))
@@ -1225,11 +2061,8 @@ public class RunCampaignMode implements Runnable {
             bottomButtons.add(continueRunButton);
         }
 
-        JButton trophyButton = makeDashboardButton("Trophy Cabinet");
-        trophyButton.addActionListener(e -> displayTrophyCabinet());
         JButton refreshButton = makeDashboardButton("Refresh Rotation");
         refreshButton.addActionListener(e -> displayTournamentsDashboard());
-        bottomButtons.add(trophyButton);
         bottomButtons.add(refreshButton);
 
         wrapper.add(choices, BorderLayout.CENTER);
@@ -1248,7 +2081,7 @@ public class RunCampaignMode implements Runnable {
         ));
 
         int owned = campaign.getOwnedCountForTournament(tournament);
-        int required = tournament.getRequiredEraCards();
+        int required = tournament.getRequiredCards();
         boolean eligible = campaign.canEnterTournament(tournament);
         boolean ready = campaign.canStartTournament(tournament);
         boolean hasCurrentRun = activeTournament != null
@@ -1265,13 +2098,14 @@ public class RunCampaignMode implements Runnable {
                 : "Locked: " + owned + "/" + required + " owned";
         String deckStrengthText = eligible
                 ? "<br>Deck Strength: " + String.format("%.2f", campaign.getTournamentDeckStrength(tournament))
-                : "<br>Need " + (required - owned) + " more " + tournament.getEraName() + " cards";
+                : "<br>Need " + (required - owned) + " more " + tournament.getScopeName() + " cards";
 
         JLabel details = new JLabel(
                 "<html><center>"
                         + "<b>" + escapeHtml(tournament.getTournamentName()) + "</b><br>"
-                        + escapeHtml(tournament.getEraName()) + " | Elections "
-                        + escapeHtml(tournament.getElectionYearRangeText())
+                        + escapeHtml(getTournamentScopeLabel(tournament)) + ": "
+                        + escapeHtml(tournament.getScopeName())
+                        + " | Elections " + escapeHtml(tournament.getElectionYearRangeText())
                         + "<br><b>" + escapeHtml(activeText) + "</b><br><br>"
                         + escapeHtml(readinessText)
                         + deckStrengthText
@@ -1306,12 +2140,39 @@ public class RunCampaignMode implements Runnable {
             buttonEnabled = ready;
         }
 
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+        buttonPanel.setOpaque(false);
+
         JButton enterButton = makeDashboardButton(buttonText);
         enterButton.setEnabled(buttonEnabled);
         enterButton.addActionListener(e -> playTournamentFromUI(tournament));
-        panel.add(enterButton, BorderLayout.SOUTH);
+        buttonPanel.add(enterButton);
+
+        JButton collectionButton = makeDashboardButton("View Cards");
+        collectionButton.addActionListener(e -> displayTournamentCollectionView(tournament));
+        buttonPanel.add(collectionButton);
+
+        panel.add(buttonPanel, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    private void displayTournamentCollectionView(CampaignTournament tournament) {
+        if (campaign == null || tournament == null) {
+            return;
+        }
+
+        collectionOwnershipFilter = COLLECTION_OWNERSHIP_OWNED;
+        if (tournament.isEraTournament()) {
+            collectionScopeMode = COLLECTION_SCOPE_ERA;
+            collectionEraFilterId = tournament.getId();
+        } else if (tournament.isTagTournament()) {
+            collectionScopeMode = COLLECTION_SCOPE_TAG;
+            collectionTagFilter = tournament.getScopeName();
+        } else {
+            collectionScopeMode = COLLECTION_SCOPE_ALL;
+        }
+        displayCollectionCards();
     }
 
     private void playTournamentFromUI(CampaignTournament tournament) {
@@ -1371,10 +2232,9 @@ public class RunCampaignMode implements Runnable {
             );
         }
 
-        activeTournament = tournament;
-        activeTournamentDeck = campaign.getTournamentActiveDeck(tournament);
-        activeTournamentNextRound = 1;
-        campaign.recordTournamentAttemptStarted(tournament);
+        // Entering the tournament screen is now only a preview. The run is not
+        // locked, and the attempt is not recorded, until the player actually
+        // clicks Play/Sim for Round 1.
         displayTournamentRunDashboard(tournament, 1);
     }
 
@@ -1399,12 +2259,13 @@ public class RunCampaignMode implements Runnable {
         JLabel details = new JLabel(
                 "<html><center>"
                         + "<b>" + escapeHtml(tournament.getTournamentName()) + "</b><br>"
-                        + escapeHtml(tournament.getEraName())
+                        + escapeHtml(getTournamentScopeLabel(tournament)) + ": "
+                        + escapeHtml(tournament.getScopeName())
                         + " | Elections " + escapeHtml(tournament.getElectionYearRangeText())
                         + "<br><br>"
-                        + "Tournament deck locked at entry: "
-                        + getActiveTournamentDeckSize() + "/" + tournament.getRequiredEraCards() + " cards"
-                        + "<br>Deck Strength: " + String.format("%.2f", getActiveTournamentDeckStrength())
+                        + getTournamentDeckStatusText(tournament) + ": "
+                        + getTournamentDeckSizeForDisplay(tournament) + "/" + tournament.getRequiredCards() + " cards"
+                        + "<br>Deck Strength: " + String.format("%.2f", getTournamentDeckStrengthForDisplay(tournament))
                         + "<br><br>"
                         + "Round 1: Easy / " + CampaignMode.formatPC(tournament.getRoundWinPC(1))
                         + " + Souvenir Pack<br>"
@@ -1423,7 +2284,7 @@ public class RunCampaignMode implements Runnable {
         details.setForeground(new Color(20, 35, 65));
         wrapper.add(details, BorderLayout.NORTH);
 
-        wrapper.add(buildActiveTournamentDeckPanel(), BorderLayout.CENTER);
+        wrapper.add(buildActiveTournamentDeckPanel(tournament), BorderLayout.CENTER);
 
         JPanel buttons = new JPanel(new GridLayout(1, 2, 18, 0));
         buttons.setOpaque(false);
@@ -1439,16 +2300,40 @@ public class RunCampaignMode implements Runnable {
         updateDisplayPanel();
     }
 
-    private int getActiveTournamentDeckSize() {
-        return activeTournamentDeck == null ? 0 : activeTournamentDeck.size();
+    private boolean hasStartedTournamentRun(CampaignTournament tournament) {
+        return tournament != null
+                && activeTournament != null
+                && activeTournament.equals(tournament)
+                && activeTournamentDeck != null
+                && !activeTournamentDeck.isEmpty();
     }
 
-    private double getActiveTournamentDeckStrength() {
-        if (activeTournamentDeck == null || activeTournamentDeck.isEmpty()) {
+    private String getTournamentDeckStatusText(CampaignTournament tournament) {
+        return hasStartedTournamentRun(tournament)
+                ? "Tournament deck locked for this run"
+                : "Tournament deck preview; locks when Round 1 starts";
+    }
+
+    private List<President> getTournamentDeckForDisplay(CampaignTournament tournament) {
+        if (hasStartedTournamentRun(tournament)) {
+            return new ArrayList<President>(activeTournamentDeck);
+        }
+        return campaign == null || tournament == null
+                ? new ArrayList<President>()
+                : campaign.getTournamentActiveDeck(tournament);
+    }
+
+    private int getTournamentDeckSizeForDisplay(CampaignTournament tournament) {
+        return getTournamentDeckForDisplay(tournament).size();
+    }
+
+    private double getTournamentDeckStrengthForDisplay(CampaignTournament tournament) {
+        List<President> deck = getTournamentDeckForDisplay(tournament);
+        if (deck.isEmpty()) {
             return 0.0;
         }
 
-        List<President> sortedDeck = new ArrayList<President>(activeTournamentDeck);
+        List<President> sortedDeck = new ArrayList<President>(deck);
         Collections.sort(sortedDeck, presidentAverageComparator());
 
         int topCount = Math.min(5, sortedDeck.size());
@@ -1469,12 +2354,48 @@ public class RunCampaignMode implements Runnable {
         return (0.30 * topFiveAverage) + (0.70 * fullDeckAverage);
     }
 
+    private boolean startTournamentRunIfNeeded(CampaignTournament tournament) {
+        if (tournament == null || campaign == null) {
+            return false;
+        }
+
+        if (hasStartedTournamentRun(tournament)) {
+            return true;
+        }
+
+        if (activeTournament != null
+                && activeTournamentDeck != null
+                && !activeTournamentDeck.isEmpty()
+                && !activeTournament.equals(tournament)) {
+            showShortDialog(
+                    "Current Run Active",
+                    "Finish your current " + activeTournament.getTournamentName()
+                            + " run before starting another tournament.",
+                    true
+            );
+            return false;
+        }
+
+        List<President> lockedDeck = campaign.getTournamentActiveDeck(tournament);
+        if (lockedDeck.size() < tournament.getRequiredCards()) {
+            showShortDialog("Tournament Locked", campaign.getTournamentEligibilityText(tournament), true);
+            return false;
+        }
+
+        activeTournament = tournament;
+        activeTournamentDeck = new ArrayList<President>(lockedDeck);
+        activeTournamentNextRound = 1;
+        campaign.recordTournamentAttemptStarted(tournament);
+        return true;
+    }
+
     private String buildActiveTournamentDeckText() {
-        if (activeTournamentDeck == null || activeTournamentDeck.isEmpty()) {
+        List<President> deck = getTournamentDeckForDisplay(activeTournament);
+        if (deck.isEmpty()) {
             return "Tournament deck not loaded.";
         }
 
-        List<President> sortedDeck = new ArrayList<President>(activeTournamentDeck);
+        List<President> sortedDeck = new ArrayList<President>(deck);
         Collections.sort(sortedDeck, presidentAverageComparator());
 
         StringBuilder deckText = new StringBuilder();
@@ -1488,7 +2409,7 @@ public class RunCampaignMode implements Runnable {
         return deckText.toString();
     }
 
-    private JPanel buildActiveTournamentDeckPanel() {
+    private JPanel buildActiveTournamentDeckPanel(CampaignTournament tournament) {
         JPanel outer = new JPanel(new BorderLayout(10, 10));
         outer.setOpaque(false);
         outer.setBorder(BorderFactory.createCompoundBorder(
@@ -1498,19 +2419,20 @@ public class RunCampaignMode implements Runnable {
 
         JLabel title = new JLabel(
                 "<html><center><b>Tournament Deck</b><br>"
-                        + "Best 10 owned cards from this era, locked at entry.</center></html>",
+                        + escapeHtml(getTournamentDeckStatusText(tournament)) + ".</center></html>",
                 SwingConstants.CENTER
         );
         title.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
         title.setForeground(new Color(20, 35, 65));
         outer.add(title, BorderLayout.NORTH);
 
-        if (activeTournamentDeck == null || activeTournamentDeck.isEmpty()) {
+        List<President> displayDeck = getTournamentDeckForDisplay(tournament);
+        if (displayDeck.isEmpty()) {
             outer.add(makeCenteredDisplayMessage("Tournament deck not loaded."), BorderLayout.CENTER);
             return outer;
         }
 
-        List<President> sortedDeck = new ArrayList<President>(activeTournamentDeck);
+        List<President> sortedDeck = new ArrayList<President>(displayDeck);
         Collections.sort(sortedDeck, presidentAverageComparator());
 
         int imageWidth = getTournamentDeckCardImageWidth();
@@ -1568,10 +2490,8 @@ public class RunCampaignMode implements Runnable {
             showShortDialog("Tournament Locked", campaign.getTournamentEligibilityText(tournament), true);
             return;
         }
-        if (activeTournament == null || !activeTournament.equals(tournament)
-                || activeTournamentDeck == null || activeTournamentDeck.isEmpty()) {
-            activeTournament = tournament;
-            activeTournamentDeck = campaign.getTournamentActiveDeck(tournament);
+        if (!startTournamentRunIfNeeded(tournament)) {
+            return;
         }
 
         final CampaignMatchConfig config;
@@ -1662,10 +2582,8 @@ public class RunCampaignMode implements Runnable {
             showShortDialog("Tournament Locked", campaign.getTournamentEligibilityText(tournament), true);
             return;
         }
-        if (activeTournament == null || !activeTournament.equals(tournament)
-                || activeTournamentDeck == null || activeTournamentDeck.isEmpty()) {
-            activeTournament = tournament;
-            activeTournamentDeck = campaign.getTournamentActiveDeck(tournament);
+        if (!startTournamentRunIfNeeded(tournament)) {
+            return;
         }
 
         setActionButtonsEnabled(false);
@@ -1830,69 +2748,596 @@ public class RunCampaignMode implements Runnable {
 
         displayTitleLabel.setText("Trophy Cabinet");
         displayPanel.removeAll();
-        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setLayout(new BorderLayout());
         displayPanel.setBackground(new Color(255, 253, 245));
 
         JPanel wrapper = new JPanel(new BorderLayout(16, 16));
         wrapper.setOpaque(false);
-        wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
+        wrapper.add(buildRosterTabPanel("Trophy Cabinet"), BorderLayout.NORTH);
 
-        int completed = campaign.getCompletedTournamentEraCount();
-        int total = campaign.getEraTournaments().size();
+        JPanel body = new JPanel(new BorderLayout(16, 16));
+        body.setOpaque(false);
+        body.setBorder(new EmptyBorder(18, 24, 24, 24));
+
+        int completedEras = campaign.getCompletedTournamentEraCount();
+        int completedTags = campaign.getCompletedTournamentTagCount();
+        int totalEras = campaign.getEraTournaments().size();
+        int totalTags = campaign.getTagTournaments().size();
+        int leagueTitles = getLeagueTitleCount();
+        int perfectLeagueSeasons = getPerfectLeagueSeasonCount();
+
         JLabel summary = new JLabel(
                 "<html><center><b>Trophy Cabinet</b><br>"
-                        + "Completed Eras: " + completed + "/" + total
-                        + " | Total Titles: " + campaign.getTotalTournamentTitles()
-                        + " | Attempts: " + campaign.getTotalTournamentAttempts()
-                        + "<br>First championship in each era awards +"
+                        + "Completed Eras: " + completedEras + "/" + totalEras
+                        + " | Completed Tags: " + completedTags + "/" + totalTags
+                        + " | Tournament Titles: " + campaign.getTotalTournamentTitles()
+                        + " | League Titles: " + leagueTitles
+                        + " | Perfect League Seasons: " + perfectLeagueSeasons
+                        + "<br>First championship in each tournament awards +"
                         + CampaignMode.formatPC(campaign.getFirstTournamentTitleBonusPC())
-                        + " and an extra Era Champion Pack."
+                        + " and an extra Champion Pack."
                         + "</center></html>",
                 SwingConstants.CENTER
         );
         summary.setFont(new Font("Dialog", Font.BOLD, Math.max(16, (int) (18 * (cardSize / 275.0)))));
         summary.setForeground(new Color(20, 35, 65));
-        wrapper.add(summary, BorderLayout.NORTH);
 
-        JPanel recordsPanel = new JPanel(new GridLayout(0, 2, 20, 20));
+        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+        topPanel.setOpaque(false);
+        topPanel.add(summary, BorderLayout.NORTH);
+        topPanel.add(buildTrophyFilterPanel(), BorderLayout.SOUTH);
+        body.add(topPanel, BorderLayout.NORTH);
+
+        JPanel recordsPanel = new JPanel(new BorderLayout(16, 16));
         recordsPanel.setOpaque(false);
 
-        for (CampaignTournament tournament : campaign.getEraTournaments()) {
-            recordsPanel.add(buildTrophyRecordPanel(tournament));
+        boolean showTournaments = shouldShowTournamentTrophies();
+        boolean showLeagues = shouldShowLeagueTrophies();
+
+        if (showTournaments) {
+            List<CampaignTournament> visibleTournaments = getVisibleTrophyTournaments();
+            recordsPanel.add(buildTournamentTrophySection(visibleTournaments), BorderLayout.NORTH);
+        }
+        if (showLeagues) {
+            recordsPanel.add(buildLeagueTrophySection(), showTournaments ? BorderLayout.CENTER : BorderLayout.NORTH);
+        }
+        if (!showTournaments && !showLeagues) {
+            recordsPanel.add(makeCenteredDisplayMessage("No trophy section matches those filters."), BorderLayout.CENTER);
         }
 
-        wrapper.add(recordsPanel, BorderLayout.CENTER);
+        body.add(recordsPanel, BorderLayout.CENTER);
 
         JPanel buttons = new JPanel(new GridLayout(1, 2, 18, 0));
         buttons.setOpaque(false);
         buttons.setBorder(new EmptyBorder(16, 0, 0, 0));
-        JButton backButton = makeDashboardButton("Back to Tournaments");
-        backButton.addActionListener(e -> displayTournamentsDashboard());
+        JButton collectionButton = makeDashboardButton("Collection");
+        collectionButton.addActionListener(e -> displayCollectionCards());
         JButton storeButton = makeDashboardButton("Store");
         storeButton.addActionListener(e -> displayStoreDashboard());
-        buttons.add(backButton);
+        buttons.add(collectionButton);
         buttons.add(storeButton);
-        wrapper.add(buttons, BorderLayout.SOUTH);
+        body.add(buttons, BorderLayout.SOUTH);
 
+        wrapper.add(body, BorderLayout.CENTER);
         displayPanel.add(wrapper, BorderLayout.NORTH);
         updateDisplayPanel();
     }
 
+    private JPanel buildTournamentTrophySection(List<CampaignTournament> visibleTournaments) {
+        JPanel section = new JPanel(new BorderLayout(10, 10));
+        section.setOpaque(false);
+
+        JLabel title = new JLabel("Tournament Trophies", SwingConstants.CENTER);
+        title.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+        title.setForeground(new Color(20, 35, 65));
+        section.add(title, BorderLayout.NORTH);
+
+        if (visibleTournaments == null || visibleTournaments.isEmpty()) {
+            JLabel emptyLabel = new JLabel(
+                    "<html><center><b>No tournaments match those filters.</b><br>"
+                            + "Try changing the type or status filter."
+                            + "</center></html>",
+                    SwingConstants.CENTER
+            );
+            emptyLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+            emptyLabel.setForeground(new Color(20, 35, 65));
+            JPanel emptyPanel = new JPanel(new BorderLayout());
+            emptyPanel.setOpaque(false);
+            emptyPanel.setBorder(new EmptyBorder(24, 10, 24, 10));
+            emptyPanel.add(emptyLabel, BorderLayout.CENTER);
+            section.add(emptyPanel, BorderLayout.CENTER);
+            return section;
+        }
+
+        JPanel grid = new JPanel(new GridLayout(0, 2, 20, 20));
+        grid.setOpaque(false);
+        for (CampaignTournament tournament : visibleTournaments) {
+            grid.add(buildTrophyRecordPanel(tournament));
+        }
+        section.add(grid, BorderLayout.CENTER);
+        return section;
+    }
+
+    private JPanel buildLeagueTrophySection() {
+        JPanel section = new JPanel(new BorderLayout(10, 10));
+        section.setOpaque(false);
+        section.setBorder(new EmptyBorder(18, 0, 0, 0));
+
+        JLabel title = new JLabel("League Trophies", SwingConstants.CENTER);
+        title.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+        title.setForeground(new Color(20, 35, 65));
+        section.add(title, BorderLayout.NORTH);
+
+        List<CampaignLeagueDivision> divisions = getVisibleLeagueTrophyDivisions();
+        if (divisions.isEmpty()) {
+            section.add(makeCenteredDisplayMessage("No League records match those filters."), BorderLayout.CENTER);
+            return section;
+        }
+
+        JPanel grid = new JPanel(new GridLayout(0, 1, 0, 14));
+        grid.setOpaque(false);
+        for (CampaignLeagueDivision division : divisions) {
+            grid.add(buildLeagueRecordPanel(division));
+        }
+        section.add(grid, BorderLayout.CENTER);
+        return section;
+    }
+
+    private JPanel buildTrophyFilterPanel() {
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 4));
+        filterPanel.setOpaque(false);
+
+        JLabel showLabel = new JLabel("Show:");
+        showLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
+        showLabel.setForeground(new Color(20, 35, 65));
+        filterPanel.add(showLabel);
+
+        JComboBox<String> typeBox = new JComboBox<String>(new String[] {
+                TROPHY_TYPE_ALL,
+                TROPHY_TYPE_TOURNAMENTS,
+                TROPHY_TYPE_ERAS,
+                TROPHY_TYPE_TAGS,
+                TROPHY_TYPE_LEAGUES
+        });
+        typeBox.setSelectedItem(trophyTypeFilter);
+        typeBox.addActionListener(e -> {
+            Object selected = typeBox.getSelectedItem();
+            trophyTypeFilter = selected == null ? TROPHY_TYPE_ALL : selected.toString();
+            displayTrophyCabinet();
+        });
+        filterPanel.add(typeBox);
+
+        JLabel statusLabel = new JLabel("Status:");
+        statusLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
+        statusLabel.setForeground(new Color(20, 35, 65));
+        filterPanel.add(statusLabel);
+
+        JComboBox<String> statusBox = new JComboBox<String>(new String[] {
+                TROPHY_STATUS_ALL,
+                TROPHY_STATUS_WON,
+                TROPHY_STATUS_ENTERED,
+                TROPHY_STATUS_ELIGIBLE,
+                TROPHY_STATUS_LOCKED
+        });
+        statusBox.setSelectedItem(trophyStatusFilter);
+        statusBox.addActionListener(e -> {
+            Object selected = statusBox.getSelectedItem();
+            trophyStatusFilter = selected == null ? TROPHY_STATUS_ALL : selected.toString();
+            displayTrophyCabinet();
+        });
+        filterPanel.add(statusBox);
+
+        JLabel sortLabel = new JLabel("Sort:");
+        sortLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
+        sortLabel.setForeground(new Color(20, 35, 65));
+        filterPanel.add(sortLabel);
+
+        JComboBox<String> sortBox = new JComboBox<String>(new String[] {
+                TROPHY_SORT_DEFAULT,
+                TROPHY_SORT_TITLES,
+                TROPHY_SORT_BEST_FINISH,
+                TROPHY_SORT_ELIGIBLE,
+                TROPHY_SORT_ATTEMPTS,
+                TROPHY_SORT_ALPHABETICAL
+        });
+        sortBox.setSelectedItem(trophySortMode);
+        sortBox.addActionListener(e -> {
+            Object selected = sortBox.getSelectedItem();
+            trophySortMode = selected == null ? TROPHY_SORT_DEFAULT : selected.toString();
+            displayTrophyCabinet();
+        });
+        filterPanel.add(sortBox);
+
+        JButton resetButton = makeDashboardButton("Reset");
+        resetButton.addActionListener(e -> {
+            trophyTypeFilter = TROPHY_TYPE_ALL;
+            trophyStatusFilter = TROPHY_STATUS_ALL;
+            trophySortMode = TROPHY_SORT_DEFAULT;
+            displayTrophyCabinet();
+        });
+        filterPanel.add(resetButton);
+
+        return filterPanel;
+    }
+
+    private boolean shouldShowTournamentTrophies() {
+        return !TROPHY_TYPE_LEAGUES.equals(trophyTypeFilter);
+    }
+
+    private boolean shouldShowLeagueTrophies() {
+        return TROPHY_TYPE_ALL.equals(trophyTypeFilter) || TROPHY_TYPE_LEAGUES.equals(trophyTypeFilter);
+    }
+
+    private List<CampaignLeagueDivision> getVisibleLeagueTrophyDivisions() {
+        ArrayList<CampaignLeagueDivision> divisions = new ArrayList<CampaignLeagueDivision>();
+        if (campaign == null) {
+            return divisions;
+        }
+
+        for (CampaignLeagueDivision division : campaign.getLeagueDivisions()) {
+            if (matchesLeagueTrophyStatusFilter(division)) {
+                divisions.add(division);
+            }
+        }
+        sortLeagueTrophyDivisions(divisions);
+        return divisions;
+    }
+
+    private boolean matchesLeagueTrophyStatusFilter(CampaignLeagueDivision division) {
+        if (division == null || TROPHY_STATUS_ALL.equals(trophyStatusFilter)) {
+            return true;
+        }
+
+        CampaignLeagueRecord record = campaign.getLeagueRecord(division);
+        boolean titleWon = hasLeagueTitle(record);
+        boolean entered = record.getSeasonsPlayed() > 0;
+        CampaignPlayer player = campaign.getPlayer();
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        boolean eligible = division.isUnlockedByCollectionSize(collectionSize);
+
+        if (TROPHY_STATUS_WON.equals(trophyStatusFilter)) {
+            return titleWon;
+        }
+        if (TROPHY_STATUS_ENTERED.equals(trophyStatusFilter)) {
+            return entered;
+        }
+        if (TROPHY_STATUS_ELIGIBLE.equals(trophyStatusFilter)) {
+            return eligible;
+        }
+        if (TROPHY_STATUS_LOCKED.equals(trophyStatusFilter)) {
+            return !eligible;
+        }
+        return true;
+    }
+
+    private void sortLeagueTrophyDivisions(List<CampaignLeagueDivision> divisions) {
+        if (divisions == null || divisions.size() <= 1) {
+            return;
+        }
+
+        if (TROPHY_SORT_TITLES.equals(trophySortMode)) {
+            Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+                @Override
+                public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                    int cmp = boolScore(hasLeagueTitle(campaign.getLeagueRecord(b)))
+                            - boolScore(hasLeagueTitle(campaign.getLeagueRecord(a)));
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return a.getDivisionNumber() - b.getDivisionNumber();
+                }
+            });
+        } else if (TROPHY_SORT_BEST_FINISH.equals(trophySortMode)) {
+            Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+                @Override
+                public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                    int cmp = campaign.getLeagueRecord(b).getBestWins()
+                            - campaign.getLeagueRecord(a).getBestWins();
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return a.getDivisionNumber() - b.getDivisionNumber();
+                }
+            });
+        } else if (TROPHY_SORT_ATTEMPTS.equals(trophySortMode)) {
+            Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+                @Override
+                public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                    int cmp = campaign.getLeagueRecord(b).getSeasonsPlayed()
+                            - campaign.getLeagueRecord(a).getSeasonsPlayed();
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return a.getDivisionNumber() - b.getDivisionNumber();
+                }
+            });
+        } else if (TROPHY_SORT_ELIGIBLE.equals(trophySortMode)) {
+            Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+                @Override
+                public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                    int cmp = getLeagueTrophyEligibilityRank(a) - getLeagueTrophyEligibilityRank(b);
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    cmp = getLeagueCardsNeeded(a) - getLeagueCardsNeeded(b);
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return a.getDivisionNumber() - b.getDivisionNumber();
+                }
+            });
+        } else if (TROPHY_SORT_ALPHABETICAL.equals(trophySortMode)) {
+            Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+                @Override
+                public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                    return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
+                }
+            });
+        } else {
+            Collections.sort(divisions, new Comparator<CampaignLeagueDivision>() {
+                @Override
+                public int compare(CampaignLeagueDivision a, CampaignLeagueDivision b) {
+                    return a.getDivisionNumber() - b.getDivisionNumber();
+                }
+            });
+        }
+    }
+
+    private int boolScore(boolean value) {
+        return value ? 1 : 0;
+    }
+
+    private int getLeagueTrophyEligibilityRank(CampaignLeagueDivision division) {
+        CampaignLeagueRecord record = campaign.getLeagueRecord(division);
+        if (hasLeagueTitle(record)) {
+            return 0;
+        }
+        CampaignPlayer player = campaign.getPlayer();
+        int collectionSize = player == null ? 0 : player.getCollectionSize();
+        if (division.isUnlockedByCollectionSize(collectionSize)) {
+            return 1;
+        }
+        return 2;
+    }
+
+    private int getLeagueCardsNeeded(CampaignLeagueDivision division) {
+        if (division == null || campaign == null || campaign.getPlayer() == null) {
+            return Integer.MAX_VALUE;
+        }
+        return Math.max(0, division.getMinimumCollectionSize() - campaign.getPlayer().getCollectionSize());
+    }
+
+    private int getLeagueTitleCount() {
+        if (campaign == null) {
+            return 0;
+        }
+        int count = 0;
+        for (CampaignLeagueDivision division : campaign.getLeagueDivisions()) {
+            if (hasLeagueTitle(campaign.getLeagueRecord(division))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getPerfectLeagueSeasonCount() {
+        if (campaign == null) {
+            return 0;
+        }
+        int count = 0;
+        for (CampaignLeagueDivision division : campaign.getLeagueDivisions()) {
+            count += campaign.getLeagueRecord(division).getPerfectSeasons();
+        }
+        return count;
+    }
+
+    private boolean hasLeagueTitle(CampaignLeagueRecord record) {
+        return record != null
+                && record.getBestWins() >= CampaignLeagueDivision.THIRD_REWARD_WIN_THRESHOLD;
+    }
+
+    private List<CampaignTournament> getVisibleTrophyTournaments() {
+        ArrayList<CampaignTournament> tournaments = new ArrayList<CampaignTournament>();
+
+        if (TROPHY_TYPE_LEAGUES.equals(trophyTypeFilter)) {
+            return tournaments;
+        } else if (TROPHY_TYPE_ERAS.equals(trophyTypeFilter)) {
+            tournaments.addAll(campaign.getEraTournaments());
+        } else if (TROPHY_TYPE_TAGS.equals(trophyTypeFilter)) {
+            tournaments.addAll(campaign.getTagTournaments());
+        } else {
+            tournaments.addAll(campaign.getEraTournaments());
+            tournaments.addAll(campaign.getTagTournaments());
+        }
+
+        ArrayList<CampaignTournament> filtered = new ArrayList<CampaignTournament>();
+        for (CampaignTournament tournament : tournaments) {
+            if (matchesTrophyStatusFilter(tournament)) {
+                filtered.add(tournament);
+            }
+        }
+
+        sortTrophyTournaments(filtered);
+        return filtered;
+    }
+
+    private boolean matchesTrophyStatusFilter(CampaignTournament tournament) {
+        if (tournament == null || TROPHY_STATUS_ALL.equals(trophyStatusFilter)) {
+            return true;
+        }
+
+        CampaignTournamentRecord record = campaign.getTournamentRecord(tournament);
+        int owned = campaign.getOwnedCountForTournament(tournament);
+        int required = tournament.getRequiredCards();
+
+        if (TROPHY_STATUS_WON.equals(trophyStatusFilter)) {
+            return record.hasWonTitle();
+        }
+        if (TROPHY_STATUS_ENTERED.equals(trophyStatusFilter)) {
+            return record.getAttempts() > 0;
+        }
+        if (TROPHY_STATUS_ELIGIBLE.equals(trophyStatusFilter)) {
+            return owned >= required;
+        }
+        if (TROPHY_STATUS_LOCKED.equals(trophyStatusFilter)) {
+            return owned < required;
+        }
+        return true;
+    }
+
+    private void sortTrophyTournaments(List<CampaignTournament> tournaments) {
+        if (tournaments == null || tournaments.size() <= 1) {
+            return;
+        }
+
+        if (TROPHY_SORT_TITLES.equals(trophySortMode)) {
+            Collections.sort(tournaments, new Comparator<CampaignTournament>() {
+                @Override
+                public int compare(CampaignTournament a, CampaignTournament b) {
+                    int cmp = campaign.getTournamentRecord(b).getTitles()
+                            - campaign.getTournamentRecord(a).getTitles();
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return compareTrophyDefault(a, b);
+                }
+            });
+        } else if (TROPHY_SORT_BEST_FINISH.equals(trophySortMode)) {
+            Collections.sort(tournaments, new Comparator<CampaignTournament>() {
+                @Override
+                public int compare(CampaignTournament a, CampaignTournament b) {
+                    int cmp = campaign.getTournamentRecord(b).getBestFinish()
+                            - campaign.getTournamentRecord(a).getBestFinish();
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return compareTrophyDefault(a, b);
+                }
+            });
+        } else if (TROPHY_SORT_ELIGIBLE.equals(trophySortMode)) {
+            Collections.sort(tournaments, new Comparator<CampaignTournament>() {
+                @Override
+                public int compare(CampaignTournament a, CampaignTournament b) {
+                    int cmp = getTrophyEligibilityRank(a) - getTrophyEligibilityRank(b);
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    cmp = getTrophyCardsNeeded(a) - getTrophyCardsNeeded(b);
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return compareTrophyDefault(a, b);
+                }
+            });
+        } else if (TROPHY_SORT_ATTEMPTS.equals(trophySortMode)) {
+            Collections.sort(tournaments, new Comparator<CampaignTournament>() {
+                @Override
+                public int compare(CampaignTournament a, CampaignTournament b) {
+                    int cmp = campaign.getTournamentRecord(b).getAttempts()
+                            - campaign.getTournamentRecord(a).getAttempts();
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    return compareTrophyDefault(a, b);
+                }
+            });
+        } else if (TROPHY_SORT_ALPHABETICAL.equals(trophySortMode)) {
+            Collections.sort(tournaments, new Comparator<CampaignTournament>() {
+                @Override
+                public int compare(CampaignTournament a, CampaignTournament b) {
+                    String aName = a == null ? "" : a.getTournamentName();
+                    String bName = b == null ? "" : b.getTournamentName();
+                    return aName.compareToIgnoreCase(bName);
+                }
+            });
+        } else {
+            Collections.sort(tournaments, new Comparator<CampaignTournament>() {
+                @Override
+                public int compare(CampaignTournament a, CampaignTournament b) {
+                    return compareTrophyDefault(a, b);
+                }
+            });
+        }
+    }
+
+    private int compareTrophyDefault(CampaignTournament a, CampaignTournament b) {
+        boolean aEra = a != null && a.isEraTournament();
+        boolean bEra = b != null && b.isEraTournament();
+        if (aEra && !bEra) {
+            return -1;
+        }
+        if (!aEra && bEra) {
+            return 1;
+        }
+
+        if (aEra && bEra) {
+            return getEraChronologyIndexByName(a.getScopeName()) - getEraChronologyIndexByName(b.getScopeName());
+        }
+
+        String aName = a == null ? "" : a.getTournamentName();
+        String bName = b == null ? "" : b.getTournamentName();
+        return aName.compareToIgnoreCase(bName);
+    }
+
+    private int getEraChronologyIndexByName(String eraName) {
+        if (eraName == null || campaign == null) {
+            return Integer.MAX_VALUE - 1;
+        }
+        List<CampaignTournament> tournaments = campaign.getEraTournaments();
+        for (int i = 0; i < tournaments.size(); i++) {
+            CampaignTournament tournament = tournaments.get(i);
+            if (tournament != null && safeEqualsIgnoreCase(eraName, tournament.getScopeName())) {
+                return i;
+            }
+        }
+        return Integer.MAX_VALUE - 1;
+    }
+
+    private int getTrophyEligibilityRank(CampaignTournament tournament) {
+        CampaignTournamentRecord record = campaign.getTournamentRecord(tournament);
+        if (record.hasWonTitle()) {
+            return 0;
+        }
+        if (campaign.getOwnedCountForTournament(tournament) >= tournament.getRequiredCards()) {
+            return 1;
+        }
+        return 2;
+    }
+
+    private int getTrophyCardsNeeded(CampaignTournament tournament) {
+        if (tournament == null) {
+            return Integer.MAX_VALUE;
+        }
+        int owned = campaign.getOwnedCountForTournament(tournament);
+        int required = tournament.getRequiredCards();
+        return Math.max(0, required - owned);
+    }
+
     private JPanel buildTrophyRecordPanel(CampaignTournament tournament) {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        boolean champion = campaign.getTournamentRecord(tournament).hasWonTitle();
+        boolean active = campaign.isTournamentActive(tournament);
+        CampaignTournamentRecord record = campaign.getTournamentRecord(tournament);
+        boolean champion = record.hasWonTitle();
         panel.setBackground(champion ? new Color(255, 248, 220) : new Color(255, 250, 235));
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(champion ? new Color(190, 150, 50) : new Color(180, 160, 120), 2),
                 new EmptyBorder(14, 14, 14, 14)
         ));
 
-        CampaignTournamentRecord record = campaign.getTournamentRecord(tournament);
+        int owned = campaign.getOwnedCountForTournament(tournament);
+        int required = tournament.getRequiredCards();
+        String entryStatus = owned >= required
+                ? "Entry: Eligible (" + owned + "/" + required + ")"
+                : "Entry: Need " + (required - owned) + " more (" + owned + "/" + required + ")";
+        String activeStatus = active ? "Active Now" : "Rotated Out";
         JLabel details = new JLabel(
                 "<html><center>"
                         + "<b>" + escapeHtml(tournament.getTournamentName()) + "</b><br>"
-                        + escapeHtml(tournament.getEraName()) + "<br><br>"
-                        + "Best Finish: <b>" + escapeHtml(record.getBestFinishLabel()) + "</b><br>"
+                        + escapeHtml(getTournamentScopeLabel(tournament)) + ": "
+                        + escapeHtml(tournament.getScopeName()) + "<br>"
+                        + escapeHtml(activeStatus) + "<br>"
+                        + escapeHtml(entryStatus)
+                        + "<br><br>Best Finish: <b>" + escapeHtml(record.getBestFinishLabel()) + "</b><br>"
                         + "Titles: " + record.getTitles() + "<br>"
                         + "Attempts: " + record.getAttempts() + "<br>"
                         + "Last Result: " + escapeHtml(record.getLastResult())
@@ -1935,21 +3380,24 @@ public class RunCampaignMode implements Runnable {
         JPanel choices = new JPanel(new GridLayout(0, 3, 24, 24));
         choices.setOpaque(false);
         choices.add(buildPackChoicePanel("Campaign Trail Pack", campaign.getCampaignTrailPack(),
-                "1 President", "0.0-10.0 rating",
+                "1 Candidate", "0.0-10.0 rating",
                 "Cheap chaos reroll. Any card can show up."));
         choices.add(buildPackChoicePanel("Filler Pack", campaign.getFillerPack(),
-                "5 Presidents", "0.0-3.0 rating",
+                "5 Candidates", "0.0-3.0 rating",
                 "Cheap depth and early collection filler."));
         choices.add(buildPackChoicePanel("Star Pack", campaign.getStarPack(),
-                "1 President", "3.5-10.0 rating",
+                "1 Candidate", "3.5-10.0 rating",
                 "Single-card gamble with a stronger floor."));
         choices.add(buildPackChoicePanel("Standard Pack", campaign.getStandardPack(),
-                "5 Presidents", "2.0-10.0 rating",
+                "5 Candidates", "2.0-10.0 rating",
                 "Balanced collection growth and active-deck upgrades."));
         choices.add(buildPackChoicePanel("Elite Pack", campaign.getElitePack(),
-                "3 Presidents", "4.0-10.0 rating",
+                "3 Candidates", "4.0-10.0 rating",
                 "Premium high-end hunting for your active deck."));
         choices.add(buildEraProspectStorePanel());
+        choices.add(buildTagProspectStorePanel());
+        choices.add(buildStateCampaignTrailStorePanel());
+        choices.add(buildIdeologyStarStorePanel());
 
         wrapper.add(choices, BorderLayout.CENTER);
         displayPanel.add(wrapper, BorderLayout.NORTH);
@@ -1979,8 +3427,8 @@ public class RunCampaignMode implements Runnable {
         JLabel details = new JLabel(
                 "<html><center>"
                         + "<b>Era Prospect Pack</b><br><br>"
-                        + "5 Presidents<br>"
-                        + "Active era only, 0.0-3.99 rating<br>"
+                        + "5 Candidates<br>"
+                        + "Active era only, 0.0-4.0 rating<br>"
                         + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
                         + "Targeted progress for currently active tournaments."
                         + affordText
@@ -2018,7 +3466,7 @@ public class RunCampaignMode implements Runnable {
 
         JLabel intro = new JLabel(
                 "<html><center>Choose an active era. Era Prospect Packs give 5 cards from that era, "
-                        + "rated 0.0-3.99, and rotate with tournaments every 3 real-world hours."
+                        + "rated 0.0-4.0, and rotate with tournaments every 3 real-world hours."
                         + "<br>Active now: " + escapeHtml(campaign.getActiveEraNamesText())
                         + " | Next rotation: " + escapeHtml(campaign.getTournamentRotationCountdownText())
                         + "</center></html>",
@@ -2049,7 +3497,7 @@ public class RunCampaignMode implements Runnable {
 
         int cost = campaign.getEraProspectPackCost();
         int owned = campaign.getOwnedCountForTournament(tournament);
-        int required = tournament.getRequiredEraCards();
+        int required = tournament.getRequiredCards();
         String affordText = campaign.getPlayer().getPC() >= cost
                 ? "You can afford this pack."
                 : "Need " + CampaignMode.formatPC(cost - campaign.getPlayer().getPC()) + " more.";
@@ -2059,7 +3507,7 @@ public class RunCampaignMode implements Runnable {
                         + "<b>" + escapeHtml(campaign.getEraProspectPackName(tournament)) + "</b><br>"
                         + escapeHtml(tournament.getTournamentName()) + "<br><br>"
                         + "Owned: " + owned + "/" + required + " for tournament entry<br>"
-                        + "5 cards, 0.0-3.99 rating<br>"
+                        + "5 cards, 0.0-4.0 rating<br>"
                         + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
                         + escapeHtml(affordText)
                         + "</center></html>",
@@ -2116,6 +3564,369 @@ public class RunCampaignMode implements Runnable {
         }
 
         displayPackResult(campaign.getEraProspectPackName(tournament), result.output);
+    }
+
+
+    private JPanel buildTagProspectStorePanel() {
+        JPanel panel = buildTargetedStorePanelBase();
+
+        int cost = campaign.getTagProspectPackCost();
+        String affordText = buildAffordText(cost);
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>Tag Prospect Pack</b><br><br>"
+                        + "5 Candidates<br>"
+                        + "Active tag only, 0.0-4.0 rating<br>"
+                        + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
+                        + "Targeted progress for currently active tag tournaments."
+                        + affordText
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (17 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+
+        JButton chooseButton = makeDashboardButton("Choose Tag");
+        chooseButton.addActionListener(e -> displayTagProspectDashboard());
+        panel.add(chooseButton, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void displayTagProspectDashboard() {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("Tag Prospect Packs");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(16, 16));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(24, 24, 24, 24));
+
+        JLabel intro = new JLabel(
+                "<html><center>Choose an active tag. Tag Prospect Packs give 5 cards from that tag, "
+                        + "rated 0.0-4.0, and rotate with tag tournaments every 3 real-world hours."
+                        + "<br>Active now: " + escapeHtml(campaign.getActiveTagNamesText())
+                        + " | Next rotation: " + escapeHtml(campaign.getTournamentRotationCountdownText())
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        intro.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+        intro.setForeground(new Color(35, 35, 35));
+        wrapper.add(intro, BorderLayout.NORTH);
+
+        JPanel choices = new JPanel(new GridLayout(0, 2, 22, 22));
+        choices.setOpaque(false);
+        for (CampaignTournament tournament : campaign.getActiveTagTournaments()) {
+            choices.add(buildTagProspectChoicePanel(tournament));
+        }
+
+        wrapper.add(choices, BorderLayout.CENTER);
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildTagProspectChoicePanel(CampaignTournament tournament) {
+        JPanel panel = buildTargetedStorePanelBase();
+
+        int cost = campaign.getTagProspectPackCost();
+        int owned = campaign.getOwnedCountForTournament(tournament);
+        int required = tournament.getRequiredCards();
+        String affordText = campaign.getPlayer().getPC() >= cost
+                ? "You can afford this pack."
+                : "Need " + CampaignMode.formatPC(cost - campaign.getPlayer().getPC()) + " more.";
+
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>" + escapeHtml(campaign.getTagProspectPackName(tournament)) + "</b><br>"
+                        + escapeHtml(tournament.getTournamentName()) + "<br><br>"
+                        + "Owned: " + owned + "/" + required + " for tournament entry<br>"
+                        + "5 cards, 0.0-4.0 rating<br>"
+                        + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
+                        + escapeHtml(affordText)
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+
+        JButton openButton = makeDashboardButton("Open");
+        openButton.addActionListener(e -> openTagProspectPackFromUI(tournament));
+        panel.add(openButton, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void openTagProspectPackFromUI(CampaignTournament tournament) {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (tournament == null || !tournament.isTagTournament()) {
+            showShortDialog("Pack Error", "That tag does not exist.", true);
+            return;
+        }
+
+        int cost = campaign.getTagProspectPackCost();
+        if (campaign.getPlayer().getPC() < cost) {
+            int needed = cost - campaign.getPlayer().getPC();
+            showShortDialog(
+                    "Not Enough Political Capital",
+                    "You need " + CampaignMode.formatPC(needed) + " more to open "
+                            + campaign.getTagProspectPackName(tournament) + ".\nCost: "
+                            + CampaignMode.formatPC(cost) + "\nCurrent balance: "
+                            + CampaignMode.formatPC(campaign.getPlayer().getPC()),
+                    true
+            );
+            return;
+        }
+
+        OperationResult result = captureBooleanOutput(() -> campaign.buyTagProspectPack(tournament));
+        appendLog(result.output);
+        refreshDashboard();
+
+        if (!result.success) {
+            showShortDialog(
+                    "Pack Error",
+                    result.output == null || result.output.trim().isEmpty()
+                            ? "Could not open " + campaign.getTagProspectPackName(tournament) + "."
+                            : result.output.trim(),
+                    true
+            );
+            return;
+        }
+
+        displayPackResult(campaign.getTagProspectPackName(tournament), result.output);
+    }
+
+    private JPanel buildStateCampaignTrailStorePanel() {
+        JPanel panel = buildTargetedStorePanelBase();
+        int cost = campaign.getStateCampaignTrailPackCost();
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>State Campaign Trail Packs</b><br><br>"
+                        + "1 Candidate<br>"
+                        + "Chosen state, 0.0-10.0 rating<br>"
+                        + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
+                        + "A slightly pricier targeted Campaign Trail Pack."
+                        + buildAffordText(cost)
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (17 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+
+        JButton chooseButton = makeDashboardButton("Choose State");
+        chooseButton.addActionListener(e -> displayStateCampaignTrailDashboard());
+        panel.add(chooseButton, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void displayStateCampaignTrailDashboard() {
+        displayTargetedSinglePickerDashboard(
+                "State Campaign Trail Packs",
+                "Choose a state. State Campaign Trail Packs give 1 card from that state, rated 0.0-10.0.",
+                campaign.getAvailableStatePackStates(),
+                campaign.getStateCampaignTrailPackCost(),
+                "State",
+                selectedState -> openStateCampaignTrailPackFromUI(selectedState)
+        );
+    }
+
+    private void openStateCampaignTrailPackFromUI(String state) {
+        openNamedTargetedPackFromUI(
+                campaign.getStateCampaignTrailPackName(state),
+                campaign.getStateCampaignTrailPack(state),
+                () -> campaign.buyStateCampaignTrailPack(state)
+        );
+    }
+
+    private JPanel buildIdeologyStarStorePanel() {
+        JPanel panel = buildTargetedStorePanelBase();
+        int cost = campaign.getIdeologyStarPackCost();
+        JLabel details = new JLabel(
+                "<html><center>"
+                        + "<b>Ideology Star Packs</b><br><br>"
+                        + "1 Candidate<br>"
+                        + "Chosen ideology, 3.5-10.0 rating<br>"
+                        + "Cost: " + CampaignMode.formatPC(cost) + "<br><br>"
+                        + "A slightly pricier targeted Star Pack."
+                        + buildAffordText(cost)
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        details.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (17 * (cardSize / 275.0)))));
+        details.setForeground(new Color(20, 35, 65));
+        panel.add(details, BorderLayout.CENTER);
+
+        JButton chooseButton = makeDashboardButton("Choose Ideology");
+        chooseButton.addActionListener(e -> displayIdeologyStarDashboard());
+        panel.add(chooseButton, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void displayIdeologyStarDashboard() {
+        displayTargetedSinglePickerDashboard(
+                "Ideology Star Packs",
+                "Choose an ideology. Ideology Star Packs give 1 card from that ideology, rated 3.5-10.0.",
+                campaign.getAvailableIdeologyPackIdeologies(),
+                campaign.getIdeologyStarPackCost(),
+                "Ideology",
+                selectedIdeology -> openIdeologyStarPackFromUI(selectedIdeology)
+        );
+    }
+
+    private void openIdeologyStarPackFromUI(String ideology) {
+        openNamedTargetedPackFromUI(
+                campaign.getIdeologyStarPackName(ideology),
+                campaign.getIdeologyStarPack(ideology),
+                () -> campaign.buyIdeologyStarPack(ideology)
+        );
+    }
+
+    private void displayTargetedSinglePickerDashboard(
+            String title, String introText, List<String> options, int cost, String labelText,
+            TargetedPackOpener opener
+    ) {
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = false;
+
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText(title);
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout(14, 14));
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(16, 16));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(28, 28, 28, 28));
+
+        JLabel intro = new JLabel("<html><center>" + escapeHtml(introText)
+                + "<br>Cost: " + CampaignMode.formatPC(cost) + buildAffordText(cost)
+                + "</center></html>", SwingConstants.CENTER);
+        intro.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+        intro.setForeground(new Color(35, 35, 35));
+        wrapper.add(intro, BorderLayout.NORTH);
+
+        if (options == null || options.isEmpty()) {
+            JLabel empty = new JLabel("No eligible options found.", SwingConstants.CENTER);
+            empty.setFont(new Font("Dialog", Font.BOLD, Math.max(15, (int) (17 * (cardSize / 275.0)))));
+            empty.setForeground(new Color(90, 70, 55));
+            wrapper.add(empty, BorderLayout.CENTER);
+        } else {
+            JPanel picker = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 12));
+            picker.setOpaque(false);
+            JLabel label = new JLabel(labelText + ":");
+            label.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+            label.setForeground(new Color(35, 35, 35));
+            picker.add(label);
+
+            JComboBox<String> comboBox = new JComboBox<String>(options.toArray(new String[0]));
+            comboBox.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+            comboBox.setPreferredSize(new Dimension(Math.max(240, (int) (260 * (cardSize / 275.0))), 36));
+            picker.add(comboBox);
+
+            JButton openButton = makeDashboardButton("Open Pack");
+            openButton.addActionListener(e -> {
+                Object selected = comboBox.getSelectedItem();
+                if (selected != null) {
+                    opener.open(selected.toString());
+                }
+            });
+            picker.add(openButton);
+            wrapper.add(picker, BorderLayout.CENTER);
+        }
+
+        JPanel bottomButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 8));
+        bottomButtons.setOpaque(false);
+        JButton backButton = makeDashboardButton("Back to Store");
+        backButton.addActionListener(e -> displayStoreDashboard());
+        bottomButtons.add(backButton);
+        wrapper.add(bottomButtons, BorderLayout.SOUTH);
+
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private void openNamedTargetedPackFromUI(String packName, CampaignPack pack, PackPurchase purchase) {
+        if (campaign == null || campaign.getPlayer() == null) {
+            showShortDialog("No Campaign Loaded", "Start or continue a campaign first.", true);
+            return;
+        }
+        if (pack == null) {
+            showShortDialog("Pack Error", "That pack does not exist.", true);
+            return;
+        }
+        if (campaign.getPlayer().getPC() < pack.getCost()) {
+            int needed = pack.getCost() - campaign.getPlayer().getPC();
+            showShortDialog(
+                    "Not Enough Political Capital",
+                    "You need " + CampaignMode.formatPC(needed) + " more to open "
+                            + packName + ".\nCost: " + CampaignMode.formatPC(pack.getCost())
+                            + "\nCurrent balance: " + CampaignMode.formatPC(campaign.getPlayer().getPC()),
+                    true
+            );
+            return;
+        }
+
+        OperationResult result = captureBooleanOutput(() -> purchase.buy());
+        appendLog(result.output);
+        refreshDashboard();
+
+        if (!result.success) {
+            showShortDialog(
+                    "Pack Error",
+                    result.output == null || result.output.trim().isEmpty()
+                            ? "Could not open " + packName + "."
+                            : result.output.trim(),
+                    true
+            );
+            return;
+        }
+
+        displayPackResult(packName, result.output);
+    }
+
+    private JPanel buildTargetedStorePanelBase() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(new Color(255, 250, 235));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 160, 120), 2),
+                new EmptyBorder(16, 16, 16, 16)
+        ));
+        return panel;
+    }
+
+    private String buildAffordText(int cost) {
+        if (campaign != null && campaign.getPlayer() != null) {
+            if (campaign.getPlayer().getPC() >= cost) {
+                return "<br><br>You can afford this pack.";
+            }
+            int needed = cost - campaign.getPlayer().getPC();
+            return "<br><br>Need " + CampaignMode.formatPC(needed) + " more.";
+        }
+        return "";
+    }
+
+    private interface TargetedPackOpener {
+        void open(String selectedValue);
+    }
+
+    private interface PackPurchase {
+        boolean buy();
     }
 
     private JPanel buildPackChoicePanel(
@@ -2400,13 +4211,18 @@ public class RunCampaignMode implements Runnable {
         }
 
         CampaignPlayer player = campaign.getPlayer();
-        CampaignTournament eraFilter = getSelectedCollectionEraTournament();
-        List<CollectionCardItem> collectionCards = buildFilteredCollectionCards(player, eraFilter);
+        if (COLLECTION_SCOPE_PROGRESS.equals(collectionScopeMode)) {
+            displayCollectionProgressDashboard(player);
+            return;
+        }
 
-        int totalInScope = getCollectionScopeTotal(eraFilter);
-        int ownedInScope = getCollectionScopeOwnedCount(player, eraFilter);
+        CollectionScope scope = getSelectedCollectionScope();
+        List<CollectionCardItem> collectionCards = buildFilteredCollectionCards(player, scope);
+
+        int totalInScope = getCollectionScopeTotal(scope);
+        int ownedInScope = getCollectionScopeOwnedCount(player, scope);
         int missingInScope = Math.max(0, totalInScope - ownedInScope);
-        String titleText = buildCollectionTitleText(eraFilter, ownedInScope, totalInScope);
+        String titleText = buildCollectionTitleText(scope, ownedInScope, totalInScope);
         displayTitleLabel.setText(titleText);
 
         int imageWidth = getCollectionCardImageWidth();
@@ -2414,22 +4230,25 @@ public class RunCampaignMode implements Runnable {
         int columns = getCollectionColumnCount(imageWidth);
         long requestId = ++collectionLoadRequestId;
 
-        displayPanel.add(makeCenteredDisplayMessage(
-                "Loading collection images... " + collectionCards.size() + " cards"
-        ), BorderLayout.CENTER);
+        final int totalCardsToLoad = collectionCards.size();
+        final JLabel loadingLabel = makeCenteredDisplayMessage(
+                buildLoadingImagesMessage("Loading collection images", 0, totalCardsToLoad)
+        );
+        displayPanel.add(loadingLabel, BorderLayout.CENTER);
         updateDisplayPanel();
 
         if (collectionCards.isEmpty()) {
             displayLoadedCollectionCards(
-                    new ArrayList<CardIconData>(), columns, ownedInScope, totalInScope, missingInScope, eraFilter
+                    new ArrayList<CardIconData>(), columns, ownedInScope, totalInScope, missingInScope, scope
             );
             return;
         }
 
-        collectionLoadWorker = new SwingWorker<List<CardIconData>, Void>() {
+        collectionLoadWorker = new SwingWorker<List<CardIconData>, Integer>() {
             @Override
             protected List<CardIconData> doInBackground() {
                 List<CardIconData> loadedCards = new ArrayList<CardIconData>();
+                int loadedCount = 0;
                 for (CollectionCardItem cardItem : collectionCards) {
                     if (isCancelled()) {
                         return loadedCards;
@@ -2440,8 +4259,23 @@ public class RunCampaignMode implements Runnable {
                             ? loadScaledIcon(president.getImageURL(), imageWidth, imageHeight)
                             : loadMissingScaledIcon(president.getImageURL(), imageWidth, imageHeight);
                     loadedCards.add(new CardIconData(president, imageWidth, icon, cardItem.isOwned()));
+                    loadedCount++;
+                    publish(loadedCount);
                 }
                 return loadedCards;
+            }
+
+            @Override
+            protected void process(List<Integer> chunks) {
+                if (chunks == null || chunks.isEmpty() || isCancelled()
+                        || requestId != collectionLoadRequestId || !showingCollectionCards) {
+                    return;
+                }
+                int loadedCount = chunks.get(chunks.size() - 1);
+                setCenteredDisplayMessage(
+                        loadingLabel,
+                        buildLoadingImagesMessage("Loading collection images", loadedCount, totalCardsToLoad)
+                );
             }
 
             @Override
@@ -2451,7 +4285,7 @@ public class RunCampaignMode implements Runnable {
                 }
 
                 try {
-                    displayLoadedCollectionCards(get(), columns, ownedInScope, totalInScope, missingInScope, eraFilter);
+                    displayLoadedCollectionCards(get(), columns, ownedInScope, totalInScope, missingInScope, scope);
                 } catch (Exception e) {
                     displayPanel.removeAll();
                     displayPanel.setLayout(new BorderLayout());
@@ -2465,18 +4299,492 @@ public class RunCampaignMode implements Runnable {
         collectionLoadWorker.execute();
     }
 
+    private void displayCollectionProgressDashboard(CampaignPlayer player) {
+        if (displayPanel == null) {
+            return;
+        }
+
+        displayTitleLabel.setText("Collection Progress Dashboard");
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(10, 10));
+        wrapper.setOpaque(false);
+        wrapper.add(buildRosterTabPanel("Collection"), BorderLayout.NORTH);
+
+        JPanel body = new JPanel(new BorderLayout(10, 10));
+        body.setOpaque(false);
+        body.setBorder(new EmptyBorder(4, 12, 12, 12));
+        body.add(buildCollectionProgressTopPanel(), BorderLayout.NORTH);
+
+        List<CollectionProgressRow> rows = buildCollectionProgressRows(player);
+        sortCollectionProgressRows(rows);
+
+        if (rows.isEmpty()) {
+            body.add(makeCenteredDisplayMessage("No era or tag progress rows available yet."), BorderLayout.CENTER);
+        } else {
+            body.add(buildCollectionProgressRowsPanel(rows), BorderLayout.CENTER);
+        }
+
+        wrapper.add(body, BorderLayout.CENTER);
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private JPanel buildCollectionProgressTopPanel() {
+        JPanel topPanel = new JPanel(new BorderLayout(8, 8));
+        topPanel.setOpaque(false);
+
+        JLabel guidance = new JLabel(
+                "<html><center><b>Collection Progress</b><br>"
+                        + "Track era and tag tournament readiness. Tags shown here have "
+                        + TAG_TOURNAMENT_REQUIRED_CARDS + "+ total cards, matching the future tag-tournament rule."
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        guidance.setFont(new Font("Dialog", Font.PLAIN, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        guidance.setForeground(new Color(70, 70, 70));
+        topPanel.add(guidance, BorderLayout.NORTH);
+
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 4));
+        controls.setOpaque(false);
+
+        JLabel viewLabel = new JLabel("View:");
+        viewLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        controls.add(viewLabel);
+
+        JComboBox<String> scopeCombo = new JComboBox<String>(new String[] {
+                COLLECTION_SCOPE_PROGRESS,
+                COLLECTION_SCOPE_ALL,
+                COLLECTION_SCOPE_ERA,
+                COLLECTION_SCOPE_TAG,
+                COLLECTION_SCOPE_FILTERS
+        });
+        scopeCombo.setSelectedItem(collectionScopeMode);
+        scopeCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        scopeCombo.addActionListener(e -> {
+            collectionScopeMode = (String) scopeCombo.getSelectedItem();
+            displayCollectionCards();
+        });
+        controls.add(scopeCombo);
+
+        JLabel showLabel = new JLabel("Show:");
+        showLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        controls.add(showLabel);
+
+        JComboBox<String> typeCombo = new JComboBox<String>(new String[] {
+                PROGRESS_TYPE_BOTH,
+                PROGRESS_TYPE_ERAS,
+                PROGRESS_TYPE_TAGS
+        });
+        typeCombo.setSelectedItem(collectionProgressTypeFilter);
+        typeCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        typeCombo.addActionListener(e -> {
+            collectionProgressTypeFilter = (String) typeCombo.getSelectedItem();
+            displayCollectionCards();
+        });
+        controls.add(typeCombo);
+
+        JLabel sortLabel = new JLabel("Sort:");
+        sortLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        controls.add(sortLabel);
+
+        JComboBox<String> sortCombo = new JComboBox<String>(new String[] {
+                PROGRESS_SORT_ELIGIBLE_CLOSE,
+                PROGRESS_SORT_CLOSEST_LOCKED,
+                PROGRESS_SORT_PERCENT_OWNED,
+                PROGRESS_SORT_OWNED_COUNT,
+                PROGRESS_SORT_DECK_STRENGTH,
+                PROGRESS_SORT_ALPHABETICAL,
+                PROGRESS_SORT_CHRONOLOGICAL
+        });
+        sortCombo.setSelectedItem(collectionProgressSortMode);
+        sortCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        sortCombo.addActionListener(e -> {
+            collectionProgressSortMode = (String) sortCombo.getSelectedItem();
+            displayCollectionCards();
+        });
+        controls.add(sortCombo);
+
+        topPanel.add(controls, BorderLayout.SOUTH);
+        return topPanel;
+    }
+
+    private List<CollectionProgressRow> buildCollectionProgressRows(CampaignPlayer player) {
+        ArrayList<CollectionProgressRow> rows = new ArrayList<CollectionProgressRow>();
+        if (campaign == null || player == null) {
+            return rows;
+        }
+
+        if (shouldShowEraProgressRows()) {
+            for (CampaignTournament tournament : campaign.getEraTournaments()) {
+                if (tournament == null) {
+                    continue;
+                }
+                List<President> candidates = campaign.getPresidentsForTournament(tournament);
+                int owned = getOwnedCountForCandidates(player, candidates);
+                int required = tournament.getRequiredCards();
+                double strength = owned >= required
+                        ? calculateScopedDeckStrength(player, candidates, required)
+                        : 0.0;
+                rows.add(new CollectionProgressRow(
+                        COLLECTION_SCOPE_ERA,
+                        tournament.getScopeName(),
+                        tournament.getId(),
+                        owned,
+                        candidates.size(),
+                        required,
+                        strength
+                ));
+            }
+        }
+
+        if (shouldShowTagProgressRows()) {
+            for (String tag : getProgressDashboardTags()) {
+                List<President> candidates = getCandidatesForTag(tag);
+                int owned = getOwnedCountForCandidates(player, candidates);
+                double strength = owned >= TAG_TOURNAMENT_REQUIRED_CARDS
+                        ? calculateScopedDeckStrength(player, candidates, TAG_TOURNAMENT_REQUIRED_CARDS)
+                        : 0.0;
+                rows.add(new CollectionProgressRow(
+                        COLLECTION_SCOPE_TAG,
+                        tag,
+                        tag,
+                        owned,
+                        candidates.size(),
+                        TAG_TOURNAMENT_REQUIRED_CARDS,
+                        strength
+                ));
+            }
+        }
+
+        return rows;
+    }
+
+    private boolean shouldShowEraProgressRows() {
+        return PROGRESS_TYPE_BOTH.equals(collectionProgressTypeFilter)
+                || PROGRESS_TYPE_ERAS.equals(collectionProgressTypeFilter);
+    }
+
+    private boolean shouldShowTagProgressRows() {
+        return PROGRESS_TYPE_BOTH.equals(collectionProgressTypeFilter)
+                || PROGRESS_TYPE_TAGS.equals(collectionProgressTypeFilter);
+    }
+
+    private JPanel buildCollectionProgressRowsPanel(List<CollectionProgressRow> rows) {
+        JPanel outer = new JPanel(new BorderLayout(0, 8));
+        outer.setOpaque(false);
+
+        JLabel summary = new JLabel(buildCollectionProgressSummaryText(rows), SwingConstants.CENTER);
+        summary.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        summary.setForeground(new Color(20, 35, 65));
+        outer.add(summary, BorderLayout.NORTH);
+
+        JPanel table = new JPanel(new GridLayout(0, 1, 0, 4));
+        table.setOpaque(false);
+        table.add(buildCollectionProgressHeaderRow());
+
+        for (CollectionProgressRow row : rows) {
+            table.add(buildCollectionProgressDataRow(row));
+        }
+
+        outer.add(table, BorderLayout.NORTH);
+        return outer;
+    }
+
+    private String buildCollectionProgressSummaryText(List<CollectionProgressRow> rows) {
+        int eligible = 0;
+        int close = 0;
+        for (CollectionProgressRow row : rows) {
+            if (row.isEligible()) {
+                eligible++;
+            } else if (row.getNeeded() <= 3) {
+                close++;
+            }
+        }
+        return "Eligible: " + eligible + " | Within 3 cards: " + close + " | Total scopes: " + rows.size();
+    }
+
+    private JPanel buildCollectionProgressHeaderRow() {
+        JPanel row = buildCollectionProgressRowShell(new Color(235, 225, 205));
+        row.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 160, 120), 1),
+                new EmptyBorder(5, 7, 5, 7)
+        ));
+        addProgressCell(row, "Type", true);
+        addProgressCell(row, "Era / Tag", true);
+        addProgressCell(row, "Owned", true);
+        addProgressCell(row, "Total", true);
+        addProgressCell(row, "Entry", true);
+        addProgressCell(row, "Status", true);
+        addProgressCell(row, "Strength", true);
+        addProgressCell(row, "Open", true);
+        return row;
+    }
+
+    private JPanel buildCollectionProgressDataRow(CollectionProgressRow progressRow) {
+        Color bg = progressRow.isEligible()
+                ? new Color(232, 246, 226)
+                : progressRow.getNeeded() <= 3
+                        ? new Color(255, 246, 218)
+                        : new Color(255, 253, 245);
+        JPanel row = buildCollectionProgressRowShell(bg);
+        row.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(215, 200, 165), 1),
+                new EmptyBorder(5, 7, 5, 7)
+        ));
+
+        addProgressCell(row, progressRow.getTypeLabel(), false);
+        addProgressCell(row, progressRow.getDisplayName(), false);
+        addProgressCell(row, String.valueOf(progressRow.getOwned()), false);
+        addProgressCell(row, String.valueOf(progressRow.getTotal()), false);
+        addProgressCell(row, String.valueOf(progressRow.getRequired()), false);
+        addProgressCell(row, progressRow.getStatusText(), false);
+        addProgressCell(row, progressRow.getStrengthText(), false);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        buttonPanel.setOpaque(false);
+        JButton openButton = makeDashboardButton("View");
+        openButton.setFont(new Font("Dialog", Font.BOLD, Math.max(11, (int) (12 * (cardSize / 275.0)))));
+        openButton.addActionListener(e -> openCollectionProgressRow(progressRow));
+        buttonPanel.add(openButton);
+        row.add(buttonPanel);
+        return row;
+    }
+
+    private JPanel buildCollectionProgressRowShell(Color backgroundColor) {
+        JPanel row = new JPanel(new GridLayout(1, 8, 6, 0));
+        row.setBackground(backgroundColor);
+        row.setOpaque(true);
+        return row;
+    }
+
+    private void addProgressCell(JPanel row, String text, boolean header) {
+        JLabel label = new JLabel(text == null ? "" : text, SwingConstants.CENTER);
+        label.setFont(new Font(
+                "Dialog",
+                header ? Font.BOLD : Font.PLAIN,
+                Math.max(12, (int) (14 * (cardSize / 275.0)))
+        ));
+        label.setForeground(header ? new Color(20, 35, 65) : new Color(55, 55, 55));
+        row.add(label);
+    }
+
+    private void openCollectionProgressRow(CollectionProgressRow progressRow) {
+        if (progressRow == null) {
+            return;
+        }
+
+        collectionOwnershipFilter = COLLECTION_OWNERSHIP_OWNED;
+        if (COLLECTION_SCOPE_ERA.equals(progressRow.getScopeType())) {
+            collectionScopeMode = COLLECTION_SCOPE_ERA;
+            collectionEraFilterId = progressRow.getScopeKey();
+        } else if (COLLECTION_SCOPE_TAG.equals(progressRow.getScopeType())) {
+            collectionScopeMode = COLLECTION_SCOPE_TAG;
+            collectionTagFilter = progressRow.getScopeKey();
+        }
+        displayCollectionCards();
+    }
+
+    private List<String> getProgressDashboardTags() {
+        ArrayList<String> tags = new ArrayList<String>();
+        if (campaign == null) {
+            return tags;
+        }
+
+        for (String tag : CardData.getAllTags()) {
+            if (tag == null || tag.trim().isEmpty() || isEraTag(tag)) {
+                continue;
+            }
+            if (getCandidateCountForTag(tag) >= TAG_TOURNAMENT_REQUIRED_CARDS) {
+                tags.add(tag);
+            }
+        }
+        Collections.sort(tags);
+        return tags;
+    }
+
+    private List<President> getCandidatesForTag(String tag) {
+        ArrayList<President> candidates = new ArrayList<President>();
+        if (campaign == null || tag == null || tag.trim().isEmpty()) {
+            return candidates;
+        }
+        for (President president : campaign.getAllPresidents()) {
+            if (president != null && president.hasTag(tag)) {
+                candidates.add(president);
+            }
+        }
+        Collections.sort(candidates, presidentAverageComparator());
+        return candidates;
+    }
+
+    private int getOwnedCountForCandidates(CampaignPlayer player, List<President> candidates) {
+        if (player == null || candidates == null || candidates.isEmpty()) {
+            return 0;
+        }
+        Set<String> ownedNames = getOwnedPresidentNames(player);
+        int owned = 0;
+        for (President president : candidates) {
+            if (president != null && ownedNames.contains(president.getName())) {
+                owned++;
+            }
+        }
+        return owned;
+    }
+
+    private double calculateScopedDeckStrength(
+            CampaignPlayer player, List<President> candidates, int requiredCards
+    ) {
+        if (player == null || candidates == null || requiredCards <= 0) {
+            return 0.0;
+        }
+
+        Set<String> ownedNames = getOwnedPresidentNames(player);
+        ArrayList<President> ownedCandidates = new ArrayList<President>();
+        for (President president : candidates) {
+            if (president != null && ownedNames.contains(president.getName())) {
+                ownedCandidates.add(president);
+            }
+        }
+        Collections.sort(ownedCandidates, presidentAverageComparator());
+        if (ownedCandidates.size() < requiredCards) {
+            return 0.0;
+        }
+        return calculateDeckStrength(new ArrayList<President>(ownedCandidates.subList(0, requiredCards)));
+    }
+
+    private void sortCollectionProgressRows(List<CollectionProgressRow> rows) {
+        if (rows == null) {
+            return;
+        }
+        Collections.sort(rows, new Comparator<CollectionProgressRow>() {
+            @Override
+            public int compare(CollectionProgressRow r1, CollectionProgressRow r2) {
+                if (r1 == null && r2 == null) {
+                    return 0;
+                }
+                if (r1 == null) {
+                    return 1;
+                }
+                if (r2 == null) {
+                    return -1;
+                }
+
+                if (PROGRESS_SORT_CLOSEST_LOCKED.equals(collectionProgressSortMode)) {
+                    int lockedCompare = Boolean.compare(r1.isEligible(), r2.isEligible());
+                    if (lockedCompare != 0) {
+                        return lockedCompare;
+                    }
+                    int neededCompare = Integer.compare(r1.getNeeded(), r2.getNeeded());
+                    if (neededCompare != 0) {
+                        return neededCompare;
+                    }
+                    return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+                }
+
+                if (PROGRESS_SORT_PERCENT_OWNED.equals(collectionProgressSortMode)) {
+                    int pctCompare = Double.compare(r2.getOwnedPct(), r1.getOwnedPct());
+                    if (pctCompare != 0) {
+                        return pctCompare;
+                    }
+                    return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+                }
+
+                if (PROGRESS_SORT_OWNED_COUNT.equals(collectionProgressSortMode)) {
+                    int ownedCompare = Integer.compare(r2.getOwned(), r1.getOwned());
+                    if (ownedCompare != 0) {
+                        return ownedCompare;
+                    }
+                    return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+                }
+
+                if (PROGRESS_SORT_DECK_STRENGTH.equals(collectionProgressSortMode)) {
+                    int strengthCompare = Double.compare(r2.getDeckStrength(), r1.getDeckStrength());
+                    if (strengthCompare != 0) {
+                        return strengthCompare;
+                    }
+                    return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+                }
+
+                if (PROGRESS_SORT_ALPHABETICAL.equals(collectionProgressSortMode)) {
+                    int typeCompare = r1.getTypeLabel().compareToIgnoreCase(r2.getTypeLabel());
+                    if (typeCompare != 0) {
+                        return typeCompare;
+                    }
+                    return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+                }
+
+                if (PROGRESS_SORT_CHRONOLOGICAL.equals(collectionProgressSortMode)) {
+                    int eraCompare = Integer.compare(getEraChronologyIndex(r1), getEraChronologyIndex(r2));
+                    if (eraCompare != 0) {
+                        return eraCompare;
+                    }
+                    int typeCompare = r1.getTypeLabel().compareToIgnoreCase(r2.getTypeLabel());
+                    if (typeCompare != 0) {
+                        return typeCompare;
+                    }
+                    return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+                }
+
+                int eligibleCompare = Boolean.compare(r2.isEligible(), r1.isEligible());
+                if (eligibleCompare != 0) {
+                    return eligibleCompare;
+                }
+                if (r1.isEligible() && r2.isEligible()) {
+                    int strengthCompare = Double.compare(r2.getDeckStrength(), r1.getDeckStrength());
+                    if (strengthCompare != 0) {
+                        return strengthCompare;
+                    }
+                }
+                int neededCompare = Integer.compare(r1.getNeeded(), r2.getNeeded());
+                if (neededCompare != 0) {
+                    return neededCompare;
+                }
+                return r1.getDisplayName().compareToIgnoreCase(r2.getDisplayName());
+            }
+        });
+    }
+
+    private int getEraChronologyIndex(CollectionProgressRow row) {
+        if (row == null || !COLLECTION_SCOPE_ERA.equals(row.getScopeType())) {
+            return Integer.MAX_VALUE;
+        }
+        if (campaign == null) {
+            return Integer.MAX_VALUE - 1;
+        }
+
+        List<CampaignTournament> tournaments = campaign.getEraTournaments();
+        for (int i = 0; i < tournaments.size(); i++) {
+            CampaignTournament tournament = tournaments.get(i);
+            if (tournament == null) {
+                continue;
+            }
+            if (safeEqualsIgnoreCase(row.getScopeKey(), tournament.getId())
+                    || safeEqualsIgnoreCase(row.getDisplayName(), tournament.getScopeName())) {
+                return i;
+            }
+        }
+        return Integer.MAX_VALUE - 1;
+    }
+
+    private boolean safeEqualsIgnoreCase(String a, String b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        return a.equalsIgnoreCase(b);
+    }
+
     private List<CollectionCardItem> buildFilteredCollectionCards(
-            CampaignPlayer player, CampaignTournament eraFilter
+            CampaignPlayer player, CollectionScope scope
     ) {
         ArrayList<CollectionCardItem> filteredCards = new ArrayList<CollectionCardItem>();
-        if (player == null || campaign == null) {
+        if (player == null || campaign == null || scope == null) {
             return filteredCards;
         }
 
         Set<String> ownedNames = getOwnedPresidentNames(player);
-        List<President> candidates = eraFilter == null
-                ? campaign.getAllPresidents()
-                : campaign.getPresidentsForTournament(eraFilter);
+        List<President> candidates = scope.getCandidates();
 
         for (President president : candidates) {
             if (president == null) {
@@ -2551,38 +4859,214 @@ public class RunCampaignMode implements Runnable {
         return ownedNames;
     }
 
-    private int getCollectionScopeTotal(CampaignTournament eraFilter) {
+    private CollectionScope getSelectedCollectionScope() {
         if (campaign == null) {
-            return 0;
+            return new CollectionScope(COLLECTION_SCOPE_ALL, COLLECTION_SCOPE_ALL, new ArrayList<President>());
         }
-        if (eraFilter == null) {
-            return campaign.getTotalPresidentCount();
+
+        if (COLLECTION_SCOPE_ERA.equals(collectionScopeMode)) {
+            CampaignTournament tournament = getSelectedCollectionEraTournament();
+            if (tournament != null) {
+                return new CollectionScope(
+                        COLLECTION_SCOPE_ERA,
+                        tournament.getScopeName(),
+                        campaign.getPresidentsForTournament(tournament),
+                        tournament
+                );
+            }
         }
-        return campaign.getPresidentsForTournament(eraFilter).size();
+
+        if (COLLECTION_SCOPE_TAG.equals(collectionScopeMode)) {
+            String tag = collectionTagFilter;
+            if (tag != null && !tag.trim().isEmpty() && !COLLECTION_TAG_ALL.equals(tag)) {
+                ArrayList<President> taggedCards = new ArrayList<President>();
+                for (President president : campaign.getAllPresidents()) {
+                    if (president != null && president.hasTag(tag)) {
+                        taggedCards.add(president);
+                    }
+                }
+                Collections.sort(taggedCards, presidentAverageComparator());
+                return new CollectionScope(COLLECTION_SCOPE_TAG, tag, taggedCards);
+            }
+            return new CollectionScope(COLLECTION_SCOPE_TAG, COLLECTION_TAG_ALL, campaign.getAllPresidents());
+        }
+
+        if (COLLECTION_SCOPE_FILTERS.equals(collectionScopeMode)) {
+            ArrayList<President> filteredCards = new ArrayList<President>();
+            for (President president : campaign.getAllPresidents()) {
+                if (matchesFullCollectionFilters(president)) {
+                    filteredCards.add(president);
+                }
+            }
+            Collections.sort(filteredCards, presidentAverageComparator());
+            return new CollectionScope(
+                    COLLECTION_SCOPE_FILTERS, buildFullFilterDisplayName(), filteredCards
+            );
+        }
+
+        return new CollectionScope(COLLECTION_SCOPE_ALL, COLLECTION_SCOPE_ALL, campaign.getAllPresidents());
     }
 
-    private int getCollectionScopeOwnedCount(CampaignPlayer player, CampaignTournament eraFilter) {
-        if (player == null || campaign == null) {
-            return 0;
+    private boolean matchesFullCollectionFilters(President president) {
+        if (president == null) {
+            return false;
         }
-        if (eraFilter == null) {
-            return player.getCollectionSize();
+
+        if (!matchesCollectionTextFilter(president.getEra(), collectionFullEraFilter, COLLECTION_ERA_ALL)) {
+            return false;
         }
-        return campaign.getOwnedCountForTournament(eraFilter);
+        if (!COLLECTION_TAG_ALL.equals(collectionFullTagFilter) && !president.hasTag(collectionFullTagFilter)) {
+            return false;
+        }
+        if (!matchesCollectionTextFilter(president.getParty(), collectionFullPartyFilter, COLLECTION_PARTY_ALL)) {
+            return false;
+        }
+        if (!matchesCollectionTextFilter(president.getState(), collectionFullStateFilter, COLLECTION_STATE_ALL)) {
+            return false;
+        }
+        if (!matchesCollectionTextFilter(president.getRegion(), collectionFullRegionFilter, COLLECTION_REGION_ALL)) {
+            return false;
+        }
+        if (!matchesCollectionTextFilter(
+                president.getIdeology(), collectionFullIdeologyFilter, COLLECTION_IDEOLOGY_ALL
+        )) {
+            return false;
+        }
+        return true;
     }
 
-    private String buildCollectionTitleText(CampaignTournament eraFilter, int owned, int total) {
+    private boolean matchesCollectionTextFilter(String value, String selectedFilter, String allFilter) {
+        if (selectedFilter == null || selectedFilter.trim().isEmpty() || allFilter.equals(selectedFilter)) {
+            return true;
+        }
+        return value != null && selectedFilter.equalsIgnoreCase(value.trim());
+    }
+
+    private String buildFullFilterDisplayName() {
+        ArrayList<String> parts = new ArrayList<String>();
+        addFilterDisplayPart(parts, "Era", collectionFullEraFilter, COLLECTION_ERA_ALL);
+        addFilterDisplayPart(parts, "Tag", collectionFullTagFilter, COLLECTION_TAG_ALL);
+        addFilterDisplayPart(parts, "Party", collectionFullPartyFilter, COLLECTION_PARTY_ALL);
+        addFilterDisplayPart(parts, "State", collectionFullStateFilter, COLLECTION_STATE_ALL);
+        addFilterDisplayPart(parts, "Region", collectionFullRegionFilter, COLLECTION_REGION_ALL);
+        addFilterDisplayPart(parts, "Ideology", collectionFullIdeologyFilter, COLLECTION_IDEOLOGY_ALL);
+
+        if (parts.isEmpty()) {
+            return "Full Filters";
+        }
+        return "Filters: " + joinStrings(parts, ", ");
+    }
+
+    private String joinStrings(List<String> values, String separator) {
+        if (values == null || values.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) {
+                builder.append(separator);
+            }
+            builder.append(values.get(i));
+        }
+        return builder.toString();
+    }
+
+    private void addFilterDisplayPart(ArrayList<String> parts, String label, String value, String allValue) {
+        if (value != null && !value.trim().isEmpty() && !allValue.equals(value)) {
+            parts.add(label + "=" + value);
+        }
+    }
+
+    private String[] getFullFilterEraLabels() {
+        return getCandidateFieldFilterLabels(COLLECTION_ERA_ALL, "era");
+    }
+
+    private String[] getFullFilterTagLabels() {
+        return getCollectionTagFilterLabels();
+    }
+
+    private String[] getCandidateFieldFilterLabels(String allLabel, String fieldName) {
+        ArrayList<String> labels = new ArrayList<String>();
+        labels.add(allLabel);
+
+        ArrayList<String> values = new ArrayList<String>();
+        HashSet<String> seen = new HashSet<String>();
+        if (campaign != null) {
+            for (President president : campaign.getAllPresidents()) {
+                String value = getCandidateFieldValue(president, fieldName);
+                if (value == null || value.trim().isEmpty()) {
+                    continue;
+                }
+                String cleaned = value.trim();
+                String key = cleaned.toLowerCase();
+                if (!seen.contains(key)) {
+                    values.add(cleaned);
+                    seen.add(key);
+                }
+            }
+        }
+
+        Collections.sort(values, String.CASE_INSENSITIVE_ORDER);
+        labels.addAll(values);
+        return labels.toArray(new String[labels.size()]);
+    }
+
+    private String getCandidateFieldValue(President president, String fieldName) {
+        if (president == null || fieldName == null) {
+            return "";
+        }
+        if ("era".equals(fieldName)) {
+            return president.getEra();
+        }
+        if ("party".equals(fieldName)) {
+            return president.getParty();
+        }
+        if ("state".equals(fieldName)) {
+            return president.getState();
+        }
+        if ("region".equals(fieldName)) {
+            return president.getRegion();
+        }
+        if ("ideology".equals(fieldName)) {
+            return president.getIdeology();
+        }
+        return "";
+    }
+
+    private int getCollectionScopeTotal(CollectionScope scope) {
+        if (scope == null) {
+            return 0;
+        }
+        return scope.getCandidates().size();
+    }
+
+    private int getCollectionScopeOwnedCount(CampaignPlayer player, CollectionScope scope) {
+        if (player == null || scope == null) {
+            return 0;
+        }
+
+        Set<String> ownedNames = getOwnedPresidentNames(player);
+        int ownedCount = 0;
+        for (President president : scope.getCandidates()) {
+            if (president != null && ownedNames.contains(president.getName())) {
+                ownedCount++;
+            }
+        }
+        return ownedCount;
+    }
+
+    private String buildCollectionTitleText(CollectionScope scope, int owned, int total) {
         double pct = total == 0 ? 0.0 : owned * 100.0 / total;
-        if (eraFilter == null) {
+        if (scope == null || COLLECTION_SCOPE_ALL.equals(scope.getScopeType())) {
             return "Collection - " + owned + "/" + total + " (" + String.format("%.1f", pct) + "%)";
         }
-        return "Collection - " + eraFilter.getEraName() + " - " + owned + "/" + total
+        return "Collection - " + scope.getDisplayName() + " - " + owned + "/" + total
                 + " (" + String.format("%.1f", pct) + "%)";
     }
 
     private void displayLoadedCollectionCards(
             List<CardIconData> loadedCards, int columns, int ownedInScope,
-            int totalInScope, int missingInScope, CampaignTournament eraFilter
+            int totalInScope, int missingInScope, CollectionScope scope
     ) {
         if (displayPanel == null || !showingCollectionCards) {
             return;
@@ -2595,44 +5079,45 @@ public class RunCampaignMode implements Runnable {
         JPanel wrapper = new JPanel(new BorderLayout(10, 10));
         wrapper.setOpaque(false);
 
-        wrapper.add(buildCollectionTopPanel(ownedInScope, totalInScope, missingInScope, eraFilter), BorderLayout.NORTH);
+        wrapper.add(buildRosterTabPanel("Collection"), BorderLayout.NORTH);
+
+        JPanel body = new JPanel(new BorderLayout(10, 10));
+        body.setOpaque(false);
+        body.add(buildCollectionTopPanel(ownedInScope, totalInScope, missingInScope, scope), BorderLayout.NORTH);
 
         if (loadedCards.isEmpty()) {
-            wrapper.add(makeCenteredDisplayMessage("No cards match these filters."), BorderLayout.CENTER);
+            body.add(makeCenteredDisplayMessage("No cards match these filters."), BorderLayout.CENTER);
         } else {
             JPanel cardGrid = new JPanel(new GridLayout(0, columns, 20, 20));
             cardGrid.setBackground(new Color(255, 253, 245));
-            cardGrid.setBorder(new EmptyBorder(8, 18, 8, 18));
+            cardGrid.setBorder(new EmptyBorder(8, 14, 8, 14));
 
             for (CardIconData cardData : loadedCards) {
                 cardGrid.add(buildPresidentCardPanel(
                         cardData.getPresident(), cardData.getImageWidth(), cardData.getIcon(), cardData.isOwned()
                 ));
             }
-            wrapper.add(cardGrid, BorderLayout.CENTER);
+            body.add(cardGrid, BorderLayout.CENTER);
         }
 
+        wrapper.add(body, BorderLayout.CENTER);
         displayPanel.add(wrapper, BorderLayout.NORTH);
         updateDisplayPanel();
     }
 
     private JPanel buildCollectionTopPanel(
-            int ownedInScope, int totalInScope, int missingInScope, CampaignTournament eraFilter
+            int ownedInScope, int totalInScope, int missingInScope, CollectionScope scope
     ) {
         JPanel topPanel = new JPanel(new BorderLayout(8, 8));
         topPanel.setOpaque(false);
 
-        String eligibilityText = "";
-        if (eraFilter != null) {
-            int required = eraFilter.getRequiredEraCards();
-            eligibilityText = ownedInScope >= required
-                    ? " | Tournament eligible"
-                    : " | Need " + (required - ownedInScope) + " more for tournament entry";
-        }
+        String scopeDescription = scope == null ? "All Cards" : scope.getDisplayName();
+        String eligibilityText = buildCollectionEligibilityText(scope, ownedInScope, totalInScope);
 
         JLabel guidance = new JLabel(
-                "<html><center>Filter your collection by era and ownership. Missing cards are shown dimmed in grayscale.<br>"
-                        + "Owned: " + ownedInScope + "/" + totalInScope
+                "<html><center>Browse your collection by all cards, era, tag, or full filters. Missing cards are shown dimmed in grayscale. Right-click a card to zoom.<br>"
+                        + "Scope: " + escapeHtml(scopeDescription)
+                        + " | Owned: " + ownedInScope + "/" + totalInScope
                         + " | Missing: " + missingInScope
                         + eligibilityText
                         + " | Showing: " + escapeHtml(collectionOwnershipFilter)
@@ -2646,18 +5131,54 @@ public class RunCampaignMode implements Runnable {
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 4));
         controls.setOpaque(false);
 
-        JLabel eraLabel = new JLabel("Era:");
-        eraLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
-        controls.add(eraLabel);
+        JLabel viewLabel = new JLabel("View:");
+        viewLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        controls.add(viewLabel);
 
-        JComboBox<String> eraCombo = new JComboBox<String>(getCollectionEraFilterLabels());
-        eraCombo.setSelectedItem(getCollectionEraFilterLabel());
-        eraCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
-        eraCombo.addActionListener(e -> {
-            collectionEraFilterId = getCollectionEraIdForLabel((String) eraCombo.getSelectedItem());
+        JComboBox<String> scopeCombo = new JComboBox<String>(new String[] {
+                COLLECTION_SCOPE_PROGRESS,
+                COLLECTION_SCOPE_ALL,
+                COLLECTION_SCOPE_ERA,
+                COLLECTION_SCOPE_TAG,
+                COLLECTION_SCOPE_FILTERS
+        });
+        scopeCombo.setSelectedItem(collectionScopeMode);
+        scopeCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+        scopeCombo.addActionListener(e -> {
+            collectionScopeMode = (String) scopeCombo.getSelectedItem();
             displayCollectionCards();
         });
-        controls.add(eraCombo);
+        controls.add(scopeCombo);
+
+        if (COLLECTION_SCOPE_ERA.equals(collectionScopeMode)) {
+            JLabel eraLabel = new JLabel("Era:");
+            eraLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+            controls.add(eraLabel);
+
+            JComboBox<String> eraCombo = new JComboBox<String>(getCollectionEraFilterLabels());
+            eraCombo.setSelectedItem(getCollectionEraFilterLabel());
+            eraCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+            eraCombo.addActionListener(e -> {
+                collectionEraFilterId = getCollectionEraIdForLabel((String) eraCombo.getSelectedItem());
+                displayCollectionCards();
+            });
+            controls.add(eraCombo);
+        }
+
+        if (COLLECTION_SCOPE_TAG.equals(collectionScopeMode)) {
+            JLabel tagLabel = new JLabel("Tag:");
+            tagLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+            controls.add(tagLabel);
+
+            JComboBox<String> tagCombo = new JComboBox<String>(getCollectionTagFilterLabels());
+            tagCombo.setSelectedItem(collectionTagFilter);
+            tagCombo.setFont(new Font("Dialog", Font.PLAIN, Math.max(13, (int) (15 * (cardSize / 275.0)))));
+            tagCombo.addActionListener(e -> {
+                collectionTagFilter = (String) tagCombo.getSelectedItem();
+                displayCollectionCards();
+            });
+            controls.add(tagCombo);
+        }
 
         JLabel ownershipLabel = new JLabel("Cards:");
         ownershipLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(13, (int) (15 * (cardSize / 275.0)))));
@@ -2676,8 +5197,159 @@ public class RunCampaignMode implements Runnable {
         });
         controls.add(ownershipCombo);
 
-        topPanel.add(controls, BorderLayout.SOUTH);
+        JPanel controlRows = new JPanel(new GridLayout(0, 1, 0, 3));
+        controlRows.setOpaque(false);
+        controlRows.add(controls);
+        if (COLLECTION_SCOPE_FILTERS.equals(collectionScopeMode)) {
+            controlRows.add(buildCollectionFullFilterPanel());
+        }
+
+        topPanel.add(controlRows, BorderLayout.SOUTH);
         return topPanel;
+    }
+
+    private JPanel buildCollectionFullFilterPanel() {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+        row.setOpaque(false);
+
+        addFullFilterCombo(row, "Era:", getFullFilterEraLabels(), collectionFullEraFilter, value -> {
+            collectionFullEraFilter = value;
+            displayCollectionCards();
+        });
+
+        addFullFilterCombo(row, "Tag:", getFullFilterTagLabels(), collectionFullTagFilter, value -> {
+            collectionFullTagFilter = value;
+            displayCollectionCards();
+        });
+
+        addFullFilterCombo(row, "Party:", getCandidateFieldFilterLabels(COLLECTION_PARTY_ALL, "party"),
+                collectionFullPartyFilter, value -> {
+                    collectionFullPartyFilter = value;
+                    displayCollectionCards();
+                });
+
+        addFullFilterCombo(row, "State:", getCandidateFieldFilterLabels(COLLECTION_STATE_ALL, "state"),
+                collectionFullStateFilter, value -> {
+                    collectionFullStateFilter = value;
+                    displayCollectionCards();
+                });
+
+        addFullFilterCombo(row, "Region:", getCandidateFieldFilterLabels(COLLECTION_REGION_ALL, "region"),
+                collectionFullRegionFilter, value -> {
+                    collectionFullRegionFilter = value;
+                    displayCollectionCards();
+                });
+
+        addFullFilterCombo(row, "Ideology:", getCandidateFieldFilterLabels(COLLECTION_IDEOLOGY_ALL, "ideology"),
+                collectionFullIdeologyFilter, value -> {
+                    collectionFullIdeologyFilter = value;
+                    displayCollectionCards();
+                });
+
+        JButton clearButton = makeDashboardButton("Clear Filters");
+        clearButton.setFont(new Font("Dialog", Font.BOLD, Math.max(10, (int) (11 * (cardSize / 275.0)))));
+        clearButton.addActionListener(e -> {
+            resetFullCollectionFilters();
+            displayCollectionCards();
+        });
+        row.add(clearButton);
+
+        return row;
+    }
+
+    private void addFullFilterCombo(
+            JPanel row, String labelText, String[] values, String selectedValue, FilterSelectionHandler handler
+    ) {
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Dialog", Font.BOLD, Math.max(12, (int) (14 * (cardSize / 275.0)))));
+        row.add(label);
+
+        JComboBox<String> combo = new JComboBox<String>(values);
+        combo.setSelectedItem(selectedValue);
+        combo.setFont(new Font("Dialog", Font.PLAIN, Math.max(11, (int) (12 * (cardSize / 275.0)))));
+        Dimension preferredSize = combo.getPreferredSize();
+        combo.setPreferredSize(new Dimension(getFullFilterComboWidth(labelText), preferredSize.height));
+        combo.addActionListener(e -> {
+            Object selected = combo.getSelectedItem();
+            handler.onSelect(selected == null ? "" : selected.toString());
+        });
+        row.add(combo);
+    }
+
+    private int getFullFilterComboWidth(String labelText) {
+        double scale = Math.max(0.85, cardSize / 275.0);
+        int baseWidth;
+        if ("Tag:".equals(labelText)) {
+            baseWidth = 145;
+        } else if ("Era:".equals(labelText)) {
+            baseWidth = 125;
+        } else if ("State:".equals(labelText)) {
+            baseWidth = 80;
+        } else if ("Region:".equals(labelText)) {
+            baseWidth = 105;
+        } else {
+            baseWidth = 115;
+        }
+        return Math.max(70, (int) Math.round(baseWidth * scale));
+    }
+
+    private void resetFullCollectionFilters() {
+        collectionFullEraFilter = COLLECTION_ERA_ALL;
+        collectionFullTagFilter = COLLECTION_TAG_ALL;
+        collectionFullPartyFilter = COLLECTION_PARTY_ALL;
+        collectionFullStateFilter = COLLECTION_STATE_ALL;
+        collectionFullRegionFilter = COLLECTION_REGION_ALL;
+        collectionFullIdeologyFilter = COLLECTION_IDEOLOGY_ALL;
+    }
+
+    private String buildCollectionEligibilityText(CollectionScope scope, int ownedInScope, int totalInScope) {
+        if (scope == null) {
+            return "";
+        }
+
+        if (COLLECTION_SCOPE_ERA.equals(scope.getScopeType()) && scope.getTournament() != null) {
+            int required = scope.getTournament().getRequiredEraCards();
+            if (ownedInScope >= required) {
+                return " | Era deck strength: "
+                        + String.format("%.2f", getScopedOwnedDeckStrength(scope, required));
+            }
+            return " | Need " + (required - ownedInScope) + " more for era tournament entry";
+        }
+
+        if (COLLECTION_SCOPE_TAG.equals(scope.getScopeType()) && !COLLECTION_TAG_ALL.equals(scope.getDisplayName())) {
+            if (totalInScope < TAG_TOURNAMENT_REQUIRED_CARDS) {
+                return " | Below future tag tournament size";
+            }
+            if (ownedInScope >= TAG_TOURNAMENT_REQUIRED_CARDS) {
+                return " | Tag deck strength: "
+                        + String.format("%.2f", getScopedOwnedDeckStrength(scope, TAG_TOURNAMENT_REQUIRED_CARDS));
+            }
+            return " | Need " + (TAG_TOURNAMENT_REQUIRED_CARDS - ownedInScope)
+                    + " more for future tag tournament entry";
+        }
+
+        return "";
+    }
+
+    private double getScopedOwnedDeckStrength(CollectionScope scope, int requiredCards) {
+        if (campaign == null || campaign.getPlayer() == null || scope == null || requiredCards <= 0) {
+            return 0.0;
+        }
+
+        Set<String> ownedNames = getOwnedPresidentNames(campaign.getPlayer());
+        ArrayList<President> eligibleOwnedCards = new ArrayList<President>();
+        for (President president : scope.getCandidates()) {
+            if (president != null && ownedNames.contains(president.getName())) {
+                eligibleOwnedCards.add(president);
+            }
+        }
+
+        Collections.sort(eligibleOwnedCards, presidentAverageComparator());
+        if (eligibleOwnedCards.size() < requiredCards) {
+            return 0.0;
+        }
+
+        return calculateDeckStrength(new ArrayList<President>(eligibleOwnedCards.subList(0, requiredCards)));
     }
 
     private String[] getCollectionEraFilterLabels() {
@@ -2685,10 +5357,71 @@ public class RunCampaignMode implements Runnable {
         labels.add(COLLECTION_ERA_ALL);
         if (campaign != null) {
             for (CampaignTournament tournament : campaign.getEraTournaments()) {
-                labels.add(tournament.getEraName());
+                labels.add(tournament.getScopeName());
             }
         }
         return labels.toArray(new String[labels.size()]);
+    }
+
+    private String[] getCollectionTagFilterLabels() {
+        ArrayList<String> labels = new ArrayList<String>();
+        labels.add(COLLECTION_TAG_ALL);
+        if (campaign != null) {
+            labels.addAll(getEligibleCollectionTags());
+        }
+        return labels.toArray(new String[labels.size()]);
+    }
+
+    private List<String> getEligibleCollectionTags() {
+        ArrayList<String> tags = new ArrayList<String>();
+        if (campaign == null) {
+            return tags;
+        }
+
+        for (String tag : CardData.getAllTags()) {
+            if (tag == null || tag.trim().isEmpty() || isEraTag(tag)) {
+                continue;
+            }
+            int count = getCandidateCountForTag(tag);
+            if (count > 0) {
+                tags.add(tag);
+            }
+        }
+        Collections.sort(tags);
+        return tags;
+    }
+
+    private boolean isEraTag(String tag) {
+        if (tag == null) {
+            return false;
+        }
+
+        String cleaned = tag.trim();
+        if (cleaned.endsWith(" Era")) {
+            return true;
+        }
+
+        if (campaign != null) {
+            for (CampaignTournament tournament : campaign.getEraTournaments()) {
+                if (tournament != null && cleaned.equalsIgnoreCase(tournament.getScopeName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private int getCandidateCountForTag(String tag) {
+        if (campaign == null || tag == null || tag.trim().isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (President president : campaign.getAllPresidents()) {
+            if (president != null && president.hasTag(tag)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private String getCollectionEraFilterLabel() {
@@ -2697,7 +5430,7 @@ public class RunCampaignMode implements Runnable {
         }
 
         CampaignTournament tournament = campaign.getTournamentById(collectionEraFilterId);
-        return tournament == null ? COLLECTION_ERA_ALL : tournament.getEraName();
+        return tournament == null ? COLLECTION_ERA_ALL : tournament.getScopeName();
     }
 
     private String getCollectionEraIdForLabel(String label) {
@@ -2706,7 +5439,7 @@ public class RunCampaignMode implements Runnable {
         }
 
         for (CampaignTournament tournament : campaign.getEraTournaments()) {
-            if (label.equals(tournament.getEraName())) {
+            if (label.equals(tournament.getScopeName())) {
                 return tournament.getId();
             }
         }
@@ -2730,6 +5463,48 @@ public class RunCampaignMode implements Runnable {
             collectionLoadWorker.cancel(true);
         }
         collectionLoadWorker = null;
+    }
+
+    private JPanel buildRosterTabPanel(String selectedTab) {
+        JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+        tabPanel.setOpaque(false);
+        tabPanel.setBorder(new EmptyBorder(0, 0, 8, 0));
+
+        JButton activeDeckTab = makeDashboardButton("Active Deck");
+        JButton collectionTab = makeDashboardButton("Collection");
+        JButton trophyTab = makeDashboardButton("Trophy Cabinet");
+
+        boolean activeSelected = "Active Deck".equals(selectedTab);
+        boolean collectionSelected = "Collection".equals(selectedTab);
+        boolean trophySelected = "Trophy Cabinet".equals(selectedTab);
+
+        styleRosterTabButton(activeDeckTab, activeSelected);
+        styleRosterTabButton(collectionTab, collectionSelected);
+        styleRosterTabButton(trophyTab, trophySelected);
+
+        activeDeckTab.addActionListener(e -> displayActiveDeckCards());
+        collectionTab.addActionListener(e -> displayCollectionCards());
+        trophyTab.addActionListener(e -> displayTrophyCabinet());
+
+        tabPanel.add(activeDeckTab);
+        tabPanel.add(collectionTab);
+        tabPanel.add(trophyTab);
+        return tabPanel;
+    }
+
+    private void styleRosterTabButton(JButton button, boolean selected) {
+        if (button == null) {
+            return;
+        }
+        button.setEnabled(!selected);
+        if (selected) {
+            button.setForeground(new Color(20, 35, 65));
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(222, 162, 6), 2),
+                    new EmptyBorder(2, 8, 2, 8)
+            ));
+            button.setBorderPainted(true);
+        }
     }
 
     private void refreshActiveDeckCards() {
@@ -2766,25 +5541,31 @@ public class RunCampaignMode implements Runnable {
         JPanel wrapper = new JPanel(new BorderLayout(12, 12));
         wrapper.setOpaque(false);
         wrapper.setBorder(new EmptyBorder(10, 14, 12, 14));
-        wrapper.add(buildActiveDeckViewTopPanel(), BorderLayout.NORTH);
+        wrapper.add(buildRosterTabPanel("Active Deck"), BorderLayout.NORTH);
+
+        JPanel body = new JPanel(new BorderLayout(12, 12));
+        body.setOpaque(false);
+        body.add(buildActiveDeckViewTopPanel(), BorderLayout.NORTH);
 
         if (activeDeck == null || activeDeck.isEmpty()) {
-            wrapper.add(makeCenteredDisplayMessage("No active deck cards yet. Open starter packs first."), BorderLayout.CENTER);
+            body.add(makeCenteredDisplayMessage("No active deck cards yet. Open starter packs first."), BorderLayout.CENTER);
+            wrapper.add(body, BorderLayout.CENTER);
             displayPanel.add(wrapper, BorderLayout.NORTH);
             updateDisplayPanel();
             return;
         }
 
-        JPanel cardGrid = new JPanel(new GridLayout(0, 5, 20, 14));
+        JPanel cardGrid = new JPanel(new GridLayout(0, 5, 18, 14));
         cardGrid.setBackground(new Color(255, 253, 245));
-        cardGrid.setBorder(new EmptyBorder(8, 18, 8, 18));
+        cardGrid.setBorder(new EmptyBorder(8, 14, 8, 14));
 
         int imageWidth = getLargeCardImageWidth();
         for (President president : activeDeck) {
             cardGrid.add(buildPresidentCardPanel(president, imageWidth));
         }
 
-        wrapper.add(cardGrid, BorderLayout.CENTER);
+        body.add(cardGrid, BorderLayout.CENTER);
+        wrapper.add(body, BorderLayout.CENTER);
         displayPanel.add(wrapper, BorderLayout.NORTH);
         updateDisplayPanel();
     }
@@ -2850,15 +5631,18 @@ public class RunCampaignMode implements Runnable {
         final int columns = getActiveDeckManagerCollectionColumnCount(ownedImageWidth);
         final long requestId = ++collectionLoadRequestId;
 
-        displayPanel.add(makeCenteredDisplayMessage(
-                "Loading Active Deck editor images... " + ownedCards.size() + " owned cards"
-        ), BorderLayout.CENTER);
+        final int totalOwnedCardsToLoad = ownedCards.size();
+        final JLabel loadingLabel = makeCenteredDisplayMessage(
+                buildLoadingImagesMessage("Loading Active Deck editor images", 0, totalOwnedCardsToLoad)
+        );
+        displayPanel.add(loadingLabel, BorderLayout.CENTER);
         updateDisplayPanel();
 
-        collectionLoadWorker = new SwingWorker<List<CardIconData>, Void>() {
+        collectionLoadWorker = new SwingWorker<List<CardIconData>, Integer>() {
             @Override
             protected List<CardIconData> doInBackground() {
                 List<CardIconData> loadedCards = new ArrayList<CardIconData>();
+                int loadedCount = 0;
                 for (President president : ownedCards) {
                     if (isCancelled()) {
                         return loadedCards;
@@ -2866,8 +5650,25 @@ public class RunCampaignMode implements Runnable {
 
                     ImageIcon icon = loadScaledIcon(president.getImageURL(), ownedImageWidth, ownedImageHeight);
                     loadedCards.add(new CardIconData(president, ownedImageWidth, icon, true));
+                    loadedCount++;
+                    publish(loadedCount);
                 }
                 return loadedCards;
+            }
+
+            @Override
+            protected void process(List<Integer> chunks) {
+                if (chunks == null || chunks.isEmpty() || isCancelled()
+                        || requestId != collectionLoadRequestId || !showingActiveDeckCards) {
+                    return;
+                }
+                int loadedCount = chunks.get(chunks.size() - 1);
+                setCenteredDisplayMessage(
+                        loadingLabel,
+                        buildLoadingImagesMessage(
+                                "Loading Active Deck editor images", loadedCount, totalOwnedCardsToLoad
+                        )
+                );
             }
 
             @Override
@@ -2906,13 +5707,18 @@ public class RunCampaignMode implements Runnable {
         wrapper.setOpaque(false);
         wrapper.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        wrapper.add(buildActiveDeckManagerTopPanel(), BorderLayout.NORTH);
+        wrapper.add(buildRosterTabPanel("Active Deck"), BorderLayout.NORTH);
+
+        JPanel body = new JPanel(new BorderLayout(14, 14));
+        body.setOpaque(false);
+        body.add(buildActiveDeckManagerTopPanel(), BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new BorderLayout(18, 18));
         centerPanel.setOpaque(false);
         centerPanel.add(buildActiveDeckDraftPanel(), BorderLayout.NORTH);
         centerPanel.add(buildActiveDeckOwnedCollectionPanel(loadedOwnedCards, collectionColumns), BorderLayout.CENTER);
-        wrapper.add(centerPanel, BorderLayout.CENTER);
+        body.add(centerPanel, BorderLayout.CENTER);
+        wrapper.add(body, BorderLayout.CENTER);
 
         displayPanel.add(wrapper, BorderLayout.NORTH);
         updateDisplayPanel();
@@ -3076,7 +5882,7 @@ public class RunCampaignMode implements Runnable {
         imageButton.setContentAreaFilled(false);
         imageButton.setOpaque(false);
         imageButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        imageButton.setPreferredSize(new Dimension(imageWidth, imageHeight));
+        imageButton.setPreferredSize(new Dimension(imageWidth + 2, imageHeight + 2));
         imageButton.setBorder(BorderFactory.createLineBorder(new Color(120, 100, 70), 1));
 
         if (icon != null) {
@@ -3091,7 +5897,7 @@ public class RunCampaignMode implements Runnable {
     private JPanel buildActiveDeckEmptySlotPanel(int slotNumber, int imageWidth) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        panel.setPreferredSize(new Dimension(imageWidth, getCardImageHeight(imageWidth)));
+        panel.setPreferredSize(new Dimension(imageWidth + 4, getCardImageHeight(imageWidth) + 4));
         panel.setBorder(BorderFactory.createDashedBorder(new Color(170, 150, 115), 3, 4));
 
         JLabel label = new JLabel("<html><center>Empty Slot<br>" + slotNumber + "</center></html>", SwingConstants.CENTER);
@@ -3254,15 +6060,15 @@ public class RunCampaignMode implements Runnable {
 
         double topFiveAverage = topCount == 0 ? 0.0 : topFiveTotal / topCount;
         double fullAverage = sortedDeck.isEmpty() ? 0.0 : fullTotal / sortedDeck.size();
-        return (0.70 * topFiveAverage) + (0.30 * fullAverage);
+        return (0.30 * topFiveAverage) + (0.70 * fullAverage);
     }
 
     private int getActiveDeckManagerSelectedCardImageWidth() {
         int frameWidth = frame == null ? 1600 : frame.getWidth();
         int availableWidth = Math.max(900, frameWidth - 160);
         int widthFromScreen = (availableWidth - 4 * 18 - 36) / 5;
-        int widthFromScale = (int) (170 * (cardSize / 275.0));
-        return Math.max(120, Math.min(widthFromScreen, Math.max(155, widthFromScale)));
+        int widthFromScale = (int) (176 * (cardSize / 275.0));
+        return Math.max(126, Math.min(widthFromScreen, Math.max(162, widthFromScale)));
     }
 
     private int getActiveDeckManagerCollectionCardImageWidth() {
@@ -3281,11 +6087,26 @@ public class RunCampaignMode implements Runnable {
     }
 
     private JLabel makeCenteredDisplayMessage(String message) {
-        String safeMessage = escapeHtml(message == null ? "" : message).replace("\n", "<br>");
-        JLabel label = new JLabel("<html><center>" + safeMessage + "</center></html>", SwingConstants.CENTER);
+        JLabel label = new JLabel("", SwingConstants.CENTER);
+        setCenteredDisplayMessage(label, message);
         label.setFont(new Font("Dialog", Font.BOLD, Math.max(18, (int) (22 * (cardSize / 275.0)))));
         label.setForeground(new Color(90, 80, 65));
         return label;
+    }
+
+    private void setCenteredDisplayMessage(JLabel label, String message) {
+        if (label == null) {
+            return;
+        }
+        String safeMessage = escapeHtml(message == null ? "" : message).replace("\n", "<br>");
+        label.setText("<html><center>" + safeMessage + "</center></html>");
+    }
+
+    private String buildLoadingImagesMessage(String label, int loaded, int total) {
+        int safeTotal = Math.max(0, total);
+        int safeLoaded = Math.max(0, Math.min(loaded, safeTotal));
+        int pct = safeTotal == 0 ? 100 : (int) Math.round(safeLoaded * 100.0 / safeTotal);
+        return label + "... " + safeLoaded + "/" + safeTotal + " (" + pct + "%)";
     }
 
     private int getCardImageHeight(int imageWidth) {
@@ -3298,9 +6119,9 @@ public class RunCampaignMode implements Runnable {
 
         // Active deck is 5 columns. Use the available width, but cap it so the
         // cards are big without becoming cartoonishly huge on ultrawide screens.
-        int widthFromScreen = (availableWidth - 4 * 22 - 36) / 5;
-        int widthFromScale = (int) (232 * (cardSize / 275.0));
-        return Math.max(165, Math.min(widthFromScreen, Math.max(230, widthFromScale)));
+        int widthFromScreen = (availableWidth - 4 * 18 - 28) / 5;
+        int widthFromScale = (int) (238 * (cardSize / 275.0));
+        return Math.max(168, Math.min(widthFromScreen, Math.max(236, widthFromScale)));
     }
 
     private int getCollectionCardImageWidth() {
@@ -3378,6 +6199,7 @@ public class RunCampaignMode implements Runnable {
             imageLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(10, (int) (12 * (cardSize / 275.0)))));
         }
 
+        addCollectionCardZoomListener(imageLabel, president, owned);
         cardPanel.add(imageLabel, BorderLayout.CENTER);
         if (!owned) {
             JLabel missingLabel = new JLabel("Missing", SwingConstants.CENTER);
@@ -3386,6 +6208,144 @@ public class RunCampaignMode implements Runnable {
             cardPanel.add(missingLabel, BorderLayout.SOUTH);
         }
         return cardPanel;
+    }
+
+    private void addCollectionCardZoomListener(JLabel imageLabel, President president, boolean owned) {
+        if (imageLabel == null || president == null) {
+            return;
+        }
+
+        imageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        imageLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e) && showingCollectionCards) {
+                    displayCollectionCardZoom(president, owned);
+                }
+            }
+        });
+    }
+
+    private void displayCollectionCardZoom(President president, boolean owned) {
+        if (displayPanel == null || president == null) {
+            return;
+        }
+
+        cancelCollectionLoadWorker();
+        showingActiveDeckCards = false;
+        showingCollectionCards = true;
+        displayTitleLabel.setText("Card Detail - " + president.getName());
+
+        displayPanel.removeAll();
+        displayPanel.setLayout(new BorderLayout());
+        displayPanel.setBackground(new Color(255, 253, 245));
+
+        JPanel wrapper = new JPanel(new BorderLayout(12, 12));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(10, 14, 12, 14));
+        wrapper.add(buildRosterTabPanel("Collection"), BorderLayout.NORTH);
+
+        JPanel topPanel = new JPanel(new BorderLayout(8, 8));
+        topPanel.setOpaque(false);
+
+        JLabel titleLabel = new JLabel(
+                "<html><center><b>" + escapeHtml(president.getName()) + "</b><br>"
+                        + (owned ? "Owned Card" : "Missing Card")
+                        + "</center></html>",
+                SwingConstants.CENTER
+        );
+        titleLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(18, (int) (22 * (cardSize / 275.0)))));
+        titleLabel.setForeground(new Color(20, 35, 65));
+        topPanel.add(titleLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        buttonPanel.setOpaque(false);
+        JButton backButton = makeDashboardButton("Back");
+        backButton.addActionListener(e -> displayCollectionCards());
+        buttonPanel.add(backButton);
+        topPanel.add(buttonPanel, BorderLayout.EAST);
+
+        wrapper.add(topPanel, BorderLayout.NORTH);
+
+        JPanel detailPanel = new JPanel(new BorderLayout(18, 18));
+        detailPanel.setOpaque(false);
+        detailPanel.setBorder(new EmptyBorder(8, 24, 24, 24));
+
+        int imageWidth = getZoomCardImageWidth();
+        int imageHeight = getCardImageHeight(imageWidth);
+        ImageIcon icon = owned
+                ? loadScaledIcon(president.getImageURL(), imageWidth, imageHeight)
+                : loadMissingScaledIcon(president.getImageURL(), imageWidth, imageHeight);
+
+        JLabel imageLabel = new JLabel();
+        imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        imageLabel.setVerticalAlignment(SwingConstants.CENTER);
+        if (icon != null) {
+            imageLabel.setIcon(icon);
+        } else {
+            imageLabel.setText("<html><center>Image not found<br>" + escapeHtml(president.getName()) + "</center></html>");
+            imageLabel.setPreferredSize(new Dimension(imageWidth, imageHeight));
+            imageLabel.setBorder(BorderFactory.createLineBorder(new Color(120, 100, 70), 1));
+            imageLabel.setFont(new Font("Dialog", Font.BOLD, Math.max(14, (int) (16 * (cardSize / 275.0)))));
+        }
+        detailPanel.add(imageLabel, BorderLayout.WEST);
+
+        JTextArea details = new JTextArea(buildCardDetailText(president, owned));
+        details.setEditable(false);
+        details.setLineWrap(true);
+        details.setWrapStyleWord(true);
+        details.setOpaque(false);
+        details.setFont(new Font("Dialog", Font.PLAIN, Math.max(16, (int) (18 * (cardSize / 275.0)))));
+        details.setForeground(new Color(45, 45, 45));
+        details.setBorder(new EmptyBorder(4, 8, 4, 8));
+        detailPanel.add(details, BorderLayout.CENTER);
+
+        wrapper.add(detailPanel, BorderLayout.CENTER);
+        displayPanel.add(wrapper, BorderLayout.NORTH);
+        updateDisplayPanel();
+    }
+
+    private String buildCardDetailText(President president, boolean owned) {
+        StringBuilder text = new StringBuilder();
+        text.append(owned ? "Owned" : "Missing").append("\n\n");
+        text.append("Average: ").append(String.format("%.2f", president.getAv())).append("\n");
+        text.append("Value: ").append(String.format("%.0f", president.getValue())).append(" PC").append("\n\n");
+        text.append("EXP: ").append(president.getExp()).append("    ");
+        text.append("INF: ").append(president.getInfl()).append("\n");
+        text.append("POL: ").append(president.getPol()).append("    ");
+        text.append("NAM: ").append(president.getNam()).append("\n\n");
+        text.append("Region: ").append(blankToDash(president.getRegion())).append("\n");
+        text.append("Era: ").append(blankToDash(president.getEra())).append("\n");
+        text.append("Party: ").append(blankToDash(president.getParty())).append("\n");
+        text.append("State: ").append(blankToDash(president.getState())).append("\n");
+        text.append("Ideology: ").append(blankToDash(president.getIdeology())).append("\n");
+        text.append("Marquee: ").append(blankToDash(president.getMarquee())).append("\n\n");
+        text.append("Tags: ").append(buildTagsText(president)).append("\n\n");
+        text.append(president.getCardInfo());
+        return text.toString();
+    }
+
+    private String blankToDash(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return "—";
+        }
+        return text.trim();
+    }
+
+    private String buildTagsText(President president) {
+        if (president == null || president.getTags() == null || president.getTags().length == 0) {
+            return "—";
+        }
+        return String.join(", ", president.getTags());
+    }
+
+    private int getZoomCardImageWidth() {
+        int frameHeight = frame == null ? 900 : frame.getHeight();
+        int frameWidth = frame == null ? 1600 : frame.getWidth();
+        int heightBasedWidth = (int) ((Math.max(500, frameHeight - 260)) / 1.32713755);
+        int widthBasedWidth = Math.max(260, (frameWidth - 260) / 3);
+        int widthFromScale = (int) (360 * (cardSize / 275.0));
+        return Math.max(260, Math.min(Math.min(heightBasedWidth, widthBasedWidth), Math.max(330, widthFromScale)));
     }
 
     private void updateDisplayPanel() {
@@ -3822,15 +6782,8 @@ public class RunCampaignMode implements Runnable {
     }
 
     private void appendLog(String text) {
-        // v3.2 intentionally no longer keeps a full console log in the middle
-        // of the screen. Short outputs are shown through CustomDialogs / text
-        // dialogs, and the center display is now reserved for card views.
-        if (text != null && !text.isEmpty()) {
-            System.out.print(text);
-            if (!text.endsWith("\n")) {
-                System.out.println();
-            }
-        }
+        // RunCampaignMode no longer mirrors captured engine output to the console.
+        // User-facing results are shown through dialogs and dashboard panels instead.
     }
 
     private OperationResult captureVoidOutput(VoidOperation operation) {
@@ -4049,6 +7002,10 @@ public class RunCampaignMode implements Runnable {
         }
     }
 
+    private interface FilterSelectionHandler {
+        void onSelect(String value);
+    }
+
     private interface VoidOperation {
         void run();
     }
@@ -4064,6 +7021,131 @@ public class RunCampaignMode implements Runnable {
         private OperationResult(boolean success, String output) {
             this.success = success;
             this.output = output == null ? "" : output;
+        }
+    }
+
+    private static class CollectionProgressRow {
+        private final String scopeType;
+        private final String displayName;
+        private final String scopeKey;
+        private final int owned;
+        private final int total;
+        private final int required;
+        private final double deckStrength;
+
+        private CollectionProgressRow(
+                String scopeType, String displayName, String scopeKey, int owned, int total,
+                int required, double deckStrength
+        ) {
+            this.scopeType = scopeType == null ? "" : scopeType;
+            this.displayName = displayName == null ? "" : displayName;
+            this.scopeKey = scopeKey == null ? this.displayName : scopeKey;
+            this.owned = Math.max(0, owned);
+            this.total = Math.max(0, total);
+            this.required = Math.max(0, required);
+            this.deckStrength = Math.max(0.0, deckStrength);
+        }
+
+        private String getScopeType() {
+            return scopeType;
+        }
+
+        private String getScopeKey() {
+            return scopeKey;
+        }
+
+        private String getDisplayName() {
+            return displayName;
+        }
+
+        private int getOwned() {
+            return owned;
+        }
+
+        private int getTotal() {
+            return total;
+        }
+
+        private int getRequired() {
+            return required;
+        }
+
+        private double getDeckStrength() {
+            return deckStrength;
+        }
+
+        private int getNeeded() {
+            return Math.max(0, required - owned);
+        }
+
+        private boolean isEligible() {
+            return owned >= required && required > 0;
+        }
+
+        private double getOwnedPct() {
+            return total == 0 ? 0.0 : owned * 100.0 / total;
+        }
+
+        private String getTypeLabel() {
+            if (COLLECTION_SCOPE_ERA.equals(scopeType)) {
+                return "Era";
+            }
+            if (COLLECTION_SCOPE_TAG.equals(scopeType)) {
+                return "Tag";
+            }
+            return scopeType;
+        }
+
+        private String getStatusText() {
+            if (isEligible()) {
+                return "Eligible";
+            }
+            return "Need " + getNeeded();
+        }
+
+        private String getStrengthText() {
+            if (!isEligible()) {
+                return "—";
+            }
+            return String.format("%.2f", deckStrength);
+        }
+    }
+
+    private static class CollectionScope {
+        private final String scopeType;
+        private final String displayName;
+        private final List<President> candidates;
+        private final CampaignTournament tournament;
+
+        private CollectionScope(String scopeType, String displayName, List<President> candidates) {
+            this(scopeType, displayName, candidates, null);
+        }
+
+        private CollectionScope(
+                String scopeType, String displayName, List<President> candidates, CampaignTournament tournament
+        ) {
+            this.scopeType = scopeType == null ? COLLECTION_SCOPE_ALL : scopeType;
+            this.displayName = displayName == null ? COLLECTION_SCOPE_ALL : displayName;
+            this.candidates = candidates == null
+                    ? new ArrayList<President>()
+                    : new ArrayList<President>(candidates);
+            this.tournament = tournament;
+        }
+
+        private String getScopeType() {
+            return scopeType;
+        }
+
+        private String getDisplayName() {
+            return displayName;
+        }
+
+        private List<President> getCandidates() {
+            return new ArrayList<President>(candidates);
+        }
+
+        private CampaignTournament getTournament() {
+            return tournament;
         }
     }
 

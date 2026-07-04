@@ -1,9 +1,10 @@
 package org.cis120.electiongame;
 
 /**
- * Persistent record for one Campaign Mode era tournament.
+ * Persistent record for one Campaign Mode tournament.
  *
- * Stored on CampaignPlayer and saved per campaign save slot.
+ * Records are keyed by tournament id, so era tournaments and tag tournaments can
+ * share the same save format without requiring a migration.
  */
 public class CampaignTournamentRecord {
 
